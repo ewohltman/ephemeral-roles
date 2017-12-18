@@ -1,0 +1,6 @@
+# Project-specific files
+.idea/
+bin/
+
+# Vendor dependencies
+vendor/
