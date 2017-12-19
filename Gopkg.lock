@@ -28,26 +28,18 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = [
-    "nacl/secretbox",
-    "poly1305",
-    "salsa20/salsa",
-    "ssh/terminal"
-  ]
-  revision = "244f6ce1f09cc9f3d7bffe29b033aaa13c0cc2f3"
+  packages = ["nacl/secretbox","poly1305","salsa20/salsa","ssh/terminal"]
+  revision = "d585fd2cc9195196078f516b69daff6744ef5e84"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = [
-    "unix",
-    "windows"
-  ]
+  packages = ["unix","windows"]
   revision = "571f7bbbe08da2a8955aed9d4db316e78630e9a3"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9a34ddad41c5543d876e3031603e6d5f9ef2326116e08ef706d9e8ea118feda9"
+  inputs-digest = "e4f65319eaca38e20ee6f66465575e418eb4287acff8d64bac9556c0f8d5049a"
   solver-name = "gps-cdcl"
   solver-version = 1

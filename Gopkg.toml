@@ -22,6 +22,14 @@
 
 
 [[constraint]]
+  name = "github.com/bwmarrin/discordgo"
+  version = "0.17.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ewohltman/discordEphemeralRolesProject"
+
+[[constraint]]
   name = "github.com/kz/discordrus"
   version = "1.0.1"
 

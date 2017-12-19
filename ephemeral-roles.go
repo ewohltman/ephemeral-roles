@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/discordEphemeralRolesProject/pkg/callbacks"
-	"github.com/ewohltman/discordEphemeralRolesProject/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 var log = logging.Instance()

@@ -6,7 +6,7 @@ package callbacks
 import (
 	"os"
 
-	"github.com/ewohltman/discordEphemeralRolesProject/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 var log = logging.Instance()
