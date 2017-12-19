@@ -16,8 +16,10 @@ import (
 
 // log is a global logrus instance pointer
 var log *logrus.Logger
+var discordHook *discordrus.Hook
 
 func init() {
+	log = logrus.New()
 	Reinitialize()
 }
 
@@ -26,43 +28,35 @@ func Instance() *logrus.Logger {
 	return log
 }
 
-// Reinitialize will create a new logging instance configured from the
-// environment, updating the global pointer to allow any previous logging
-// instance to be garbage collected
+// Reinitialize will update the global logger with values from the environment
 func Reinitialize() {
-	log = logrus.New()
-	logLevel := environmentLevel()
+	log.SetLevel(environmentLevel())
 
-	log.Formatter = &logrus.TextFormatter{}
-	log.Level = logLevel
-	log.Out = os.Stdout
-	log.AddHook(
-		discordrus.NewHook(
-			// Use environment variable for security reasons
-			os.Getenv("DISCORDRUS_WEBHOOK_URL"),
-			// Set minimum level to DebugLevel to receive all log entries
-			log.Level,
-			&discordrus.Opts{
-				Username:           "",
-				Author:             "",                     // Setting this to a non-empty string adds the author text to the message header
-				DisableTimestamp:   false,                  // Setting this to true will disable timestamps from appearing in the footer
-				TimestampFormat:    "Jan 2 15:04:05.00000", // The timestamp takes this format; if it is unset, it will take logrus' default format
-				EnableCustomColors: true,                   // If set to true, the below CustomLevelColors will apply
-				CustomLevelColors: &discordrus.LevelColors{
-					Debug: 10170623,
-					Info:  3581519,
-					Warn:  14327864,
-					Error: 13631488,
-					Panic: 13631488,
-					Fatal: 13631488,
-				},
-				DisableInlineFields: true, // If set to true, fields will not appear in columns ("inline")
+	log.Hooks = make(logrus.LevelHooks)
+
+	log.AddHook(discordrus.NewHook(
+		os.Getenv("DISCORDRUS_WEBHOOK_URL"),
+		log.Level,
+		&discordrus.Opts{
+			Username:           "",
+			Author:             "",                     // Setting this to a non-empty string adds the author text to the message header
+			DisableTimestamp:   false,                  // Setting this to true will disable timestamps from appearing in the footer
+			TimestampFormat:    "Jan 2 15:04:05.00000", // The timestamp takes this format; if it is unset, it will take logrus' default format
+			EnableCustomColors: true,                   // If set to true, the below CustomLevelColors will apply
+			CustomLevelColors: &discordrus.LevelColors{
+				Debug: 10170623,
+				Info:  3581519,
+				Warn:  14327864,
+				Error: 13631488,
+				Panic: 13631488,
+				Fatal: 13631488,
 			},
-		),
-	)
+			DisableInlineFields: true, // If set to true, fields will not appear in columns ("inline")
+		},
+	))
 }
 
-// environmentLevel parses and sets our logging level from the environment
+// environmentLevel parses and returns our logging level from the environment
 func environmentLevel() logrus.Level {
 	envLevel, found := os.LookupEnv("LOG_LEVEL")
 	if !found || envLevel == "" {

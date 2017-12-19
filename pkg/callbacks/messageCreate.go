@@ -33,24 +33,36 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 
+		tokens := strings.Split(strings.TrimSpace(m.Content), " ")
+
 		log.WithFields(logrus.Fields{
-			"author":  m.Author.Username,
-			"channel": c.Name,
-			"guild":   g.Name,
-			"content": m.Content,
-		}).Debugf("New message")
+			"author":        m.Author.Username,
+			"channel":       c.Name,
+			"guild":         g.Name,
+			"content":       m.Content,
+			"contentTokens": tokens,
+		}).Infof("New Info message")
 
 		logLevel := ""
-		tokens := strings.Split(m.Content, " ")
-		switch strings.ToLower(strings.TrimSpace(tokens[1])) {
-		case "log_level":
-			logLevel = tokens[2]
-		}
+		if len(tokens) == 3 {
+			switch strings.ToLower(strings.TrimSpace(tokens[1])) {
+			case "log_level":
+				logLevel = tokens[2]
+			}
 
-		if logLevel != "" {
-			os.Setenv("LOG_LEVEL", "logLevel")
-		}
+			if logLevel != "" {
+				os.Setenv("LOG_LEVEL", logLevel)
 
-		logging.Reinitialize()
+				logging.Reinitialize()
+			}
+
+			log.WithFields(logrus.Fields{
+				"author":    m.Author.Username,
+				"channel":   c.Name,
+				"guild":     g.Name,
+				"content":   m.Content,
+				"LOG_LEVEL": logLevel,
+			}).Debugf("New Debug message")
+		}
 	}
 }
