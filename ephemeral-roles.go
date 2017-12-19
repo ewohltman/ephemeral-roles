@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
@@ -14,6 +12,12 @@ import (
 var log = logging.Instance()
 
 func main() {
+	// Check for EPH_BOT_PORT, we need this to connect to Discord
+	port, found := os.LookupEnv("PORT")
+	if !found || port == "" {
+		port = "8080"
+	}
+
 	// Check for EPH_BOT_TOKEN, we need this to connect to Discord
 	token, found := os.LookupEnv("EPH_BOT_TOKEN")
 	if !found || token == "" {
@@ -50,13 +54,22 @@ func main() {
 	}
 	defer dgBot.Close() // Cleanly close down the Discord session.
 
-	// Wait here until CTRL-C or other term signal is received.
-	fmt.Println("dERP is now running.  Press CTRL-C to exit.")
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
-	<-sc
+	// Set up handler funcs and an HTTP server to live in a container
+	http.HandleFunc(
+		"/",
+		func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+		},
+	)
 
-	log.Infof("Caught signal for graceful shutdown")
+	http.HandleFunc(
+		"/status",
+		func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+		},
+	)
+
+	log.Infof("Bot instance shutting down: %s", http.ListenAndServe(":"+port, nil).Error())
 
 	return
 }
