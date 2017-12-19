@@ -1,2 +1,2 @@
-# Discord Ephemeral Roles Project \[DERP\]
-A Discord utility for assigning temporary roles based upon voice channel presence
+# Ephemeral Roles
+Ephemeral Roles is a Discord bot for managing ephemeral roles based upon user voice channel presence
