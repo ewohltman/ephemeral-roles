@@ -6,7 +6,7 @@ before_script:
 - go vet ./...
 - go test -race ./...
 script:
-- go build -i -race -o bin/ephemeral-roles ephemeral-roles.go
+- go build -i -o bin/ephemeral-roles ephemeral-roles.go
 before_deploy:
 - zip -r ephemeral-roles.zip .
 deploy:
