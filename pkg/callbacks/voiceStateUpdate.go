@@ -244,7 +244,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 		log.WithFields(logrus.Fields{
 			"user":  user.Username,
 			"guild": guild.Name,
-		}).Infof("User disconnected from voice channels and ephemeral roles revoked")
+		}).Debugf("User disconnected from voice channels and ephemeral roles revoked")
 
 		return
 	}
@@ -268,7 +268,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 			"guild":   guild.Name,
 			"channel": channelName,
 			"role":    ephRole.Name,
-		}).Infof("User connected to voice channel and added to role")
+		}).Debugf("User connected to voice channel and added to role")
 
 		return
 	}
