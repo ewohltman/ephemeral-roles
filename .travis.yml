@@ -15,15 +15,11 @@ deploy:
   region: us-east-1
   access_key_id: "AKIAITOP2BVV6ICBAOYQ"
   secret_access_key:
-    secure: "hs1+Wf9WMOskffNEmjDl5QojrVG99mTgsl6XwC551tUAmEDRypwkVVIR1m28qTAkh3Tf8IE2sy3JNU7MSDs2V0H2jRAFAIHGMjfnGQUIdcdDIFfDB9w0t/zG7ph0ng02b3JA5IkPwAdoN7mnO6brwlvpgljLGIdTeVaNWMc9CF5y4m4Q3zYRGPacC/G3eN3D+FfxYspW0P1qW2fVwlfJC6uEB9NSfF2keyvVqkCQZs5ebXM+B/6B3hI+21+M30Q4ujZm/f55AOgG3ip3csLd4Sd2W6eWXdtmuSufvYi384o+UM1+gowVryJU8QcYrFRRwkz4iJALjbdQd+nlQFbOyCfmTPf1Djeb2x64LNANvZqvCkqPsO1SHrRW1X8+FvX2wO2nSKrd4j2iEma8O06dcvsW/Zv149qZZXgAJxkDOdo59vKNAKi/XPacXrVe3i7MO4jgCtAJa+rf16Tw8yLeLtUMSYqLGdW0PICJ1NakZVz9s/DWr0zMWbXpFpqqMKA9Tv0jI+6bKFezkfwmhVT4gTkNQ0+d+hD+pUAHb1XMydD3muDLSzvH09dp6xPANaY653lv3STRwxho+XCXxbl4jVjhKqTYx0iANYx1QHqigUYSPu7vygqtV8irchgHEVlF5Qjq276M3TvT9NzHCZTjI2gtQSsy8nR1aHrKIuGpWkg="
+    secure: "CR7WlLyeZq2jBgRnABJZqkVlAJFfMN0M5r3R6iMFCPwc7rCQHm8GF8bnRv/UE1IewrzEa1Jhn7R9f/zGqUxjqOY4/OGG2SW5dHzUPTzBOUUlaRVntVc7ERsU0VsfPRntO1gwoaUqreAwJ8LarKBi9b2BeUbK3l78PS/LUzqyzaH9K6CPiAOBZWPXItuo926m3li/skS1+HV0nR2Ii7NOdq4QJnVqx8tt5vkSCPBXWgLTPxAFDEChOoy/kY/pdl62K83o5zpHnjvS/dyI44eWagWXqoDVnyqSDqznNJbewzOIsSLGVFvWAZfiS9W+9Rr0VzfFxXVeD0QuTbsKsBv/uF3iLsjharLPd6Fwt+c4u1FbBmEQhJsJnKLWzZxj4kp58n4nEWQOclkKB+8kmFIhsrn3IoETB0/V2r+0mtWbYmf5A6qMtNNEImQEkPLefsEu97VRqXNWpsG+FvhULaiaPQrn63WNOszy0AfHRN1K9UZBaQTyQQbKJGDIOBJa7iAsyRLiWwz+/9o8xk8a6opqHOEJILDHQLsJh8ItJzLEtGmWGnpYQeBlWSfNi+726W5EOF33M+AIy9D2ZNhDRGJcQrbHY0bvFYtok4svR6y/05+VrfVzRF3IwuOleqvSkLQLtJPO5kdNuMLWzNKGbdalqQbfe5PCLnnuxtkX+HD0Bkc="
   zip_file: ephemeral-roles.zip
   app: ephemeral-roles
   env: ephemeral-roles
-  bucket_name: ephemeral-roles
   wait-until-deployed: true
   on:
     repo: ewohltman/ephemeral-roles
     all_branches: true
-env:
-  global:
-    secure:
