@@ -1,9 +1,11 @@
 package callbacks
 
 import (
+	"os"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,7 +16,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// check if the message is BotKeyword
+	// check if the message starts with our keyword
 	if strings.HasPrefix(m.Content, botKeyphrase) {
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
@@ -35,6 +37,20 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			"author":  m.Author.Username,
 			"channel": c.Name,
 			"guild":   g.Name,
+			"content": m.Content,
 		}).Debugf("New message")
+
+		logLevel := ""
+		tokens := strings.Split(m.Content, " ")
+		switch strings.ToLower(strings.TrimSpace(tokens[1])) {
+		case "log_level":
+			logLevel = tokens[2]
+		}
+
+		if logLevel != "" {
+			os.Setenv("LOG_LEVEL", "logLevel")
+		}
+
+		logging.Reinitialize()
 	}
 }
