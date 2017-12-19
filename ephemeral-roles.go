@@ -14,22 +14,22 @@ import (
 var log = logging.Instance()
 
 func main() {
-	// Check for DERP_BOT_TOKEN, we need this to connect to Discord
-	token, found := os.LookupEnv("DERP_BOT_TOKEN")
+	// Check for EPH_BOT_TOKEN, we need this to connect to Discord
+	token, found := os.LookupEnv("EPH_BOT_TOKEN")
 	if !found || token == "" {
-		log.Fatalf("DERP_BOT_TOKEN not defined in environment variables")
+		log.Fatalf("EPH_BOT_TOKEN not defined in environment variables")
 	}
 
-	// Check for DERP_BOT_KEYWORD, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("DERP_BOT_KEYWORD")
+	// Check for EPH_BOT_KEYWORD, we don't need it now but it's required in the callbacks
+	_, found = os.LookupEnv("EPH_BOT_KEYWORD")
 	if !found {
-		log.Fatalf("DERP_BOT_KEYWORD not defined in environment variables")
+		log.Fatalf("EPH_BOT_KEYWORD not defined in environment variables")
 	}
 
-	// Check for DERP_CHANNEL_PREFIX, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("DERP_CHANNEL_PREFIX")
+	// Check for EPH_CHANNEL_PREFIX, we don't need it now but it's required in the callbacks
+	_, found = os.LookupEnv("EPH_CHANNEL_PREFIX")
 	if !found {
-		log.Fatalf("DERP_CHANNEL_PREFIX not defined in environment variables")
+		log.Fatalf("EPH_CHANNEL_PREFIX not defined in environment variables")
 	}
 
 	// Create a new Discord session using the provided bot token.
