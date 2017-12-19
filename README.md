@@ -1,5 +1,5 @@
 # ephemeral-roles
-[![Travis CI](https://travis-ci.org/ewohltman/househunter.svg?branch=master)](https://travis-ci.org/ewohltman/househunter.svg?branch=master)
+Development branch: [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)
 
 `ephemeral-roles` is a Discord bot for managing ephemeral roles based upon user
 voice channel presence.
