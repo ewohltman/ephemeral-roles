@@ -92,12 +92,12 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 
 		// Edit the blank role
 		color := 16753920 // Default to orange hex #FFA500 in decimal
-		if colorString, found := os.LookupEnv("DERP_CHANNEL_COLOR_HEX2DEC"); found {
+		if colorString, found := os.LookupEnv("EPH_CHANNEL_COLOR_HEX2DEC"); found {
 			parsedString, err := strconv.Atoi(colorString)
 			if err != nil {
 				log.WithError(err).
-					WithField("DERP_CHANNEL_COLOR_HEX2DEC", colorString).
-					Warnf("Error parsing DERP_CHANNEL_COLOR_HEX2DEC from environment")
+					WithField("EPH_CHANNEL_COLOR_HEX2DEC", colorString).
+					Warnf("Error parsing EPH_CHANNEL_COLOR_HEX2DEC from environment")
 			} else {
 				color = parsedString
 			}
@@ -124,8 +124,8 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 
 		// TODO: Figure out why the following section on ordering roles does not work
 		/*
-			// Check if DERP_DISPLAY_AFTER was provided for ordering, otherwise we're done
-			roleDisplayAfter := os.Getenv("DERP_DISPLAY_AFTER")
+			// Check if EPH_DISPLAY_AFTER was provided for ordering, otherwise we're done
+			roleDisplayAfter := os.Getenv("EPH_DISPLAY_AFTER")
 
 			if roleDisplayAfter != "" {
 				// Reorder them to be below slot roleDisplayAfter
