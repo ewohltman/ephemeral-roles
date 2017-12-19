@@ -12,7 +12,7 @@ import (
 var log = logging.Instance()
 
 func main() {
-	// Check for EPH_BOT_PORT, we need this to connect to Discord
+	// Check for PORT, we need this to connect to Discord
 	port, found := os.LookupEnv("PORT")
 	if !found || port == "" {
 		port = "8080"
@@ -62,6 +62,7 @@ func main() {
 		},
 	)
 
+	// Do something special with /status later?
 	http.HandleFunc(
 		"/status",
 		func(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +70,7 @@ func main() {
 		},
 	)
 
-	log.Infof("Bot instance shutting down: %s", http.ListenAndServe(":"+port, nil).Error())
+	log.WithError(http.ListenAndServe(":"+port, nil)).Fatalf("HTTP server error")
 
 	return
 }
