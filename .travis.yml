@@ -19,6 +19,7 @@ deploy:
   zip_file: ephemeral-roles.zip
   app: ephemeral-roles
   env: ephemeral-roles
+  bucketname: ephemeral-roles
   wait-until-deployed: true
   on:
     repo: ewohltman/ephemeral-roles
