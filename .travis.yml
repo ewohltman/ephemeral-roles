@@ -1,21 +1,21 @@
 language: go
 go:
-  - 1.x
+- 1.x
 sudo: false
 before_script:
-  - go vet ./...
-  - go test -race ./...
+- go vet ./...
+- go test -race ./...
 script:
-  - go build -i -race -o bin/ephemeral-roles ephemeral-roles.go
+- go build -i -race -o bin/ephemeral-roles ephemeral-roles.go
 before_deploy:
-  - zip -r ephemeral-roles.zip .
+- zip -r ephemeral-roles.zip .
 deploy:
   provider: elasticbeanstalk
   skip_cleanup: true
-  region: "us-east-1"
-  access_key_id: $ACCESSKEYID
+  region: us-east-1
+  access_key_id: "AKIAITOP2BVV6ICBAOYQ"
   secret_access_key:
-    secure: "$SECRETACCESSKEY"
+    secure: "hs1+Wf9WMOskffNEmjDl5QojrVG99mTgsl6XwC551tUAmEDRypwkVVIR1m28qTAkh3Tf8IE2sy3JNU7MSDs2V0H2jRAFAIHGMjfnGQUIdcdDIFfDB9w0t/zG7ph0ng02b3JA5IkPwAdoN7mnO6brwlvpgljLGIdTeVaNWMc9CF5y4m4Q3zYRGPacC/G3eN3D+FfxYspW0P1qW2fVwlfJC6uEB9NSfF2keyvVqkCQZs5ebXM+B/6B3hI+21+M30Q4ujZm/f55AOgG3ip3csLd4Sd2W6eWXdtmuSufvYi384o+UM1+gowVryJU8QcYrFRRwkz4iJALjbdQd+nlQFbOyCfmTPf1Djeb2x64LNANvZqvCkqPsO1SHrRW1X8+FvX2wO2nSKrd4j2iEma8O06dcvsW/Zv149qZZXgAJxkDOdo59vKNAKi/XPacXrVe3i7MO4jgCtAJa+rf16Tw8yLeLtUMSYqLGdW0PICJ1NakZVz9s/DWr0zMWbXpFpqqMKA9Tv0jI+6bKFezkfwmhVT4gTkNQ0+d+hD+pUAHb1XMydD3muDLSzvH09dp6xPANaY653lv3STRwxho+XCXxbl4jVjhKqTYx0iANYx1QHqigUYSPu7vygqtV8irchgHEVlF5Qjq276M3TvT9NzHCZTjI2gtQSsy8nR1aHrKIuGpWkg="
   zip_file: ephemeral-roles.zip
   app: ephemeral-roles
   env: ephemeral-roles
@@ -24,3 +24,6 @@ deploy:
   on:
     repo: ewohltman/ephemeral-roles
     all_branches: true
+env:
+  global:
+    secure:
