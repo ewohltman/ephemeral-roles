@@ -22,8 +22,14 @@ func main() {
 
 	// Check for DERP_BOT_KEYWORD, we don't need it now but it's required in the callbacks
 	_, found = os.LookupEnv("DERP_BOT_KEYWORD")
-	if !found || token == "" {
+	if !found {
 		log.Fatalf("DERP_BOT_KEYWORD not defined in environment variables")
+	}
+
+	// Check for DERP_CHANNEL_PREFIX, we don't need it now but it's required in the callbacks
+	_, found = os.LookupEnv("DERP_CHANNEL_PREFIX")
+	if !found {
+		log.Fatalf("DERP_CHANNEL_PREFIX not defined in environment variables")
 	}
 
 	// Create a new Discord session using the provided bot token.
@@ -49,6 +55,8 @@ func main() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
+
+	log.Infof("Caught signal for graceful shutdown")
 
 	return
 }

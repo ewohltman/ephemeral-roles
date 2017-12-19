@@ -11,3 +11,4 @@ import (
 
 var log = logging.Instance()
 var botKeyphrase = os.Getenv("DERP_BOT_KEYWORD")
+var botChannelPrefix = os.Getenv("DERP_CHANNEL_PREFIX")
