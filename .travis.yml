@@ -1,3 +1,6 @@
+branches:
+  only:
+  - develop # Only build our develop branch
 language: go
 go:
 - 1.x
@@ -23,4 +26,4 @@ deploy:
   wait-until-deployed: true
   on:
     repo: ewohltman/ephemeral-roles
-    all_branches: true
+    branch: develop
