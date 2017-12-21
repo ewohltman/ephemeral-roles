@@ -12,8 +12,8 @@ voice channel presence.
 
 1. Invite the `Ephemeral Roles` bot to your Discord server
     1. [Click here to invite](https://discordapp.com/oauth2/authorize?client_id=392419127626694676&scope=bot&permissions=268435456)
-2. Ensure the new `Ephemeral Roles` role is at or as near to the top of the server's list of roles as possible
-4. Enjoy
+2. Ensure the new `Ephemeral Roles` role is at or as near as possible to the top of the server's list of roles
+4. Enjoy!
 
 ----
 
@@ -25,25 +25,25 @@ for changes to your voice channels.  When detecting a user joining a channel,
 associated with the channel. 
 
 In this way, it's easier to see at a glance who is available for chatting and
-under which channel because the member list in Discord servers group members
-together by role.
+under which channel because the member list in Discord groups members together
+by role.
 
 When the user changes voice channels, even across Discord servers,
 `Ephemeral Roles` will account for the change and automatically revoke/reissue
 ephemeral roles as appropriate.  Upon a user disconnecting from all voice channels,
-`Ephemeral Roles` all revoke all ephemeral roles.
+`Ephemeral Roles` will revoke all ephemeral roles.
 
 ----
 
 ## Rolling your own
  
-In order to run this, you will need to define the following environment
+In order to run this locally, you will need to define the following environment
 variables:
 
 ```
-LOG_LEVEL=info # Supported: debug, info, warn, error, fatal, panic
 PORT=8080 # port to bind for local HTTP server
-DISCORDRUS_WEBHOOK_URL= # Discord Webhook URL for bot logging
+LOG_LEVEL=info # Supported: debug, info, warn, error, fatal, panic
+DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging
 EPH_BOT_TOKEN= # Discord Bot Token
 EPH_BOT_KEYWORD=!eph # Keyphrase to monitor incomming messages to begin with
 EPH_CHANNEL_PREFIX=~ # Prefix to put before ephemeral channels to stand out 
