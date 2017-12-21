@@ -9,11 +9,8 @@ voice channel presence.
 ## Quickstart
 
 1. Invite the `Ephemeral Roles` bot to your Discord server
-    1. [Click here to invite](https://discordapp.com/oauth2/authorize?&client_id=392419127626694676&scope=bot&permissions=0)
-2. Create a new role in your server specifically for `Ephemeral Roles`
-    1. Ensure the new role is at or as near to the top of the server's list of roles as possible
-    2. Enable the 'Manage Roles' permission for the new `Ephemeral Roles` role
-3. Assign the new role to `Ephemeral Roles`
+    1. [Click here to invite](https://discordapp.com/oauth2/authorize?client_id=392419127626694676&scope=bot&permissions=268435456)
+2. Ensure the new `Ephemeral Roles` role is at or as near to the top of the server's list of roles as possible
 4. Enjoy
 
 ----
