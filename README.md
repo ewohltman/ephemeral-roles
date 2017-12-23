@@ -1,8 +1,7 @@
 # ephemeral-roles
 Development branch: [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)
 
-`ephemeral-roles` is a Discord bot for managing ephemeral roles based upon user
-voice channel presence.
+### `ephemeral-roles` is a Discord bot for managing ephemeral roles based upon user voice channel presence.
 
 | Examples |
 | :------: |
@@ -38,7 +37,7 @@ ephemeral roles as appropriate.  Upon a user disconnecting from all voice channe
 
 ----
 
-## Rolling your own
+## Rolling your own locally
  
 In order to run this locally, you will need to define the following environment
 variables:
