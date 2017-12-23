@@ -1,7 +1,7 @@
 # ephemeral-roles
-Development branch: [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)
+### A Discord bot for managing ephemeral roles based upon member voice channel presence
 
-### `ephemeral-roles` is a Discord bot for managing ephemeral roles based upon user voice channel presence.
+Development branch: [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)
 
 | Examples |
 | :------: |
