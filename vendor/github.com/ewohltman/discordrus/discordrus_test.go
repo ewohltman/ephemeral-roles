@@ -26,6 +26,7 @@ func init() {
 			Author:             "",                     // Setting this to a non-empty string adds the author text to the message header
 			DisableTimestamp:   false,                  // Setting this to true will disable timestamps from appearing in the footer
 			TimestampFormat:    "Jan 2 15:04:05.00000", // The timestamp takes this format; if it is unset, it will take logrus' default format
+			TimestampLocale:    time.UTC,               // The timestamp takes it's timezone from the provided locale
 			EnableCustomColors: true,                   // If set to true, the below CustomLevelColors will apply
 			CustomLevelColors: &LevelColors{
 				Debug: 10170623,
