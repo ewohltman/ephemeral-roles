@@ -24,6 +24,12 @@ func main() {
 		log.Fatalf("EPH_BOT_TOKEN not defined in environment variables")
 	}
 
+	// Check for EPH_BOT_NAME, we don't need it now but it's required in the callbacks
+	_, found = os.LookupEnv("EPH_BOT_NAME")
+	if !found {
+		log.Fatalf("EPH_BOT_NAME not defined in environment variables")
+	}
+
 	// Check for EPH_BOT_KEYWORD, we don't need it now but it's required in the callbacks
 	_, found = os.LookupEnv("EPH_BOT_KEYWORD")
 	if !found {
@@ -31,12 +37,12 @@ func main() {
 	}
 
 	// Check for EPH_CHANNEL_PREFIX, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("EPH_CHANNEL_PREFIX")
+	_, found = os.LookupEnv("EPH_ROLE_PREFIX")
 	if !found {
 		log.Fatalf("EPH_CHANNEL_PREFIX not defined in environment variables")
 	}
 
-	// Create a new Discord session using the provided bot token.
+	// Create a new Discord session using the provided bot token
 	dgBot, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.WithError(err).Fatalf("Error creating Discord session")
@@ -47,12 +53,12 @@ func main() {
 	dgBot.AddHandler(callbacks.MessageCreate)
 	dgBot.AddHandler(callbacks.VoiceStateUpdate)
 
-	// Open the websocket and begin listening.
+	// Open the websocket and begin listening
 	err = dgBot.Open()
 	if err != nil {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
-	defer dgBot.Close() // Cleanly close down the Discord session.
+	defer dgBot.Close() // Cleanly close down the Discord session
 
 	// Set up handler funcs and an HTTP server to live in a container
 	http.HandleFunc(

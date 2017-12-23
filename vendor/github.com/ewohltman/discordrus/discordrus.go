@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 const (
@@ -37,6 +38,8 @@ type Opts struct {
 	DisableTimestamp bool
 	// TimestampFormat specifies a custom format for the footer
 	TimestampFormat string
+	// TimestampLocale specifies a custom locale for the timestamp
+	TimestampLocale *time.Location
 }
 
 // Hook is a hook to send logs to Discord
@@ -127,6 +130,9 @@ func (hook *Hook) parseToJson(entry *logrus.Entry) (*[]byte, error) {
 
 	// Add footer to embed
 	if !hook.Opts.DisableTimestamp {
+		if hook.Opts.TimestampLocale != nil {
+			entry.Time = entry.Time.In(hook.Opts.TimestampLocale)
+		}
 		timestamp := ""
 		if hook.Opts.TimestampFormat != "" {
 			timestamp = entry.Time.Format(hook.Opts.TimestampFormat)

@@ -43,9 +43,11 @@ variables:
 ```
 PORT=8080 # port to bind for local HTTP server
 LOG_LEVEL=info # Supported: debug, info, warn, error, fatal, panic
-DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging
+LOG_TIMEZONE_LOCATION=UTC [optional] # time.Location strings, e.g. "America/New_York".  Default: runtime time.Local
 EPH_BOT_TOKEN= # Discord Bot Token
-EPH_BOT_KEYWORD=!eph # Keyphrase to monitor incomming messages to begin with
-EPH_CHANNEL_PREFIX=~ # Prefix to put before ephemeral channels to stand out 
+EPH_BOT_NAME= # Discord Bot Name.  I use this to differentiate "dev" vs "prod" bots
+EPH_BOT_KEYWORD=![keyword] # Keyphrase to monitor incomming messages to begin with
+EPH_ROLE_PREFIX={[keyword]} # Prefix to put before ephemeral channels to stand out 
 EPH_CHANNEL_COLOR_HEX2DEC=16753920 # RGB color in hex to dec for the ephemeral roles
+DISCORDRUS_WEBHOOK_URL=[optional] # Webhook URL for discordrus bot logging to Discord
 ```

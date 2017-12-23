@@ -7,19 +7,49 @@
 package logging
 
 import (
+	"fmt"
 	"os"
 	"strings"
+	"time"
 
-	"github.com/kz/discordrus"
+	"github.com/ewohltman/discordrus"
 	"github.com/sirupsen/logrus"
 )
 
 // log is a global logrus instance pointer
 var log *logrus.Logger
-var discordHook *discordrus.Hook
+
+type localeFormatter struct {
+	logrus.Formatter
+	*time.Location
+}
+
+// (*localeFormatter) Format satisfies the logrus.Formatter interface
+func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
+	e.Time = e.Time.In(l.Location)
+
+	return l.Formatter.Format(e)
+}
 
 func init() {
-	log = logrus.New()
+	// Determine timestamp locale
+	timestampLocale, err := timeLocalization()
+	if err != nil {
+		timestampLocale = time.Local // Default
+	}
+
+	// Instantiate our global logger instance
+	log = &logrus.Logger{
+		Formatter: &localeFormatter{ // Set the log entry formatter
+			&logrus.TextFormatter{},
+			timestampLocale,
+		},
+		Out:   os.Stdout,               // Set the output io.Writer
+		Level: logrus.InfoLevel,        // Set the default log level
+		Hooks: make(logrus.LevelHooks), // Create a blank map of log level hooks
+	}
+
+	// Follow through with runtime configurable options
 	Reinitialize()
 }
 
@@ -28,32 +58,58 @@ func Instance() *logrus.Logger {
 	return log
 }
 
-// Reinitialize will update the global logger with values from the environment
+// Reinitialize will update the global logger's logging level and reset logging
+// hooks with new the level from the environment
 func Reinitialize() {
+	// Update our global logging instance
 	log.SetLevel(environmentLevel())
 
-	log.Hooks = make(logrus.LevelHooks)
+	// Support for optional discordrus hook
+	if hookURLString, found := os.LookupEnv("DISCORDRUS_WEBHOOK_URL"); found {
+		log.Hooks = make(logrus.LevelHooks)
 
-	log.AddHook(discordrus.NewHook(
-		os.Getenv("DISCORDRUS_WEBHOOK_URL"),
-		log.Level,
-		&discordrus.Opts{
-			Username:           "",
-			Author:             "",                     // Setting this to a non-empty string adds the author text to the message header
-			DisableTimestamp:   false,                  // Setting this to true will disable timestamps from appearing in the footer
-			TimestampFormat:    "Jan 2 15:04:05.00000", // The timestamp takes this format; if it is unset, it will take logrus' default format
-			EnableCustomColors: true,                   // If set to true, the below CustomLevelColors will apply
-			CustomLevelColors: &discordrus.LevelColors{
-				Debug: 10170623,
-				Info:  3581519,
-				Warn:  14327864,
-				Error: 13631488,
-				Panic: 13631488,
-				Fatal: 13631488,
-			},
-			DisableInlineFields: true, // If set to true, fields will not appear in columns ("inline")
-		},
-	))
+		timeString := ""
+
+		timestampLocale, err := timeLocalization()
+		if err != nil {
+			log.WithError(err).Debugf("Unable to determine timestamp locale, defaulting to local runtime")
+
+			timeString = time.Now().String()
+		} else {
+			log.WithField("locale", timestampLocale.String()).Debugf("Found custom logging timestamp locale")
+
+			timeString = time.Now().In(timestampLocale).String()
+		}
+
+		// timeZoneTokens => [2017-12-23] [11:45:53.0703314] [-0000] [UTC]
+		timeZoneToken := strings.Split(timeString, " ")[3]
+
+		timeStampFormat := "Jan 2 15:04:05.00000 " + timeZoneToken
+
+		log.AddHook(
+			discordrus.NewHook(
+				hookURLString,
+				log.Level,
+				&discordrus.Opts{
+					Username:            "",
+					Author:              "",    // Setting this to a non-empty string adds the author text to the message header
+					DisableInlineFields: false, // If set to true, fields will not appear in columns ("inline")
+					EnableCustomColors:  true,  // If set to true, the below CustomLevelColors will apply
+					CustomLevelColors: &discordrus.LevelColors{
+						Debug: 10170623,
+						Info:  3581519,
+						Warn:  14327864,
+						Error: 13631488,
+						Panic: 13631488,
+						Fatal: 13631488,
+					},
+					DisableTimestamp: false,           // Setting this to true will disable timestamps from appearing in the footer
+					TimestampFormat:  timeStampFormat, // The timestamp takes this format; if it is unset, it will take logrus' default format
+					TimestampLocale:  timestampLocale,
+				},
+			),
+		)
+	}
 }
 
 // environmentLevel parses and returns our logging level from the environment
@@ -79,4 +135,25 @@ func environmentLevel() logrus.Level {
 	}
 
 	return logrus.InfoLevel // Default to info if we cannot parse
+}
+
+// timeLocalization returns the *time.Location defined in the environment by
+// LOG_TIMEZONE_LOCATION, else defaults to time.Local
+func timeLocalization() (timeLocalization *time.Location, err error) {
+	if location, found := os.LookupEnv("LOG_TIMEZONE_LOCATION"); !found || location == "" {
+		err = fmt.Errorf("LOG_TIMEZONE_LOCATION not defined in environment variables")
+
+		return
+	} else {
+		parsedLocation, parseErr := time.LoadLocation(location)
+		if parseErr != nil {
+			err = fmt.Errorf("unable to parse LOG_TIMEZONE_LOCATION: %s", err.Error())
+
+			return
+		}
+
+		timeLocalization = parsedLocation
+	}
+
+	return
 }
