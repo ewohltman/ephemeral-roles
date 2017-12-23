@@ -266,7 +266,7 @@ func guildRoleCreateEdit(
 	// Create a new blank role
 	ephRole, err = s.GuildRoleCreate(guild.ID)
 	if err != nil {
-		err = fmt.Errorf("Unable to create ephemeral role: %s", err.Error())
+		err = fmt.Errorf("unable to create ephemeral role: %s", err.Error())
 
 		return
 	}
@@ -295,7 +295,7 @@ func guildRoleCreateEdit(
 		ephRole.Mentionable,
 	)
 	if err != nil {
-		err = fmt.Errorf("Unable to edit ephemeral role: %s", err.Error())
+		err = fmt.Errorf("unable to edit ephemeral role: %s", err.Error())
 
 		return
 	}
@@ -304,7 +304,7 @@ func guildRoleCreateEdit(
 	// Find all voice channels
 	guildChannels, err := s.GuildChannels(guild.ID)
 	if err != nil {
-		err = fmt.Errorf("Unable to get guild channels: %s", err.Error())
+		err = fmt.Errorf("unable to get guild channels: %s", err.Error())
 
 		return
 	}
@@ -333,7 +333,7 @@ func guildRoleCreateEdit(
 
 	guildRoles, err := s.GuildRoles(guild.ID)
 	if err != nil {
-		err = fmt.Errorf("Unable to get guild roles: %s", err.Error())
+		err = fmt.Errorf("unable to get guild roles: %s", err.Error())
 
 		return
 	}
@@ -350,7 +350,7 @@ func guildRoleCreateEdit(
 	}
 
 	if botRolePosition == -1 {
-		err = fmt.Errorf("Unable to get find bot role in guild: %s", err.Error())
+		err = fmt.Errorf("unable to get find bot role in guild: %s", err.Error())
 
 		return
 	}
