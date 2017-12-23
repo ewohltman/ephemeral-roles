@@ -16,7 +16,6 @@ import (
 
 // log is a global logrus instance pointer
 var log *logrus.Logger
-var discordHook *discordrus.Hook
 
 func init() {
 	log = logrus.New()
@@ -34,26 +33,28 @@ func Reinitialize() {
 
 	log.Hooks = make(logrus.LevelHooks)
 
-	log.AddHook(discordrus.NewHook(
-		os.Getenv("DISCORDRUS_WEBHOOK_URL"),
-		log.Level,
-		&discordrus.Opts{
-			Username:           "",
-			Author:             "",                     // Setting this to a non-empty string adds the author text to the message header
-			DisableTimestamp:   false,                  // Setting this to true will disable timestamps from appearing in the footer
-			TimestampFormat:    "Jan 2 15:04:05.00000", // The timestamp takes this format; if it is unset, it will take logrus' default format
-			EnableCustomColors: true,                   // If set to true, the below CustomLevelColors will apply
-			CustomLevelColors: &discordrus.LevelColors{
-				Debug: 10170623,
-				Info:  3581519,
-				Warn:  14327864,
-				Error: 13631488,
-				Panic: 13631488,
-				Fatal: 13631488,
+	if webhookURLString, found := os.LookupEnv("DISCORDRUS_WEBHOOK_URL"); found {
+		log.AddHook(discordrus.NewHook(
+			webhookURLString,
+			log.Level,
+			&discordrus.Opts{
+				Username:           "",
+				Author:             "",                     // Setting this to a non-empty string adds the author text to the message header
+				DisableTimestamp:   false,                  // Setting this to true will disable timestamps from appearing in the footer
+				TimestampFormat:    "Jan 2 15:04:05.00000", // The timestamp takes this format; if it is unset, it will take logrus' default format
+				EnableCustomColors: true,                   // If set to true, the below CustomLevelColors will apply
+				CustomLevelColors: &discordrus.LevelColors{
+					Debug: 10170623,
+					Info:  3581519,
+					Warn:  14327864,
+					Error: 13631488,
+					Panic: 13631488,
+					Fatal: 13631488,
+				},
+				DisableInlineFields: true, // If set to true, fields will not appear in columns ("inline")
 			},
-			DisableInlineFields: true, // If set to true, fields will not appear in columns ("inline")
-		},
-	))
+		))
+	}
 }
 
 // environmentLevel parses and returns our logging level from the environment
