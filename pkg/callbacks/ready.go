@@ -9,7 +9,7 @@ import (
 func Ready(s *discordgo.Session, event *discordgo.Ready) {
 	log.WithFields(logrus.Fields{
 		"servers": len(event.Guilds),
-	}).Infof("Ephemeral Roles started up")
+	}).Infof(botName + " started up")
 
 	s.UpdateStatus(0, botKeyphrase) // Set the Discord "playing" status
 }

@@ -10,5 +10,7 @@ import (
 )
 
 var log = logging.Instance()
+
+var botName = os.Getenv("EPH_BOT_NAME")
 var botKeyphrase = os.Getenv("EPH_BOT_KEYWORD")
 var botChannelPrefix = os.Getenv("EPH_CHANNEL_PREFIX")
