@@ -17,7 +17,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// check if the message starts with our keyword
-	if strings.HasPrefix(m.Content, botKeyphrase) {
+	if strings.HasPrefix(m.Content, botKeyphrase+" ") {
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 			log.WithError(err).Errorf("Unable to find channel")
@@ -33,21 +33,21 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 
-		tokens := strings.Split(strings.TrimSpace(m.Content), " ")
+		contentTokens := strings.Split(strings.TrimSpace(m.Content), " ")
 
 		log.WithFields(logrus.Fields{
 			"author":        m.Author.Username,
 			"channel":       c.Name,
 			"guild":         g.Name,
 			"content":       m.Content,
-			"contentTokens": tokens,
-		}).Infof("New Info message")
+			"contentTokens": contentTokens,
+		}).Debugf("New message")
 
 		logLevel := ""
-		if len(tokens) == 3 {
-			switch strings.ToLower(strings.TrimSpace(tokens[1])) {
+		if len(contentTokens) == 3 { // [botKeyphrase] [modifyThis] [toThis] :: !eph log_level debug
+			switch strings.ToLower(strings.TrimSpace(contentTokens[1])) {
 			case "log_level":
-				logLevel = tokens[2]
+				logLevel = contentTokens[2]
 			}
 
 			if logLevel != "" {
@@ -62,7 +62,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				"guild":     g.Name,
 				"content":   m.Content,
 				"LOG_LEVEL": logLevel,
-			}).Debugf("New Debug message")
+			}).Infof("Logging level changed")
 		}
 	}
 }
