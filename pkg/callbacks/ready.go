@@ -9,7 +9,7 @@ import (
 func Ready(s *discordgo.Session, event *discordgo.Ready) {
 	log.WithFields(logrus.Fields{
 		"servers": len(event.Guilds),
-	}).Infof(botName + " started up")
+	}).Infof(BOT_NAME + " started up")
 
-	s.UpdateStatus(0, botKeyphrase) // Set the Discord "playing" status
+	s.UpdateStatus(0, BOT_KEYWORD) // Set the Discord "playing" status
 }

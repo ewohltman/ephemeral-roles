@@ -17,7 +17,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// check if the message starts with our keyword
-	if strings.HasPrefix(m.Content, botKeyphrase+" ") {
+	if strings.HasPrefix(m.Content, BOT_KEYWORD+" ") {
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 			log.WithError(err).Errorf("Unable to find channel")
@@ -44,7 +44,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}).Debugf("New message")
 
 		logLevel := ""
-		if len(contentTokens) == 3 { // [botKeyphrase] [modifyThis] [toThis] :: !eph log_level debug
+		if len(contentTokens) == 3 { // [BOT_KEYWORD] [modifyThis] [toThis] :: !eph log_level debug
 			switch strings.ToLower(strings.TrimSpace(contentTokens[1])) {
 			case "log_level":
 				logLevel = contentTokens[2]

@@ -2,6 +2,7 @@ package callbacks
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
@@ -11,14 +12,19 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type DiscordAPIResponse struct {
+	Code    int
+	Message string
+}
+
 type discordError struct {
 	HTTPResponseMessage string
 	APIResponse         *DiscordAPIResponse
 }
 
-type DiscordAPIResponse struct {
-	Code    int
-	Message string
+// String implements the Stringer interface for field names in logs
+func (dAR *DiscordAPIResponse) String() string {
+	return fmt.Sprintf("Code: %d, Message: %s", dAR.Code, dAR.Message)
 }
 
 // VoiceStateUpdate is the callback function for the "voice state update" event from Discord
@@ -42,9 +48,20 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	}
 
 	// Context-appropriate logging is handled within getGuildRoles()
-	roles, err := getGuildRoles(s, vsu, guild)
+	roles, err := getGuildRoles(s, guild)
 	if err != nil {
 		return
+	}
+
+	// Map out this guild's roles
+	guildRoleNameToID := make(map[string]string)
+	guildRoleIDToRole := make(map[string]*discordgo.Role)
+	guildRoleOriginalOrder := make(map[int]*discordgo.Role)
+
+	for _, role := range roles {
+		guildRoleNameToID[role.Name] = role.ID
+		guildRoleIDToRole[role.ID] = role
+		guildRoleOriginalOrder[role.Position] = role
 	}
 
 	channelName := vsu.ChannelID
@@ -64,136 +81,27 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 		channelName = channel.Name
 	}
 
-	// Map out this guild's roles
-	guildRoleNameToID := make(map[string]string)
-	guildRoleIDToRole := make(map[string]*discordgo.Role)
-	guildRoleOriginalOrder := make(map[int]*discordgo.Role)
-
-	for _, role := range roles {
-		guildRoleNameToID[role.Name] = role.ID
-		guildRoleIDToRole[role.ID] = role
-		guildRoleOriginalOrder[role.Position] = role
-	}
-
+	ephRoleName := BOT_ROLE_PREFIX + " " + channelName
 	var ephRole *discordgo.Role
-	ephRoleName := botChannelPrefix + " " + channelName
 
 	// Does this guild have our intended ephemeral role?
-	if intendedRole, found := guildRoleNameToID[ephRoleName]; found && channelName != "" {
-		ephRole = guildRoleIDToRole[intendedRole]
+	if existingRole, found := guildRoleNameToID[ephRoleName]; found && channelName != "" {
+		ephRole = guildRoleIDToRole[existingRole]
 	}
 
 	// If we did not find it, create it
 	if ephRole == nil && channelName != "" {
-		// Create a new blank role
-		ephRole, err = s.GuildRoleCreate(vsu.GuildID)
+		var err error
+
+		ephRole, err = guildRoleCreateEdit(s, ephRoleName, guild)
 		if err != nil {
 			log.WithError(err).WithFields(logrus.Fields{
-				"user":    user.Username,
-				"guild":   guild.Name,
-				"channel": channelName,
-			}).Errorf("Unable to create ephemeral role")
+				"guild": guild.Name,
+				"role":  ephRoleName,
+			}).Errorf("Error managing ephemeral role")
 
 			return
 		}
-
-		// Edit the blank role
-		color := 16753920 // Default to orange hex #FFA500 in decimal
-		if colorString, found := os.LookupEnv("EPH_CHANNEL_COLOR_HEX2DEC"); found {
-			parsedString, err := strconv.Atoi(colorString)
-			if err != nil {
-				log.WithError(err).
-					WithField("EPH_CHANNEL_COLOR_HEX2DEC", colorString).
-					Warnf("Error parsing EPH_CHANNEL_COLOR_HEX2DEC from environment")
-			} else {
-				color = parsedString
-			}
-		}
-
-		ephRole, err = s.GuildRoleEdit(
-			vsu.GuildID,
-			ephRole.ID,
-			ephRoleName,
-			color, // Orange hex #FFA500 to decimal
-			true,
-			ephRole.Permissions,
-			ephRole.Mentionable,
-		)
-		if err != nil {
-			log.WithError(err).WithFields(logrus.Fields{
-				"user":    user.Username,
-				"guild":   guild.Name,
-				"channel": channelName,
-			}).Errorf("Unable to edit ephemeral role")
-
-			return
-		}
-
-		// TODO: Figure out why the following section on ordering roles does not work
-		/*
-			// Check if EPH_DISPLAY_AFTER was provided for ordering, otherwise we're done
-			roleDisplayAfter := os.Getenv("EPH_DISPLAY_AFTER")
-
-			if roleDisplayAfter != "" {
-				// Reorder them to be below slot roleDisplayAfter
-				guildNewRoleOrder := make([]*discordgo.Role, 0, len(roles)+1)
-
-				// Find our slot under in the "stack" for our role
-				// The highest in the UI list has the greatest positional parameter
-				for i := len(guildRoleOriginalOrder); i >= 0; i-- {
-					if guildRoleOriginalOrder[i] != nil && guildRoleOriginalOrder[i].Name == roleDisplayAfter {
-						// Add the lower positions
-						for j := 0; j < i; j++ {
-							if guildRoleOriginalOrder[j] != nil {
-								originalCopy := *guildRoleOriginalOrder[j]
-								originalCopy.Position = j
-
-								guildNewRoleOrder = append(guildNewRoleOrder, &originalCopy)
-							}
-						}
-
-						// Add our new position
-						ephRole.Position = i
-						guildNewRoleOrder = append(guildNewRoleOrder, ephRole)
-
-						// Update the remaining positions
-						for k := i + 1; k <= len(guildRoleOriginalOrder)+1; k++ {
-							if guildRoleOriginalOrder[k-1] != nil {
-								originalCopy := *guildRoleOriginalOrder[k-1]
-								originalCopy.Position = k
-
-								guildNewRoleOrder = append(guildNewRoleOrder, &originalCopy)
-							}
-						}
-
-						break // No need to go any further after the critical section
-					}
-				}
-
-				for testIndex := 0; testIndex < len(guildNewRoleOrder); testIndex++ {
-					log.Infof("guildNewRoleOrder[%d] = %+v", testIndex, *guildNewRoleOrder[testIndex])
-				}
-
-				// Set the new role order
-				orderedRoles, err := s.GuildRoleReorder(vsu.GuildID, guildNewRoleOrder)
-				if err != nil {
-					log.WithError(err).WithFields(logrus.Fields{
-						"user":    user.Username,
-						"guild":   guild.Name,
-						"channel": channelName,
-					}).Errorf("Unable to order new ephemeral role")
-				} else {
-					// Reset our maps
-					guildRoleNameToID = make(map[string]string)
-					guildRoleIDToRole = make(map[string]*discordgo.Role)
-
-					for _, role := range orderedRoles {
-						guildRoleNameToID[role.Name] = role.ID
-						guildRoleIDToRole[role.ID] = role
-					}
-				}
-			}
-		*/
 	}
 
 	// Check to see if we need to add this user to the ephemeral role
@@ -205,7 +113,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 
 		// Found our member, check roles
 		for _, memberRoleID := range member.Roles {
-			guildRole, found := guildRoleIDToRole[memberRoleID]
+			role, found := guildRoleIDToRole[memberRoleID]
 			if !found {
 				log.WithFields(logrus.Fields{
 					"user":  user.Username,
@@ -216,20 +124,20 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 			}
 
 			// Is this the role we're looking for?
-			if guildRole == ephRole {
+			if role == ephRole {
 				foundInMemberRoles = true
 
 				continue
 			}
 
 			// While we're here, let's check to see if we can clean up
-			if strings.HasPrefix(guildRole.Name, botChannelPrefix+" ") {
-				err = s.GuildMemberRoleRemove(vsu.GuildID, vsu.UserID, guildRole.ID)
+			if strings.HasPrefix(role.Name, BOT_ROLE_PREFIX+" ") {
+				err = s.GuildMemberRoleRemove(guild.ID, user.ID, role.ID)
 				if err != nil {
 					log.WithError(err).WithFields(logrus.Fields{
 						"user":  user.Username,
 						"guild": guild.Name,
-						"role":  guildRole.Name,
+						"role":  role.Name,
 					}).Errorf("Unable to remove role on VoiceStateUpdate")
 				}
 
@@ -257,7 +165,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 
 	// Add user to role
 	if !foundInMemberRoles {
-		err = s.GuildMemberRoleAdd(vsu.GuildID, vsu.UserID, ephRole.ID)
+		err = s.GuildMemberRoleAdd(guild.ID, user.ID, ephRole.ID)
 		if err != nil {
 			log.WithError(err).WithFields(logrus.Fields{
 				"user":    user.Username,
@@ -300,11 +208,10 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 // error in some other way
 func getGuildRoles(
 	s *discordgo.Session,
-	vsu *discordgo.VoiceStateUpdate,
 	guild *discordgo.Guild,
 ) (roles []*discordgo.Role, err error) {
 
-	roles, err = s.GuildRoles(vsu.GuildID)
+	roles, err = s.GuildRoles(guild.ID)
 	if err != nil {
 		// Find the JSON with regular expressions
 		rx := regexp.MustCompile("{.*}")
@@ -346,6 +253,167 @@ func getGuildRoles(
 		}).Errorf("Unable to determine roles in guild")
 
 		return
+	}
+
+	return
+}
+
+func guildRoleCreateEdit(
+	s *discordgo.Session,
+	ephRoleName string,
+	guild *discordgo.Guild) (ephRole *discordgo.Role, err error) {
+
+	// Create a new blank role
+	ephRole, err = s.GuildRoleCreate(guild.ID)
+	if err != nil {
+		err = fmt.Errorf("Unable to create ephemeral role: %s", err.Error())
+
+		return
+	}
+
+	// Check for role color override
+	roleColor := 16753920 // Default to orange hex #FFA500 in decimal
+	if colorString, found := os.LookupEnv("EPH_ROLE_COLOR_HEX2DEC"); found {
+		parsedString, err := strconv.Atoi(colorString)
+		if err != nil {
+			log.WithError(err).
+				WithField("EPH_ROLE_COLOR_HEX2DEC", colorString).
+				Warnf("Error parsing EPH_ROLE_COLOR_HEX2DEC from environment")
+		} else {
+			roleColor = parsedString
+		}
+	}
+
+	// Edit the new role
+	ephRole, err = s.GuildRoleEdit(
+		guild.ID,
+		ephRole.ID,
+		ephRoleName,
+		roleColor, // Orange hex #FFA500 to decimal
+		true,
+		ephRole.Permissions,
+		ephRole.Mentionable,
+	)
+	if err != nil {
+		err = fmt.Errorf("Unable to edit ephemeral role: %s", err.Error())
+
+		return
+	}
+
+	// Organize the role within the existing roles
+	// Find all voice channels
+	guildChannels, err := s.GuildChannels(guild.ID)
+	if err != nil {
+		err = fmt.Errorf("Unable to get guild channels: %s", err.Error())
+
+		return
+	}
+
+	currentChannelOrder := make(map[int]*discordgo.Channel)
+
+	for _, channel := range guildChannels {
+		if channel.Type != discordgo.ChannelTypeGuildVoice {
+			continue
+		}
+
+		currentChannelOrder[channel.Position] = channel
+	}
+
+	channelOrderListString := ""
+	for i := 0; i < len(currentChannelOrder); i++ {
+		channelOrderListString = fmt.Sprintf(
+			"%s\norder: %d, name: %s",
+			channelOrderListString,
+			i,
+			currentChannelOrder[i].Name,
+		)
+	}
+
+	log.WithField("channels", channelOrderListString).Debugf("Current channel order")
+
+	guildRoles, err := s.GuildRoles(guild.ID)
+	if err != nil {
+		err = fmt.Errorf("Unable to get guild roles: %s", err.Error())
+
+		return
+	}
+
+	currentRoleOrder := make(map[int]*discordgo.Role)
+	botRolePosition := -1
+
+	for _, role := range guildRoles {
+		currentRoleOrder[role.Position] = role
+
+		if role.Name == BOT_NAME {
+			botRolePosition = role.Position
+		}
+	}
+
+	if botRolePosition == -1 {
+		err = fmt.Errorf("Unable to get find bot role in guild: %s", err.Error())
+
+		return
+	}
+
+	newRoleOrder := make([]*discordgo.Role, 0, len(currentRoleOrder)+1)
+
+	// Add the pre-existing lower roles
+	for i := 0; i < botRolePosition; i++ {
+		if currentRoleOrder[i] != nil {
+			if i == 0 { // @everybody
+				newRoleOrder = append(newRoleOrder, currentRoleOrder[i])
+				continue
+			}
+
+			if currentRoleOrder[i].Name == ephRole.Name {
+				continue // Manually insert later
+			}
+
+			currentRoleOrder[i].Position = currentRoleOrder[i].Position - 1
+			newRoleOrder = append(newRoleOrder, currentRoleOrder[i])
+		}
+	}
+
+	// Add our new role
+	ephRole.Position = botRolePosition - 1
+	newRoleOrder = append(newRoleOrder, ephRole)
+
+	// Add the bot role and remaining higher roles
+	for j := botRolePosition; j < len(newRoleOrder); j++ {
+		newRoleOrder = append(newRoleOrder, currentRoleOrder[j])
+	}
+
+	roleOrderListString := ""
+	for i := 0; i < len(currentRoleOrder); i++ {
+		if currentRoleOrder[i] != nil {
+			roleOrderListString = fmt.Sprintf(
+				"%s\norder: %d, name: %s",
+				roleOrderListString,
+				i,
+				currentRoleOrder[i].Name,
+			)
+		}
+	}
+
+	log.WithField("roles", roleOrderListString).Debugf("Current role order")
+
+	newRoleOrderListString := ""
+	for i := 0; i < len(newRoleOrder); i++ {
+		if newRoleOrder[i] != nil {
+			newRoleOrderListString = fmt.Sprintf(
+				"%s\norder: %d, name: %s",
+				newRoleOrderListString,
+				i,
+				newRoleOrder[i].Name,
+			)
+		}
+	}
+
+	log.WithField("roles", newRoleOrderListString).Debugf("New role order")
+
+	_, err = s.GuildRoleReorder(guild.ID, newRoleOrder)
+	if err != nil {
+		log.WithError(err).WithField("newRoleOrder", newRoleOrder).Errorf("Unable to order new channel")
 	}
 
 	return

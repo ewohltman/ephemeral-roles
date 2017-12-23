@@ -37,7 +37,7 @@ func main() {
 	}
 
 	// Check for EPH_CHANNEL_PREFIX, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("EPH_CHANNEL_PREFIX")
+	_, found = os.LookupEnv("EPH_ROLE_PREFIX")
 	if !found {
 		log.Fatalf("EPH_CHANNEL_PREFIX not defined in environment variables")
 	}
