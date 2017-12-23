@@ -208,10 +208,9 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 			guildRole, found := guildRoleIDToRole[memberRoleID]
 			if !found {
 				log.WithFields(logrus.Fields{
-					"user":   user.Username,
-					"guild":  guild.Name,
-					"roleID": memberRoleID,
-				}).Debugf("Role ID not found in guild")
+					"user":  user.Username,
+					"guild": guild.Name,
+				}).Debugf("Role not found in current guild")
 
 				continue
 			}
@@ -295,9 +294,10 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	}).Debugf("User changed status in voice channel")
 }
 
-// getGuildRoles handles role lookups is a graceful way.
+// getGuildRoles handles role lookups is a graceful way
+//
 // Logging is handled within this function so the caller should handle the
-// error in some other way.
+// error in some other way
 func getGuildRoles(
 	s *discordgo.Session,
 	vsu *discordgo.VoiceStateUpdate,
@@ -306,10 +306,10 @@ func getGuildRoles(
 
 	roles, err = s.GuildRoles(vsu.GuildID)
 	if err != nil {
+		// Find the JSON with regular expressions
 		rx := regexp.MustCompile("{.*}")
-
+		errHTTPString := rx.ReplaceAllString(err.Error(), "")
 		errJSONString := rx.FindString(err.Error())
-		errHTTPString := rx.ReplaceAllString(err.Error(), errJSONString)
 
 		dErr := &discordError{
 			HTTPResponseMessage: errHTTPString,
@@ -318,7 +318,7 @@ func getGuildRoles(
 
 		unmarshalErr := json.Unmarshal([]byte(errJSONString), dErr.APIResponse)
 
-		// Unable to unmarshal API response
+		// Unable to unmarshal the API response
 		if unmarshalErr != nil {
 			log.WithError(err).WithFields(logrus.Fields{
 				"guild": guild.Name,
@@ -331,18 +331,18 @@ func getGuildRoles(
 		// Code 50013: "Missing Permissions"
 		if dErr.APIResponse.Code == 50013 {
 			log.WithFields(logrus.Fields{
-				"guild":      guild.Name,
-				"http_error": dErr.HTTPResponseMessage,
-				"api_error":  dErr.APIResponse,
-			}).Warnf("Bot has insufficiently privileged role in guild to query guild roles")
+				"guild":     guild.Name,
+				"api_error": *dErr.APIResponse,
+			}).Warnf("Insufficient privileged role to query guild roles")
 
 			return
 		}
 
-		// Catch all error codes
+		// Catch all other error codes
 		log.WithFields(logrus.Fields{
-			"guild": guild.Name,
-			"error": dErr,
+			"guild":      guild.Name,
+			"http_error": dErr.HTTPResponseMessage,
+			"api_error":  *dErr.APIResponse,
 		}).Errorf("Unable to determine roles in guild")
 
 		return
