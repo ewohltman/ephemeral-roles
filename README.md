@@ -6,6 +6,8 @@ voice channel presence.
 
 ![Ephemeral Roles in action](https://media.giphy.com/media/3o6nUQ3e70R3uo5uzS/giphy.gif)
 
+![Ephemeral Roles example](https://i.imgur.com/RSHOAoz.png)
+
 ----
 
 ## Quickstart
