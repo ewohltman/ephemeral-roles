@@ -1,13 +1,25 @@
 package callbacks
 
 import (
+	"encoding/json"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
+
+type discordError struct {
+	HTTPResponseMessage string
+	APIResponse         *DiscordAPIResponse
+}
+
+type DiscordAPIResponse struct {
+	Code    int
+	Message string
+}
 
 // VoiceStateUpdate is the callback function for the "voice state update" event from Discord
 func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
@@ -29,21 +41,16 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 		return
 	}
 
-	// Get the roles for this guild
-	roles, err := s.GuildRoles(vsu.GuildID)
+	// Context-appropriate logging is handled within getGuildRoles()
+	roles, err := getGuildRoles(s, vsu, guild)
 	if err != nil {
-		log.WithError(err).WithFields(logrus.Fields{
-			"user":  user.Username,
-			"guild": guild.Name,
-		}).Errorf("Unable to determine roles from guild in VoiceStateUpdate")
-
 		return
 	}
 
 	channelName := vsu.ChannelID
 
 	if channelName != "" {
-		// User connect/change event
+		// User connect or change event
 		channel, err := s.Channel(vsu.ChannelID)
 		if err != nil {
 			log.WithError(err).WithFields(logrus.Fields{
@@ -286,4 +293,60 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 			"selfMute": vsu.SelfMute,
 		},
 	}).Debugf("User changed status in voice channel")
+}
+
+// getGuildRoles handles role lookups is a graceful way.
+// Logging is handled within this function so the caller should handle the
+// error in some other way.
+func getGuildRoles(
+	s *discordgo.Session,
+	vsu *discordgo.VoiceStateUpdate,
+	guild *discordgo.Guild,
+) (roles []*discordgo.Role, err error) {
+
+	roles, err = s.GuildRoles(vsu.GuildID)
+	if err != nil {
+		rx := regexp.MustCompile("{.*}")
+
+		errJSONString := rx.FindString(err.Error())
+		errHTTPString := rx.ReplaceAllString(err.Error(), errJSONString)
+
+		dErr := &discordError{
+			HTTPResponseMessage: errHTTPString,
+			APIResponse:         &DiscordAPIResponse{},
+		}
+
+		unmarshalErr := json.Unmarshal([]byte(errJSONString), dErr.APIResponse)
+
+		// Unable to unmarshal API response
+		if unmarshalErr != nil {
+			log.WithError(err).WithFields(logrus.Fields{
+				"guild": guild.Name,
+				"json":  errJSONString,
+			}).Errorf("Unable to unmarshal Discord API JSON response while determining roles in guild")
+
+			return
+		}
+
+		// Code 50013: "Missing Permissions"
+		if dErr.APIResponse.Code == 50013 {
+			log.WithFields(logrus.Fields{
+				"guild":      guild.Name,
+				"http_error": dErr.HTTPResponseMessage,
+				"api_error":  dErr.APIResponse,
+			}).Warnf("Bot has insufficiently privileged role in guild to query guild roles")
+
+			return
+		}
+
+		// Catch all error codes
+		log.WithFields(logrus.Fields{
+			"guild": guild.Name,
+			"error": dErr,
+		}).Errorf("Unable to determine roles in guild")
+
+		return
+	}
+
+	return
 }
