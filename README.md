@@ -45,23 +45,23 @@ When a member changes voice channels, even across Discord servers,
 In order to run this locally, you will need to define the following environment
 variables.
 
-Required:
+**Required:**
 ```
 EPH_BOT_TOKEN= # Discord Bot Token
 EPH_BOT_NAME= # Discord Bot Name.  I use this to differentiate "dev" vs "prod" bots
 EPH_BOT_KEYWORD=![keyword] # Keyphrase to monitor incomming messages to begin with
-EPH_ROLE_PREFIX={[keyword]} # Prefix to put before ephemeral channels to stand out 
-EPH_CHANNEL_COLOR_HEX2DEC=16753920 # RGB color in hex to dec for the ephemeral roles
+EPH_ROLE_PREFIX={[keyword]} # Prefix to put before ephemeral channels to stand out
 ```
 
-Optional:
+**Optional:**
 ```
-PORT=8080 # port to bind for local HTTP server
+EPH_CHANNEL_COLOR_HEX2DEC=16753920 # RGB color in hex to dec for the ephemeral roles.  Default: orange
+PORT=8080 # Port to bind for local HTTP server.  Default: 8080
 LOG_LEVEL=info # Supported: debug, info, warn, error, fatal, panic.  Default: info
 LOG_TIMEZONE_LOCATION=UTC # time.Location strings, e.g. "America/New_York".  Default: runtime time.Local
 ```
 
-Optional integration with [discordrus](https://github.com/kz/discordrus)
+**Optional integration with [discordrus](https://github.com/kz/discordrus):**
 ```
 DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord integration
 ```
