@@ -19,6 +19,7 @@ import (
 // log is a global logrus instance pointer
 var log *logrus.Logger
 
+// localeFormatter is a custom formatter for logrus
 type localeFormatter struct {
 	logrus.Formatter
 	*time.Location
@@ -31,6 +32,7 @@ func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
 	return l.Formatter.Format(e)
 }
 
+// init runs during package initialization, before the main function
 func init() {
 	// Determine timestamp locale
 	timestampLocale, err := timeLocalization()
@@ -49,25 +51,32 @@ func init() {
 		Hooks: make(logrus.LevelHooks), // Create a blank map of log level hooks
 	}
 
-	// Follow through with runtime configurable options
+	// Follow through with runtime-configurable options
 	Reinitialize()
 }
 
 // Instance returns the global logger instance pointer
-func Instance() *logrus.Logger {
-	return log
+func Instance() (log *logrus.Logger) {
+	return
 }
 
-// Reinitialize will update the global logger's logging level and reset logging
-// hooks with new the level from the environment
+// Reinitialize allows for runtime-updates of the global logging instance's
+// level and resets the hooks with new values from the environment
 func Reinitialize() {
-	// Update our global logging instance
+	// Update our global logging instance log level
 	log.SetLevel(environmentLevel())
 
-	// Support for optional discordrus hook
-	if hookURLString, found := os.LookupEnv("DISCORDRUS_WEBHOOK_URL"); found {
-		log.Hooks = make(logrus.LevelHooks)
+	// Reset logging hooks
+	log.Hooks = make(logrus.LevelHooks)
 
+	// Check/apply `github.com/kz/discordrus` hook integration
+	discordrusIntegration()
+}
+
+// discordrusIntegration checks to see if we can apply an optional integration
+// support for a `github.com/kz/discordrus` hook
+func discordrusIntegration() {
+	if hookURLString, found := os.LookupEnv("DISCORDRUS_WEBHOOK_URL"); found {
 		timeString := ""
 
 		timestampLocale, err := timeLocalization()
@@ -112,31 +121,6 @@ func Reinitialize() {
 	}
 }
 
-// environmentLevel parses and returns our logging level from the environment
-func environmentLevel() logrus.Level {
-	envLevel, found := os.LookupEnv("LOG_LEVEL")
-	if !found || envLevel == "" {
-		return logrus.InfoLevel // Default to info if not defined
-	}
-
-	switch strings.ToLower(strings.TrimSpace(envLevel)) {
-	case "debug":
-		return logrus.DebugLevel
-	case "info":
-		return logrus.InfoLevel
-	case "warn":
-		return logrus.WarnLevel
-	case "error":
-		return logrus.ErrorLevel
-	case "fatal":
-		return logrus.FatalLevel
-	case "panic":
-		return logrus.PanicLevel
-	}
-
-	return logrus.InfoLevel // Default to info if we cannot parse
-}
-
 // timeLocalization returns the *time.Location defined in the environment by
 // LOG_TIMEZONE_LOCATION, else defaults to time.Local
 func timeLocalization() (timeLocalization *time.Location, err error) {
@@ -153,6 +137,33 @@ func timeLocalization() (timeLocalization *time.Location, err error) {
 		}
 
 		timeLocalization = parsedLocation
+	}
+
+	return
+}
+
+// environmentLevel parses and returns our logging level from the environment
+func environmentLevel() (logLevel logrus.Level) {
+	logLevel = logrus.InfoLevel // Default to InfoLevel
+
+	envLevel, found := os.LookupEnv("LOG_LEVEL")
+	if !found || envLevel == "" {
+		return
+	}
+
+	switch strings.ToLower(strings.TrimSpace(envLevel)) {
+	case "debug":
+		logLevel = logrus.DebugLevel
+	case "info":
+		logLevel = logrus.InfoLevel
+	case "warn":
+		logLevel = logrus.WarnLevel
+	case "error":
+		logLevel = logrus.ErrorLevel
+	case "fatal":
+		logLevel = logrus.FatalLevel
+	case "panic":
+		logLevel = logrus.PanicLevel
 	}
 
 	return
