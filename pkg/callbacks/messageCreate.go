@@ -12,7 +12,7 @@ import (
 // MessageCreate is the callback function for the "Message create" event from Discord
 func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages from the bot itself
-	if m.Author.ID == s.State.User.ID {
+	if m.Author.Bot == true {
 		return
 	}
 
@@ -44,10 +44,25 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}).Debugf("New message")
 
 		logLevel := ""
-		if len(contentTokens) == 3 { // [BOT_KEYWORD] [modifyThis] [toThis] :: !eph log_level debug
+		if len(contentTokens) > 2 { // [BOT_KEYWORD] [command] [options] :: !eph log_level debug
 			switch strings.ToLower(strings.TrimSpace(contentTokens[1])) {
+			case "info":
+				// TODO: Reply to bot command info
+				// It should provide information about
+				// the bot such as what framework it is using and the used
+				// version, help commands and, most importantly, who made it.
+				//
+				// Ignore both your own and other bots' messages. This helps
+				// prevent infinite self-loops and potential security exploits.
+				// Using a zero width space such as \u200B and \u180E in the
+				// beginning of each message also prevents your bot from
+				// triggering other bots' commands.
 			case "log_level":
-				logLevel = contentTokens[2]
+				if len(contentTokens) >= 3 {
+					logLevel = contentTokens[2]
+				}
+			default:
+				// Silently fail
 			}
 
 			if logLevel != "" {
