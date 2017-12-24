@@ -114,7 +114,7 @@ func discordrusIntegration() {
 					},
 					DisableTimestamp: false,           // Setting this to true will disable timestamps from appearing in the footer
 					TimestampFormat:  timeStampFormat, // The timestamp takes this format; if it is unset, it will take logrus' default format
-					TimestampLocale:  timestampLocale,
+					TimestampLocale:  timestampLocale, // The timestamp takes it's timezone from the provided locale
 				},
 			),
 		)
