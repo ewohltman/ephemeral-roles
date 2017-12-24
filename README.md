@@ -5,11 +5,6 @@
 Development branch: [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)
 [![Discord Bots](https://discordbots.org/api/widget/status/392419127626694676.svg)](https://discordbots.org/bot/392419127626694676)
 
-| Examples |
-| :------: |
-| ![Ephemeral Roles in action](https://media.giphy.com/media/3o6nUQ3e70R3uo5uzS/giphy.gif) |
-| ![Ephemeral Roles example](https://i.imgur.com/RSHOAoz.png) |
-
 ----
 
 ## Quickstart
@@ -18,6 +13,13 @@ Development branch: [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-role
     1. [Click here to invite](https://discordapp.com/oauth2/authorize?client_id=392419127626694676&scope=bot&permissions=268435456)
 2. Ensure the new `Ephemeral Roles` role is at or as near as possible to the top of the server's list of roles
 4. Enjoy!
+
+----
+
+| Examples |
+| :------: |
+| ![Ephemeral Roles in action](https://media.giphy.com/media/3o6nUQ3e70R3uo5uzS/giphy.gif) |
+| ![Ephemeral Roles example](https://i.imgur.com/RSHOAoz.png) |
 
 ----
 
