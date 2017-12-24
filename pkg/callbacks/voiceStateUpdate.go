@@ -81,7 +81,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 		channelName = channel.Name
 	}
 
-	ephRoleName := BOT_ROLE_PREFIX + " " + channelName
+	ephRoleName := ROLE_PREFIX + " " + channelName
 	var ephRole *discordgo.Role
 
 	// Does this guild have our intended ephemeral role?
@@ -131,7 +131,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 			}
 
 			// While we're here, let's check to see if we can clean up
-			if strings.HasPrefix(role.Name, BOT_ROLE_PREFIX+" ") {
+			if strings.HasPrefix(role.Name, ROLE_PREFIX+" ") {
 				err = s.GuildMemberRoleRemove(guild.ID, user.ID, role.ID)
 				if err != nil {
 					log.WithError(err).WithFields(logrus.Fields{
@@ -273,12 +273,12 @@ func guildRoleCreateEdit(
 
 	// Check for role color override
 	roleColor := 16753920 // Default to orange hex #FFA500 in decimal
-	if colorString, found := os.LookupEnv("EPH_ROLE_COLOR_HEX2DEC"); found {
+	if colorString, found := os.LookupEnv("ROLE_COLOR_HEX2DEC"); found {
 		parsedString, err := strconv.Atoi(colorString)
 		if err != nil {
 			log.WithError(err).
-				WithField("EPH_ROLE_COLOR_HEX2DEC", colorString).
-				Warnf("Error parsing EPH_ROLE_COLOR_HEX2DEC from environment")
+				WithField("ROLE_COLOR_HEX2DEC", colorString).
+				Warnf("Error parsing ROLE_COLOR_HEX2DEC from environment")
 		} else {
 			roleColor = parsedString
 		}
