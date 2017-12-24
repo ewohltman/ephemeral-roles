@@ -68,6 +68,6 @@ DISCORDRUS_WEBHOOK_URL=[optional] # Webhook URL for discordrus bot logging to Di
 
 ## Dependencies
 
-| Graph |
+| [dep](https://github.com/golang/dep) Graph |
 | :------: |
 | ![Dependency graph](https://github.com/ewohltman/ephemeral-roles/blob/develop/dep_status_visual.png) |
