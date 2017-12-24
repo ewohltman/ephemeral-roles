@@ -56,14 +56,14 @@ EPH_CHANNEL_COLOR_HEX2DEC=16753920 # RGB color in hex to dec for the ephemeral r
 
 Optional:
 ```
-PORT=8080 [optional] # port to bind for local HTTP server
-LOG_LEVEL=info [optional] # Supported: debug, info, warn, error, fatal, panic.  Default: info
-LOG_TIMEZONE_LOCATION=UTC [optional] # time.Location strings, e.g. "America/New_York".  Default: runtime time.Local
+PORT=8080 # port to bind for local HTTP server
+LOG_LEVEL=info # Supported: debug, info, warn, error, fatal, panic.  Default: info
+LOG_TIMEZONE_LOCATION=UTC # time.Location strings, e.g. "America/New_York".  Default: runtime time.Local
 ```
 
 Optional integration with [discordrus](https://github.com/kz/discordrus)
 ```
-DISCORDRUS_WEBHOOK_URL=[optional] # Webhook URL for discordrus bot logging to Discord integration
+DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord integration
 ```
 
 ## Dependencies
