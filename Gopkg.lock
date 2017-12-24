@@ -10,8 +10,8 @@
 [[projects]]
   name = "github.com/ewohltman/discordrus"
   packages = ["."]
-  revision = "4659ba1a3743a279425d918618148145a818d12d"
-  version = "v1.0.2"
+  revision = "46c7f3e9e7f9b158d51fb736548e85ef67896216"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -48,6 +48,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "704a6e47d30d60ddf3b6910a0e12665ab0ee96f28a6de1892d792ed68ff48349"
+  inputs-digest = "8c5debf17cd9f481399f43d12f64302b242047e4aa5d6388db905f42b4044c4e"
   solver-name = "gps-cdcl"
   solver-version = 1
