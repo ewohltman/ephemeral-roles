@@ -1,6 +1,6 @@
 # ephemeral-roles
 
-<img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/res/Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100">
+<img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/res/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100">
 
 [![Discord Bots](https://discordbots.org/api/widget/status/392419127626694676.svg)](https://discordbots.org/bot/392419127626694676)
 [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master)
