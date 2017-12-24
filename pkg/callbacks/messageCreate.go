@@ -11,8 +11,8 @@ import (
 
 // MessageCreate is the callback function for the "Message create" event from Discord
 func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// Ignore all messages from the bot itself
-	if m.Author.Bot == true {
+	// Ignore all messages from bots
+	if m.Author.Bot {
 		return
 	}
 

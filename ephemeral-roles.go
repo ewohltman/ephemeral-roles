@@ -12,34 +12,34 @@ import (
 var log = logging.Instance()
 
 func main() {
-	// Check for PORT, we need this to connect to Discord
+	// Check for BOT_TOKEN, we need this to connect to Discord
+	token, found := os.LookupEnv("BOT_TOKEN")
+	if !found || token == "" {
+		log.Fatalf("BOT_TOKEN not defined in environment variables")
+	}
+
+	// Check for BOT_NAME, we don't need it now but it's required in the callbacks
+	_, found = os.LookupEnv("BOT_NAME")
+	if !found {
+		log.Fatalf("BOT_NAME not defined in environment variables")
+	}
+
+	// Check for BOT_KEYWORD, we don't need it now but it's required in the callbacks
+	_, found = os.LookupEnv("BOT_KEYWORD")
+	if !found {
+		log.Fatalf("BOT_KEYWORD not defined in environment variables")
+	}
+
+	// Check for ROLE_PREFIX, we don't need it now but it's required in the callbacks
+	_, found = os.LookupEnv("ROLE_PREFIX")
+	if !found {
+		log.Fatalf("ROLE_PREFIX not defined in environment variables")
+	}
+
+	// Check for PORT, we need this to for our HTTP server in our container
 	port, found := os.LookupEnv("PORT")
 	if !found || port == "" {
 		port = "8080"
-	}
-
-	// Check for EPH_BOT_TOKEN, we need this to connect to Discord
-	token, found := os.LookupEnv("EPH_BOT_TOKEN")
-	if !found || token == "" {
-		log.Fatalf("EPH_BOT_TOKEN not defined in environment variables")
-	}
-
-	// Check for EPH_BOT_NAME, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("EPH_BOT_NAME")
-	if !found {
-		log.Fatalf("EPH_BOT_NAME not defined in environment variables")
-	}
-
-	// Check for EPH_BOT_KEYWORD, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("EPH_BOT_KEYWORD")
-	if !found {
-		log.Fatalf("EPH_BOT_KEYWORD not defined in environment variables")
-	}
-
-	// Check for EPH_CHANNEL_PREFIX, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("EPH_ROLE_PREFIX")
-	if !found {
-		log.Fatalf("EPH_CHANNEL_PREFIX not defined in environment variables")
 	}
 
 	// Create a new Discord session using the provided bot token
