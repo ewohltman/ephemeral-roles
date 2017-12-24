@@ -1,10 +1,13 @@
 # ephemeral-roles
-### A Discord bot for managing ephemeral roles based upon member voice channel presence
+
+<img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/res/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100">
 
 [![Discord Bots](https://discordbots.org/api/widget/status/392419127626694676.svg)](https://discordbots.org/bot/392419127626694676)
 [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles)
 [![GoDoc](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg?status.svg)](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg)
+
+### A Discord bot for managing ephemeral roles based upon member voice channel presence
 
 ----
 
@@ -16,10 +19,10 @@
 
 ----
 
-| Examples |
+| Usage |
 | :------: |
-| ![Ephemeral Roles in action](https://media.giphy.com/media/3o6nUQ3e70R3uo5uzS/giphy.gif) |
-| ![Ephemeral Roles example](https://i.imgur.com/RSHOAoz.png) |
+| ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/res/action.gif) |
+| ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/res/static.png) |
 
 ----
 
@@ -65,11 +68,11 @@ LOG_TIMEZONE_LOCATION=UTC # time.Location strings, e.g. "America/New_York".  Def
 
 **Optional integration with [discordrus](https://github.com/kz/discordrus):**
 ```
-DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord integration
+DISCORDRUS_WEBHOOK_URL= # Webhook URL for`discordrus bot logging to Discord integration
 ```
 
 ## Dependencies
 
 | [dep](https://github.com/golang/dep) Graph |
 | :------: |
-| ![Dependency graph](https://github.com/ewohltman/ephemeral-roles/blob/develop/dep_status_visual.png) |
+| ![Dependency graph](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/dep_status_visual.png) |
