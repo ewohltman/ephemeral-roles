@@ -42,7 +42,7 @@ list in servers will group together members by role right out of the box.
 When a member changes voice channels, even across Discord servers,
 `Ephemeral Roles` will account for the change and automatically revoke/reissue
 *ephemeral roles* as appropriate.  Finally, upon a member disconnecting from
-all voice channels, `Ephemeral Roles` will revoke all *ephemeral roles*.
+all voice channels `Ephemeral Roles` will revoke all *ephemeral roles*.
 
 ----
 
