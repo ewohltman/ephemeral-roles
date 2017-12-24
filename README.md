@@ -1,10 +1,14 @@
 # ephemeral-roles
+### A Discord bot for managing ephemeral roles based upon member voice channel presence
+
+
 Development branch: [![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)
+[![Discord Bots](https://discordbots.org/api/widget/status/392419127626694676.svg)](https://discordbots.org/bot/392419127626694676)
 
-`ephemeral-roles` is a Discord bot for managing ephemeral roles based upon user
-voice channel presence.
-
-![Ephemeral Roles in action](https://media.giphy.com/media/3o6nUQ3e70R3uo5uzS/giphy.gif)
+| Examples |
+| :------: |
+| ![Ephemeral Roles in action](https://media.giphy.com/media/3o6nUQ3e70R3uo5uzS/giphy.gif) |
+| ![Ephemeral Roles example](https://i.imgur.com/RSHOAoz.png) |
 
 ----
 
@@ -35,7 +39,7 @@ ephemeral roles as appropriate.  Upon a user disconnecting from all voice channe
 
 ----
 
-## Rolling your own
+## Rolling your own locally
  
 In order to run this locally, you will need to define the following environment
 variables:
