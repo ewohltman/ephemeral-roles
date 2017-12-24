@@ -21,8 +21,8 @@
 
 | Usage |
 | :------: |
-| ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/action.gif) |
-| ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/static.png) |
+| ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/res/action.gif) |
+| ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/res/static.png) |
 
 ----
 
