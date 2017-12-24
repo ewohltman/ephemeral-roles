@@ -21,8 +21,8 @@
 
 | Usage |
 | :------: |
-| ![Ephemeral Roles in action](https://media.giphy.com/media/3o6nUQ3e70R3uo5uzS/giphy.gif) |
-| ![Ephemeral Roles example](https://i.imgur.com/RSHOAoz.png) |
+| ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/action.gif) |
+| ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/static.png) |
 
 ----
 
@@ -68,11 +68,11 @@ LOG_TIMEZONE_LOCATION=UTC # time.Location strings, e.g. "America/New_York".  Def
 
 **Optional integration with [discordrus](https://github.com/kz/discordrus):**
 ```
-DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord integration
+DISCORDRUS_WEBHOOK_URL= # Webhook URL for`discordrus bot logging to Discord integration
 ```
 
 ## Dependencies
 
 | [dep](https://github.com/golang/dep) Graph |
 | :------: |
-| ![Dependency graph](https://github.com/ewohltman/ephemeral-roles/blob/develop/dep_status_visual.png) |
+| ![Dependency graph](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/dep_status_visual.png) |
