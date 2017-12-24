@@ -72,6 +72,8 @@ LOG_TIMEZONE_LOCATION=UTC # time.Location strings, e.g. "America/New_York".  Def
 DISCORDRUS_WEBHOOK_URL= # Webhook URL for`discordrus bot logging to Discord integration
 ```
 
+----
+
 ## Dependencies
 
 | [dep](https://github.com/golang/dep) Graph |
