@@ -7,14 +7,14 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles)
 [![GoDoc](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg?status.svg)](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg)
 
-### A Discord bot for managing ephemeral roles based upon member voice channel presence
+### A Discord bot for managing ephemeral roles based upon voice channel member presence
 
 ----
 
 ## Quickstart
 
 1. [Invite](https://discordapp.com/oauth2/authorize?client_id=392419127626694676&scope=bot&permissions=268435456) the `Ephemeral Roles` bot to your Discord server
-2. Ensure the new `Ephemeral Roles` role is at the top or as near as possible to the server's list of roles
+2. Ensure the new `Ephemeral Roles` role is at the top (or as near as possible) to the server's list of roles
 4. Enjoy!
 
 ----
@@ -28,20 +28,21 @@
 
 ## How does it work?
 
-After the `Ephemeral Roles` bot is invited to your Discord server, it will
-immediately start to watch for changes to your voice channels.  When a member
-joins a channel, `Ephemeral Roles` will automatically assign that member an
+After the `Ephemeral Roles` bot is invited to your Discord server, it
+immediately starts to watch for changes to your voice channels.  When a member
+joins a channel, `Ephemeral Roles` automatically assigns that member an
 *ephemeral role* associated with the channel.  If the *ephemeral role* doesn't
 exist yet, `Ephemeral Roles` will create it.
 
 By having your members auto-sorted into *ephemeral roles* in your member list,
-it's clear to see who are available for chatting and the channels they are in
-because the member list in Discord groups members together by role.
+it's clear to see who are available for chatting and the channels they are in.
+This is because `ephemeral-roles` leverages the Discord feature that the member
+list in servers will group together members by role right out of the box.
 
 When a member changes voice channels, even across Discord servers,
 `Ephemeral Roles` will account for the change and automatically revoke/reissue
-*ephemeral roles* as appropriate.  Upon a member disconnecting from all voice channels,
-`Ephemeral Roles` will revoke all *ephemeral roles*.
+*ephemeral roles* as appropriate.  Finally, upon a member disconnecting from
+all voice channels, `Ephemeral Roles` will revoke all *ephemeral roles*.
 
 ----
 
