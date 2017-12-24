@@ -10,7 +10,7 @@
 [[projects]]
   name = "github.com/ewohltman/discordrus"
   packages = ["."]
-  revision = "efddb6a1f7274ea39a781c31e565b71518044a93"
+  revision = "4659ba1a3743a279425d918618148145a818d12d"
   version = "v1.0.2"
 
 [[projects]]
