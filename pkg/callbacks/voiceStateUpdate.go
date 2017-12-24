@@ -12,6 +12,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// DiscordAPIResponse is a helper struct for encapsulating API responses in use
+// with logging
 type DiscordAPIResponse struct {
 	Code    int
 	Message string

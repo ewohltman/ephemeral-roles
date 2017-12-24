@@ -124,20 +124,25 @@ func discordrusIntegration() {
 // timeLocalization returns the *time.Location defined in the environment by
 // LOG_TIMEZONE_LOCATION, else defaults to time.Local
 func timeLocalization() (timeLocalization *time.Location, err error) {
-	if location, found := os.LookupEnv("LOG_TIMEZONE_LOCATION"); !found || location == "" {
+	envLocation, found := os.LookupEnv("LOG_TIMEZONE_LOCATION")
+	if !found {
 		err = fmt.Errorf("LOG_TIMEZONE_LOCATION not defined in environment variables")
 
 		return
-	} else {
-		parsedLocation, parseErr := time.LoadLocation(location)
-		if parseErr != nil {
-			err = fmt.Errorf("unable to parse LOG_TIMEZONE_LOCATION: %s", err.Error())
-
-			return
-		}
-
-		timeLocalization = parsedLocation
 	}
+
+	if envLocation == "" {
+		envLocation = time.Local.String()
+	}
+
+	parsedLocation, parseErr := time.LoadLocation(envLocation)
+	if parseErr != nil {
+		err = fmt.Errorf("unable to parse LOG_TIMEZONE_LOCATION: %s", err.Error())
+
+		return
+	}
+
+	timeLocalization = parsedLocation
 
 	return
 }
