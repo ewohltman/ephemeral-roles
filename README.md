@@ -2,8 +2,8 @@
 ### A Discord bot for managing ephemeral roles based upon member voice channel presence
 
 [![Discord Bots](https://discordbots.org/api/widget/status/392419127626694676.svg)](https://discordbots.org/bot/392419127626694676)
-[![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=develop)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/househunter)
+[![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles)
 [![GoDoc](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg?status.svg)](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg)
 
 ----
