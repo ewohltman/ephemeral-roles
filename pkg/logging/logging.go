@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ewohltman/discordrus"
+	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
 )
 
