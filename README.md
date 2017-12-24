@@ -1,6 +1,6 @@
 # ephemeral-roles
 
-<img src="https://github.com/ewohltman/emphemeral-roles/raw/develop/res/Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100">
+<img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/develop/res/Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100">
 
 ### A Discord bot for managing ephemeral roles based upon member voice channel presence
 
