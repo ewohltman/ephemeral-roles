@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Imgur</title>
+        <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+        <meta name="copyright" content="Copyright 2017 Imgur, Inc." />
+        <meta id="viewport" name="viewport" content="width=728, user-scalable=yes" />
+        <link rel="stylesheet" type="text/css" href="//s.imgur.com/min/sharePlayer.css?1513980279" />
+
+        <style type="text/css">
+            #content, #video {
+                width:  728px;
+                height: 454px;
+            }
+
+            #chrome, #progress {
+                width: 728px;
+            }
+        </style>
+
+        <link rel="alternate" type="application/json+oembed" href="https://api.imgur.com/oembed.json?url=http://i.imgur.com/Z5GDaNi.gifv" title="Imgur GIF" />
+        <link rel="alternate" type="application/xml+oembed" href="https://api.imgur.com/oembed.xml?url=http://i.imgur.com/Z5GDaNi.gifv" title="Imgur GIF" />
+
+        <link rel="canonical"                 href="https://i.imgur.com/Z5GDaNi.gifv" />
+
+        <meta property="og:site_name"         content="Imgur" />
+        <meta property="og:title"             content="Imgur GIF" />
+        <meta property="og:type"              content="video.other" />
+                <meta property="og:url"               content="https://i.imgur.com/Z5GDaNi.gif?noredirect" />
+        <meta property="og:image"             content="https://i.imgur.com/Z5GDaNi.gif?noredirect" />
+        <meta property="og:image:width"       content="728" />
+        <meta property="og:image:height"      content="454" />
+        
+
+        <meta name="twitter:site"                       content="@imgur" />
+        <meta name="twitter:domain"                     content="imgur.com" />
+        <meta name="twitter:app:id:googleplay"          content="com.imgur.mobile" />
+        <meta name="twitter:card"                       content="player" />
+        <meta name="twitter:title"                      content="Imgur GIF" />
+        <meta name="twitter:description"                content="Imgur: The magic of the Internet." />
+        <meta name="twitter:image"                      content="https://i.imgur.com/Z5GDaNih.jpg" />
+        <meta name="twitter:player"                     content="https://i.imgur.com/Z5GDaNi.gifv?twitter#t" />
+        <meta name="twitter:player:width"               content="728" />
+        <meta name="twitter:player:height"              content="454" />
+        <meta name="twitter:player:stream"              content="https://i.imgur.com/Z5GDaNi.mp4" />
+        <meta name="twitter:player:stream:content_type" content="video/mp4">
+
+        <!--[if lte IE 8]><script type="text/javascript" src="//s.imgur.com/min/iepoly.js?1513980279"></script>
+<![endif]-->
+    </head>
+    <body id="body">
+        <div id="content">
+            <script type="text/javascript">
+                window.image        = 'Z5GDaNi';
+                window.image_size   = '874444';
+                window.image_width  = '728';
+                window.image_height = '454';
+                window.cdn_url      = '//i.imgur.com';
+
+                if(navigator.userAgent.match(/Firefox/)) {
+                    document.body.className = document.body.className + ' firefox';
+                }
+            </script>
+            <div class="vid-container">
+                
+                
+                
+                <div class="post-image">
+    
+
+            <div class="video-container">
+            <script type="text/javascript">
+                var videoItem = {
+                    looping:  true,
+                    width:    728,
+                    height:   454,
+                    size:     874444,
+                    gifUrl:   '//i.imgur.com/Z5GDaNi.gif',
+                    forceGif: false,
+                    prefer_video: true,
+                    hash:     'Z5GDaNi',
+                    forceLoadAll: false,
+                }
+            </script>
+            <video poster="//i.imgur.com/Z5GDaNih.jpg"
+                preload="auto"
+                autoplay="autoplay"
+                muted="muted"  loop="loop"
+            webkit-playsinline></video>
+            <div class="video-elements">
+                <source src="//i.imgur.com/Z5GDaNi.mp4" type="video/mp4">
+            </div>
+            <progress value="0" max="100" min="0"></progress>
+            <div class="video-loader"></div>
+            <script id="scriptZ5GDaNi" type="text/javascript" src="//s.imgur.com/min/imageViewerInline.js?1513980279"></script>
+
+            <meta itemprop="thumbnailUrl" content="https://i.imgur.com/Z5GDaNih.jpg" />
+            <meta itemprop="contentURL" content="https://i.imgur.com/Z5GDaNi.mp4" />
+            <meta itemprop="embedURL" content="https://i.imgur.com/Z5GDaNi.gifv" />
+        </div>
+    
+</div>
+
+            </div>
+            <script type="text/javascript">
+            var pixel_url = '//i.imgur.com/imageview.gif?a=Z5GDaNi&r=' + encodeURIComponent(document.referrer);
+            var pixel = document.createElement('img');
+            pixel.src = pixel_url;
+            </script>
+
+            <div id="chrome">
+                <div class="icon">
+                    <a href="//imgur.com/Z5GDaNi"><img src="//i.imgur.com/favicon.ico" /></a>
+                </div>
+                <div class="imgur">
+                    <a href="//imgur.com/Z5GDaNi">Imgur</a>
+                </div>
+                <div class="controls">
+                    <a href="//imgur.com/download/Z5GDaNi">download</a>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+        <script type="text/javascript" src="//s.imgur.com/min/sharePlayer.js?1513980279"></script>
+
+        <script type="text/javascript">
+    var _comscore = _comscore || [];
+    _comscore.push({ c1: "2", c2: "7770950" });
+    (function() {
+        var s = document.createElement("script"), el = document.getElementsByTagName("script")[0]; s.async = true;
+        s.src = (document.location.protocol == "https:" ? "https://sb" : "http://b") + ".scorecardresearch.com/beacon.js";
+        el.parentNode.insertBefore(s, el);
+    })();
+</script>
+<noscript>
+    <img src="http://b.scorecardresearch.com/p?c1=2&c2=7770950&cv=2.0&cj=1" />
+</noscript>
+        <!-- Quantcast Tag -->
+<script type="text/javascript">
+var _qevents = _qevents || [];
+(function() {
+    var elem = document.createElement('script');
+    elem.src = (document.location.protocol == "https:" ? "https://secure" : "http://edge") + ".quantserve.com/quant.js";
+    elem.async = true;
+    elem.type = "text/javascript";
+    var scpt = document.getElementsByTagName('script')[0];
+    scpt.parentNode.insertBefore(elem, scpt);
+})();
+_qevents.push({
+    qacct:"p-f8oruOqDFlMeI"
+});
+</script>
+
+<noscript>
+    <div style="display:none;"><img src="//pixel.quantserve.com/pixel/p-f8oruOqDFlMeI.gif" border="0" height="1" width="1" alt="Quantcast"/></div>
+</noscript>
+<!-- End Quantcast tag -->
+
+
+    </body>
+</html>
