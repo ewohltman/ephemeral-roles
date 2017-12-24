@@ -66,6 +66,8 @@ Optional integration with [discordrus](https://github.com/kz/discordrus)
 DISCORDRUS_WEBHOOK_URL=[optional] # Webhook URL for discordrus bot logging to Discord integration
 ```
 
-## Dependency Graph
+## Dependencies
 
-![Dependency graph](https://github.com/ewohltman/ephemeral-roles/blob/develop/dep_status_visual.png)
+| Graph |
+| :------: |
+| ![Dependency graph](https://github.com/ewohltman/ephemeral-roles/blob/develop/dep_status_visual.png) |
