@@ -56,8 +56,8 @@ func init() {
 }
 
 // Instance returns the global logger instance pointer
-func Instance() (log *logrus.Logger) {
-	return
+func Instance() *logrus.Logger {
+	return log
 }
 
 // Reinitialize allows for runtime-updates of the global logging instance's
