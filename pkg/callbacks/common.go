@@ -18,4 +18,4 @@ var BOT_NAME = os.Getenv("BOT_NAME")
 var BOT_KEYWORD = os.Getenv("BOT_KEYWORD")
 
 // ROLE_PREFIX is the prefix to add before ephemeral role names
-var ROLE_PREFIX = os.Getenv("ROLE_PREFIX")
+var ROLE_PREFIX = os.Getenv("ROLE_PREFIX") + " "
