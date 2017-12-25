@@ -1,9 +1,9 @@
 // Package logging should be used by other packages to get a pointer to the
-// global logrus logging instance via the Instance() function call
+// global logrus logging instance via the Instance function call
 //
 // Logging configuration is determined via environment variables upon startup.
 // These variables may be manipulated during runtime and then reflected in the
-// global logging instance via the Reinitialize() function call
+// global logging instance via the Reinitialize function call
 package logging
 
 import (
