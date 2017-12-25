@@ -242,7 +242,7 @@ func getGuildRoles(
 			log.WithFields(logrus.Fields{
 				"guild":     guild.Name,
 				"api_error": *dErr.APIResponse,
-			}).Warnf("Insufficient privileged role to query guild roles")
+			}).Debugf("Insufficient privileged role to query guild roles")
 
 			return
 		}
