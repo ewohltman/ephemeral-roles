@@ -2,10 +2,10 @@
 
 
 [[projects]]
-  name = "github.com/bwmarrin/discordgo"
+  branch = "develop"
+  name = "github.com/ewohltman/discordgo"
   packages = ["."]
-  revision = "2fda7ce223a66a5b70b66987c22c3c94d022ee66"
-  version = "v0.17.0"
+  revision = "83e5ff06ddc458ca634c9958c2737a9a94786328"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -48,6 +48,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "94e9d07c92353eb89d5fb405d7bda2d170bdfe88aaf379b05977f3561c0ec86f"
+  inputs-digest = "7736c020c423d6169f9a102477ad5eca1a0d70793e237823bdeb3f9c369904dc"
   solver-name = "gps-cdcl"
   solver-version = 1
