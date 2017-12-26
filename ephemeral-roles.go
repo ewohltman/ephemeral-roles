@@ -49,7 +49,7 @@ func main() {
 	}
 
 	// Add event handlers
-	dgBot.AddHandler(callbacks.Ready)            // Connection established with server
+	dgBot.AddHandler(callbacks.Ready)            // Connection established with Discord
 	dgBot.AddHandler(callbacks.MessageCreate)    // Chat messages with BOT_KEYWORD
 	dgBot.AddHandler(callbacks.VoiceStateUpdate) // Updates to voice channel state
 
