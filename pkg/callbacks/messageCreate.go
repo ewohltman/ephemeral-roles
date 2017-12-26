@@ -17,7 +17,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// check if the message starts with our keyword
-	if strings.HasPrefix(m.Content, BOT_KEYWORD+" ") {
+	if strings.HasPrefix(m.Content, BOTKEYWORD+" ") {
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
 			log.WithError(err).Errorf("Unable to find channel")

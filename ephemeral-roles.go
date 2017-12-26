@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/ewohltman/discordgo"
@@ -102,6 +103,7 @@ func main() {
 	}
 
 	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGHUP)
 	signal.Notify(stop, os.Interrupt)
 
 	httpServer := &http.Server{
@@ -123,7 +125,7 @@ func main() {
 	// Block until the OS signal
 	<-stop
 
-	log.Infof("Caught graceful shutdown signal")
+	log.Warnf("Caught graceful shutdown signal")
 
 	// Cleanly close down the Discord session
 	dgBot.Close()
