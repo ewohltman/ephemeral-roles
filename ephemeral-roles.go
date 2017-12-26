@@ -1,15 +1,57 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
+	"os/signal"
+	"time"
 
 	"github.com/ewohltman/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/sirupsen/logrus"
 )
 
 var log = logging.Instance()
+
+type Server struct {
+	logger *logrus.Logger
+	mux    *http.ServeMux
+}
+
+func NewServer(options ...func(*Server)) *Server {
+	s := &Server{
+		logger: log,
+		mux:    http.NewServeMux(),
+	}
+
+	for _, f := range options {
+		f(s)
+	}
+
+	// Do something special with /status later?
+	s.mux.HandleFunc(
+		"/status",
+		func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+		},
+	)
+
+	s.mux.HandleFunc(
+		"/",
+		func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+		},
+	)
+
+	return s
+}
+
+// (s *Server) ServeHTTP satisfies the http.Handler interface
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.mux.ServeHTTP(w, r)
+}
 
 func main() {
 	// Check for BOT_TOKEN, we need this to connect to Discord
@@ -58,25 +100,37 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
-	defer dgBot.Close() // Cleanly close down the Discord session
 
-	// Set up handler funcs and an HTTP server to live in a container
-	http.HandleFunc(
-		"/",
-		func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+
+	httpServer := &http.Server{
+		Addr: ":" + port,
+		Handler: NewServer(func(s *Server) {
+			s.logger = log
 		},
-	)
+		),
+	}
 
-	// Do something special with /status later?
-	http.HandleFunc(
-		"/status",
-		func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
-		},
-	)
+	go func() {
+		log.Infof("Starting internal HTTP server instance")
 
-	log.WithError(http.ListenAndServe(":"+port, nil)).Fatalf("HTTP server error")
+		if err := httpServer.ListenAndServe(); err != nil {
+			log.WithError(err).Errorf("Internal HTTP server error")
+		}
+	}()
+
+	// Block until the OS signal
+	<-stop
+
+	log.Infof("Caught graceful shutdown signal")
+
+	// Cleanly close down the Discord session
+	dgBot.Close()
+
+	// Cleanly shutdown the HTTP server
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	httpServer.Shutdown(ctx)
 
 	return
 }
