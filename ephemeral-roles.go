@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -15,6 +17,9 @@ import (
 )
 
 var log = logging.Instance()
+
+var guildList []*discordgo.Guild
+var numGuilds int
 
 type Server struct {
 	logger *logrus.Logger
@@ -39,6 +44,31 @@ func NewServer(options ...func(*Server)) *Server {
 		},
 	)
 
+	// List the guilds our bot is a member of
+	s.mux.HandleFunc(
+		"/guilds",
+		func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			buf := bytes.NewBuffer([]byte{})
+			for _, guild := range guildList {
+				buf.Write([]byte(guild.Name + "\n"))
+			}
+
+			response := buf.Bytes()
+
+			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Length", strconv.Itoa(len(response)))
+
+			_, err := w.Write(response)
+			if err != nil {
+				log.WithError(err).Errorf("Error writing /guilds HTTP response")
+
+				return
+			}
+		},
+	)
+
 	s.mux.HandleFunc(
 		"/",
 		func(w http.ResponseWriter, r *http.Request) {
@@ -52,6 +82,29 @@ func NewServer(options ...func(*Server)) *Server {
 // (s *Server) ServeHTTP satisfies the http.Handler interface
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
+}
+
+func monitorGuildsChange(dgBotSession *discordgo.Session) {
+	for true {
+		if len(dgBotSession.State.Guilds) > numGuilds {
+			log.WithField(
+				"guild",
+				dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
+			).Infof(dgBotSession.State.User.Username + " joined new guild")
+
+			guildList = dgBotSession.State.Guilds
+			numGuilds = len(guildList)
+		}
+
+		if len(dgBotSession.State.Guilds) < numGuilds {
+			log.Infof(dgBotSession.State.User.Username + " removed from guild")
+
+			guildList = dgBotSession.State.Guilds
+			numGuilds = len(guildList)
+		}
+
+		time.Sleep(time.Second * 5)
+	}
 }
 
 func main() {
@@ -86,18 +139,18 @@ func main() {
 	}
 
 	// Create a new Discord session using the provided bot token
-	dgBot, err := discordgo.New("Bot " + token)
+	dgBotSession, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.WithError(err).Fatalf("Error creating Discord session")
 	}
 
 	// Add event handlers
-	dgBot.AddHandler(callbacks.Ready)            // Connection established with Discord
-	dgBot.AddHandler(callbacks.MessageCreate)    // Chat messages with BOT_KEYWORD
-	dgBot.AddHandler(callbacks.VoiceStateUpdate) // Updates to voice channel state
+	dgBotSession.AddHandler(callbacks.Ready)            // Connection established with Discord
+	dgBotSession.AddHandler(callbacks.MessageCreate)    // Chat messages with BOT_KEYWORD
+	dgBotSession.AddHandler(callbacks.VoiceStateUpdate) // Updates to voice channel state
 
 	// Open the websocket and begin listening
-	err = dgBot.Open()
+	err = dgBotSession.Open()
 	if err != nil {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
@@ -114,9 +167,13 @@ func main() {
 		),
 	}
 
-	go func() {
-		log.Infof("Starting internal HTTP server instance")
+	guildList = dgBotSession.State.Guilds
+	numGuilds = len(guildList)
 
+	go monitorGuildsChange(dgBotSession)
+
+	log.Infof("Starting internal HTTP server instance")
+	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
 			log.WithError(err).Errorf("Internal HTTP server error")
 		}
@@ -128,7 +185,7 @@ func main() {
 	log.Warnf("Caught graceful shutdown signal")
 
 	// Cleanly close down the Discord session
-	dgBot.Close()
+	dgBotSession.Close()
 
 	// Cleanly shutdown the HTTP server
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
