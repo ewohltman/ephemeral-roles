@@ -125,7 +125,7 @@ func main() {
 	// Block until the OS signal
 	<-stop
 
-	log.Infof("Caught graceful shutdown signal")
+	log.Warnf("Caught graceful shutdown signal")
 
 	// Cleanly close down the Discord session
 	dgBot.Close()
