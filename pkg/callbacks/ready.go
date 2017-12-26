@@ -28,8 +28,5 @@ func Ready(s *discordgo.Session, event *discordgo.Ready) {
 		log.WithError(err).WithFields(logrus.Fields{
 			"UpdateStatusData": usd,
 		}).Errorf("Error updating complex status")
-
-		// Fall-back set the Discord "playing" status
-		s.UpdateStatus(0, BOT_KEYWORD)
 	}
 }
