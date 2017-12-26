@@ -66,11 +66,17 @@ ROLE_COLOR_HEX2DEC=16753920 # RGB color in hex to dec for the ephemeral roles.  
 PORT=8080 # Port to bind for local HTTP server.  Default: 8080
 LOG_LEVEL=info # Supported: debug, info, warn, error, fatal, panic.  Default: info
 LOG_TIMEZONE_LOCATION=UTC # time.Location strings, e.g. "America/New_York".  Default: runtime time.Local
+
 ```
 
 **Optional integration with [discordrus](https://github.com/kz/discordrus):**
 ```
 DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord integration
+```
+
+**Optional integration with [discordbots.org](https://discordbots.org/):**
+```
+DISCORDBOTS_ORG_TOKEN= # Token from discordbots.org for POSTing updates
 ```
 
 ----
