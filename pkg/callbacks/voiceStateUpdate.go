@@ -29,7 +29,7 @@ func (dAR *DiscordAPIResponse) String() string {
 	return fmt.Sprintf("Code: %d, Message: %s", dAR.Code, dAR.Message)
 }
 
-// VoiceStateUpdate is the callback function for the "voice state update" event from Discord
+// VoiceStateUpdate is the callback function for the VoiceStateUpdate event from Discord
 func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	// Get the user
 	user, err := s.User(vsu.UserID)
