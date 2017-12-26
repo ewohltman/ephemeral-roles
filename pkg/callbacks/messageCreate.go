@@ -4,12 +4,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/sirupsen/logrus"
 )
 
-// MessageCreate is the callback function for the "Message create" event from Discord
+// MessageCreate is the callback function for the MessageCreate event from Discord
 func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Ignore all messages from bots
 	if m.Author.Bot {

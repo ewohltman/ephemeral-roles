@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
@@ -49,9 +49,9 @@ func main() {
 	}
 
 	// Add event handlers
-	dgBot.AddHandler(callbacks.Ready)
-	dgBot.AddHandler(callbacks.MessageCreate)
-	dgBot.AddHandler(callbacks.VoiceStateUpdate)
+	dgBot.AddHandler(callbacks.Ready)            // Connection established with Discord
+	dgBot.AddHandler(callbacks.MessageCreate)    // Chat messages with BOT_KEYWORD
+	dgBot.AddHandler(callbacks.VoiceStateUpdate) // Updates to voice channel state
 
 	// Open the websocket and begin listening
 	err = dgBot.Open()
