@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/discordgo"
 	"github.com/sirupsen/logrus"
 )
 
