@@ -5,7 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Ready is the callback function for the "ready" event from Discord
+// Ready is the callback function for the Ready event from Discord
 func Ready(s *discordgo.Session, event *discordgo.Ready) {
 	log.WithFields(logrus.Fields{
 		"guilds": len(event.Guilds),
