@@ -5,8 +5,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var guildCount int
-
 // Ready is the callback function for the Ready event from Discord
 func Ready(s *discordgo.Session, event *discordgo.Ready) {
 	log.WithFields(logrus.Fields{
@@ -33,18 +31,5 @@ func Ready(s *discordgo.Session, event *discordgo.Ready) {
 
 		// Fall-back set the Discord "playing" status
 		s.UpdateStatus(0, BOT_KEYWORD)
-	}
-}
-
-func newGuildMonitor(s *discordgo.Session) {
-	for true {
-		// Guild added
-		if len(s.State.Guilds) > guildCount {
-			log.WithFields(logrus.Fields{
-				"guildCount": guildCount,
-			}).Infof(BOT_NAME + " Ready event")
-
-			continue
-		}
 	}
 }
