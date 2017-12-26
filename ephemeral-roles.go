@@ -129,7 +129,9 @@ func main() {
 	dgBot.Close()
 
 	// Cleanly shutdown the HTTP server
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+
 	httpServer.Shutdown(ctx)
 
 	return
