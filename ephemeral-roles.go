@@ -16,6 +16,8 @@ import (
 
 var log = logging.Instance()
 
+var numGuilds int
+
 type Server struct {
 	logger *logrus.Logger
 	mux    *http.ServeMux
@@ -54,6 +56,27 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
 }
 
+func monitorGuildsChange(dgBotSession *discordgo.Session) {
+	for true {
+		if len(dgBotSession.State.Guilds) > numGuilds {
+			log.WithField(
+				"guild",
+				dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
+			).Infof(dgBotSession.State.User.Username + " joined new guild")
+
+			numGuilds = len(dgBotSession.State.Guilds)
+		}
+
+		if len(dgBotSession.State.Guilds) < numGuilds {
+			log.Infof(dgBotSession.State.User.Username + " removed from guild")
+
+			numGuilds = len(dgBotSession.State.Guilds)
+		}
+
+		time.Sleep(time.Second * 5)
+	}
+}
+
 func main() {
 	// Check for BOT_TOKEN, we need this to connect to Discord
 	token, found := os.LookupEnv("BOT_TOKEN")
@@ -86,21 +109,23 @@ func main() {
 	}
 
 	// Create a new Discord session using the provided bot token
-	dgBot, err := discordgo.New("Bot " + token)
+	dgBotSession, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.WithError(err).Fatalf("Error creating Discord session")
 	}
 
 	// Add event handlers
-	dgBot.AddHandler(callbacks.Ready)            // Connection established with Discord
-	dgBot.AddHandler(callbacks.MessageCreate)    // Chat messages with BOT_KEYWORD
-	dgBot.AddHandler(callbacks.VoiceStateUpdate) // Updates to voice channel state
+	dgBotSession.AddHandler(callbacks.Ready)            // Connection established with Discord
+	dgBotSession.AddHandler(callbacks.MessageCreate)    // Chat messages with BOT_KEYWORD
+	dgBotSession.AddHandler(callbacks.VoiceStateUpdate) // Updates to voice channel state
 
 	// Open the websocket and begin listening
-	err = dgBot.Open()
+	err = dgBotSession.Open()
 	if err != nil {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
+
+	numGuilds = len(dgBotSession.State.Guilds)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGHUP)
@@ -114,9 +139,10 @@ func main() {
 		),
 	}
 
-	go func() {
-		log.Infof("Starting internal HTTP server instance")
+	go monitorGuildsChange(dgBotSession)
 
+	log.Infof("Starting internal HTTP server instance")
+	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
 			log.WithError(err).Errorf("Internal HTTP server error")
 		}
@@ -128,7 +154,7 @@ func main() {
 	log.Warnf("Caught graceful shutdown signal")
 
 	// Cleanly close down the Discord session
-	dgBot.Close()
+	dgBotSession.Close()
 
 	// Cleanly shutdown the HTTP server
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
