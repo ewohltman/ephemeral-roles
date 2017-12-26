@@ -19,7 +19,7 @@
 
 ----
 
-| Usage (orange roles below are managed by `Ephemeral Roles`) |
+| Usage \(orange roles below are managed by `Ephemeral Roles`\) |
 | :------: |
 | ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/action.gif) |
 | ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/static.png) |
