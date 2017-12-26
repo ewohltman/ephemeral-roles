@@ -82,7 +82,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 
 	for _, role := range guildRoles {
 		// Role already exists
-		if role.Name == ROLE_PREFIX+channel.Name {
+		if role.Name == ROLEPREFIX+channel.Name {
 			ephRole = role
 
 			// User not in role, revoke any existing ephemeral roles
@@ -117,11 +117,11 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 		var err error
 
 		// Create and edit a new role
-		ephRole, err = guildRoleCreateEdit(s, ROLE_PREFIX+channel.Name, guild)
+		ephRole, err = guildRoleCreateEdit(s, ROLEPREFIX+channel.Name, guild)
 		if err != nil {
 			log.WithError(err).WithFields(logrus.Fields{
 				"guild": guild.Name,
-				"role":  ROLE_PREFIX + channel.Name,
+				"role":  ROLEPREFIX + channel.Name,
 			}).Errorf("Error managing ephemeral role")
 
 			return
@@ -295,7 +295,7 @@ func guildRoleCreateEdit(
 	for _, role := range guildRoles {
 		currentRoleOrder[role.Position] = role
 
-		if role.Name == BOT_NAME {
+		if role.Name == BOTNAME {
 			botRolePosition = role.Position
 		}
 	}
@@ -389,7 +389,7 @@ func guildRoleMemberCleanup(s *discordgo.Session, user *discordgo.User, guild *d
 	}
 
 	for _, role := range guildRoles {
-		if strings.HasPrefix(role.Name, ROLE_PREFIX) { // An ephemeral role
+		if strings.HasPrefix(role.Name, ROLEPREFIX) { // An ephemeral role
 			if memberRoleIDs[role.ID] { // Our user belongs to this role
 				err := s.GuildMemberRoleRemove(guild.ID, user.ID, role.ID)
 				if err != nil {

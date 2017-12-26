@@ -9,14 +9,14 @@ import (
 func Ready(s *discordgo.Session, event *discordgo.Ready) {
 	log.WithFields(logrus.Fields{
 		"guildCount": len(event.Guilds),
-	}).Infof(BOT_NAME + " Ready event")
+	}).Infof(BOTNAME + " Ready event")
 
 	idleSince := 0
 
 	usd := discordgo.UpdateStatusData{
 		IdleSince: &idleSince,
 		Game: &discordgo.Game{
-			Name: BOT_KEYWORD,
+			Name: BOTKEYWORD,
 			Type: discordgo.GameTypeWatching,
 		},
 		AFK:    false,
