@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 
 var log = logging.Instance()
 
+var guildList []*discordgo.Guild
 var numGuilds int
 
 type Server struct {
@@ -38,6 +41,31 @@ func NewServer(options ...func(*Server)) *Server {
 		"/status",
 		func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
+		},
+	)
+
+	// List the guilds our bot is a member of
+	s.mux.HandleFunc(
+		"/guilds",
+		func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+
+			buf := bytes.NewBuffer([]byte{})
+			for _, guild := range guildList {
+				buf.Write([]byte(guild.Name + "\n"))
+			}
+
+			response := buf.Bytes()
+
+			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Length", strconv.Itoa(len(response)))
+
+			_, err := w.Write(response)
+			if err != nil {
+				log.WithError(err).Errorf("Error writing /guilds HTTP response")
+
+				return
+			}
 		},
 	)
 
@@ -64,13 +92,15 @@ func monitorGuildsChange(dgBotSession *discordgo.Session) {
 				dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
 			).Infof(dgBotSession.State.User.Username + " joined new guild")
 
-			numGuilds = len(dgBotSession.State.Guilds)
+			guildList = dgBotSession.State.Guilds
+			numGuilds = len(guildList)
 		}
 
 		if len(dgBotSession.State.Guilds) < numGuilds {
 			log.Infof(dgBotSession.State.User.Username + " removed from guild")
 
-			numGuilds = len(dgBotSession.State.Guilds)
+			guildList = dgBotSession.State.Guilds
+			numGuilds = len(guildList)
 		}
 
 		time.Sleep(time.Second * 5)
@@ -125,8 +155,6 @@ func main() {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
 
-	numGuilds = len(dgBotSession.State.Guilds)
-
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGHUP)
 	signal.Notify(stop, os.Interrupt)
@@ -138,6 +166,9 @@ func main() {
 		},
 		),
 	}
+
+	guildList = dgBotSession.State.Guilds
+	numGuilds = len(guildList)
 
 	go monitorGuildsChange(dgBotSession)
 
