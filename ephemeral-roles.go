@@ -50,7 +50,7 @@ func main() {
 
 	// Add event handlers
 	dgBot.AddHandler(callbacks.Ready)            // Connection established
-	dgBot.AddHandler(callbacks.BotJoin)          // Bot invited to new server
+	dgBot.AddHandler(callbacks.GuildMemberAdd)   // Bot invited to new server
 	dgBot.AddHandler(callbacks.MessageCreate)    // Chat messages with BOT_KEYWORD
 	dgBot.AddHandler(callbacks.VoiceStateUpdate) // Updates to voice channel state
 

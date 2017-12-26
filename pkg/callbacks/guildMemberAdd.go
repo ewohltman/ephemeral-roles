@@ -5,8 +5,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// BotJoin is the callback function for the GuildMemberAdd event from Discord
-func BotJoin(s *discordgo.Session, memberAddEvent *discordgo.GuildMemberAdd) {
+// GuildMemberAdd is the callback function for the GuildMemberAdd event from Discord
+func GuildMemberAdd(s *discordgo.Session, memberAddEvent *discordgo.GuildMemberAdd) {
 	if memberAddEvent.User.Bot && memberAddEvent.User.ID == s.State.User.ID {
 		guild, err := s.Guild(memberAddEvent.GuildID)
 		if err != nil {
