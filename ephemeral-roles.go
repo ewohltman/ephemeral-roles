@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -17,17 +18,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var log = logging.Instance()
+// internalStateCache is a mutex protected cache of values
+type internalStateCache struct {
+	mu        sync.RWMutex
+	guildList []*discordgo.Guild
+	numGuilds int
+}
 
-var guildList []*discordgo.Guild
-var numGuilds int
-
+// Server is the struct for the internal HTTP server
 type Server struct {
 	logger *logrus.Logger
 	mux    *http.ServeMux
 }
 
-func NewServer(options ...func(*Server)) *Server {
+var log = logging.Instance()
+var isc *internalStateCache
+
+func newServer(options ...func(*Server)) *Server {
 	s := &Server{
 		logger: log,
 		mux:    http.NewServeMux(),
@@ -51,8 +58,11 @@ func NewServer(options ...func(*Server)) *Server {
 		func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 
+			isc.mu.RLock()
+			defer isc.mu.RUnlock()
+
 			buf := bytes.NewBuffer([]byte{})
-			for _, guild := range guildList {
+			for _, guild := range isc.guildList {
 				buf.Write([]byte(guild.Name + "\n"))
 			}
 
@@ -87,7 +97,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func monitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
 	for true {
-		if len(dgBotSession.State.Guilds) > numGuilds {
+		isc.mu.RLock()
+		checkNum := isc.numGuilds
+		isc.mu.RUnlock()
+
+		if len(dgBotSession.State.Guilds) > checkNum {
 			log.WithField(
 				"guild",
 				dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
@@ -96,7 +110,7 @@ func monitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID st
 			guildsUpdate(dgBotSession, token, botID)
 		}
 
-		if len(dgBotSession.State.Guilds) < numGuilds {
+		if len(dgBotSession.State.Guilds) < checkNum {
 			log.Infof(dgBotSession.State.User.Username + " removed from guild")
 
 			guildsUpdate(dgBotSession, token, botID)
@@ -107,11 +121,14 @@ func monitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID st
 }
 
 func guildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
-	guildList = dgBotSession.State.Guilds
-	numGuilds = len(guildList)
+	isc.mu.Lock()
+	defer isc.mu.Unlock()
+
+	isc.guildList = dgBotSession.State.Guilds
+	isc.numGuilds = len(isc.guildList)
 
 	if token != "" && botID != "" {
-		discordBotsOrg.Update(token, botID, numGuilds)
+		discordBotsOrg.Update(token, botID, isc.numGuilds)
 	}
 }
 
@@ -183,12 +200,13 @@ func main() {
 
 	httpServer := &http.Server{
 		Addr: ":" + port,
-		Handler: NewServer(func(s *Server) {
+		Handler: newServer(func(s *Server) {
 			s.logger = log
 		},
 		),
 	}
 
+	isc = &internalStateCache{}
 	guildsUpdate(dgBotSession, discordBotsToken, botID)
 	go monitorGuildsUpdate(dgBotSession, discordBotsToken, botID)
 
