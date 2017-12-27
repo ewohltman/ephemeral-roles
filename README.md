@@ -14,7 +14,7 @@
 
 ----
 
-| Usage/Examples \(orange roles below are automatically managed by `Ephemeral Roles`\) |
+| Usage/Examples \(Orange roles below are automatically managed by `Ephemeral Roles`\) |
 | :------: |
 | ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/action.gif) |
 | ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/static.png) |
