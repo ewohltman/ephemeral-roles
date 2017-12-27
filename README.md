@@ -55,7 +55,7 @@ variables.
 **Required:**
 ```
 BOT_TOKEN= # Discord Bot Token
-BOT_NAME= # Discord Bot Name.  I use this to differentiate "dev" vs "prod" bots
+BOT_NAME= # Discord Bot Name
 BOT_KEYWORD=![keyword] # Keyphrase to monitor incomming messages to begin with
 ROLE_PREFIX={[keyword]} # Prefix to put before ephemeral channels to stand out
 ```
@@ -76,6 +76,7 @@ DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord inte
 
 **Optional integration with [discordbots.org](https://discordbots.org/):**
 ```
+BOT_ID= # Discord Bot Client ID
 DISCORDBOTS_ORG_TOKEN= # Token from discordbots.org for POSTing updates
 ```
 

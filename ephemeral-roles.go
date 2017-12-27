@@ -12,6 +12,7 @@ import (
 
 	"github.com/ewohltman/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
+	"github.com/ewohltman/ephemeral-roles/pkg/discordBotsOrg"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/sirupsen/logrus"
 )
@@ -84,7 +85,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
 }
 
-func monitorGuildsChange(dgBotSession *discordgo.Session) {
+func monitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
 	for true {
 		if len(dgBotSession.State.Guilds) > numGuilds {
 			log.WithField(
@@ -92,18 +93,25 @@ func monitorGuildsChange(dgBotSession *discordgo.Session) {
 				dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
 			).Infof(dgBotSession.State.User.Username + " joined new guild")
 
-			guildList = dgBotSession.State.Guilds
-			numGuilds = len(guildList)
+			guildsUpdate(dgBotSession, token, botID)
 		}
 
 		if len(dgBotSession.State.Guilds) < numGuilds {
 			log.Infof(dgBotSession.State.User.Username + " removed from guild")
 
-			guildList = dgBotSession.State.Guilds
-			numGuilds = len(guildList)
+			guildsUpdate(dgBotSession, token, botID)
 		}
 
 		time.Sleep(time.Second * 5)
+	}
+}
+
+func guildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
+	guildList = dgBotSession.State.Guilds
+	numGuilds = len(guildList)
+
+	if token != "" && botID != "" {
+		discordBotsOrg.Update(token, botID, numGuilds)
 	}
 }
 
@@ -138,6 +146,20 @@ func main() {
 		port = "8080"
 	}
 
+	// Check for DISCORDBOTS_ORG_TOKEN, we need this for optional discordbots.org integration
+	discordBotsToken, found := os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
+	if !found || discordBotsToken == "" {
+		log.WithField("warn", "DISCORDBOTS_ORG_TOKEN not defined in environment variables").
+			Warnf("Integration with discordbots.org integration disabled")
+	}
+
+	// Check for BOT_ID, we need this for optional discordbots.org integration
+	botID, found := os.LookupEnv("BOT_ID")
+	if !found || botID == "" {
+		log.WithField("warn", "BOT_ID not defined in environment variables").
+			Warnf("Integration with discordbots.org integration disabled")
+	}
+
 	// Create a new Discord session using the provided bot token
 	dgBotSession, err := discordgo.New("Bot " + token)
 	if err != nil {
@@ -167,10 +189,8 @@ func main() {
 		),
 	}
 
-	guildList = dgBotSession.State.Guilds
-	numGuilds = len(guildList)
-
-	go monitorGuildsChange(dgBotSession)
+	guildsUpdate(dgBotSession, discordBotsToken, botID)
+	go monitorGuildsUpdate(dgBotSession, discordBotsToken, botID)
 
 	log.Infof("Starting internal HTTP server instance")
 	go func() {
