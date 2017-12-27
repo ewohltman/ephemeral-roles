@@ -20,7 +20,7 @@ type serverUpdate struct {
 	ServerCount int `json:"server_count"`
 }
 
-// Update POSTs a server_count update to discordbots.org
+// Update POSTs a server_count update to discordbots.org.
 func Update(token string, botID string, serverCount int) {
 	botID, found := os.LookupEnv("BOT_ID")
 	if !found || botID == "" {
