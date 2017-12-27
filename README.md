@@ -76,8 +76,8 @@ DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord inte
 
 **Optional integration with [discordbots.org](https://discordbots.org/):**
 ```
-BOT_ID= # Discord Bot Client ID
 DISCORDBOTS_ORG_TOKEN= # Token from discordbots.org for POSTing updates
+BOT_ID= # Discord Bot Client ID
 ```
 
 ----
