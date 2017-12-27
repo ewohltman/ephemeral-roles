@@ -192,7 +192,7 @@ func main() {
 	guildsUpdate(dgBotSession, discordBotsToken, botID)
 	go monitorGuildsUpdate(dgBotSession, discordBotsToken, botID)
 
-	log.Infof("Starting internal HTTP server instance")
+	log.Debugf("Starting internal HTTP server instance")
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
 			log.WithError(err).Errorf("Internal HTTP server error")
