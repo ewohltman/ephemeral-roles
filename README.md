@@ -8,7 +8,8 @@
 
 ## Quickstart
 
-1. [Invite](https://discordapp.com/oauth2/authorize?client_id=392419127626694676&scope=bot&permissions=268435456) the `Ephemeral Roles` bot to your Discord server
+1. [Invite](https://discordapp.com/api/oauth2/authorize?client_id=392419127626694676&permissions=268435488&scope=bot) the `Ephemeral Roles` bot to your Discord server
+    1. The `Manage Server` and `Manage Roles` permissions are required, which the invite link above provides
 2. Ensure the new `Ephemeral Roles` role is at the top (or as near as possible) to the server's list of roles
     1. If you're not sure how or why to do that, take a quick read over Discord's excellent [Role Management 101](https://support.discordapp.com/hc/en-us/articles/214836687-Role-Management-101) guide
 3. Enjoy!
