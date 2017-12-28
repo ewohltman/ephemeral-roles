@@ -158,6 +158,7 @@ func getGuildRoles(
 	s *discordgo.Session,
 	guild *discordgo.Guild,
 ) (roles []*discordgo.Role, err error) {
+
 	roles, err = s.GuildRoles(guild.ID)
 	if err != nil {
 		// Find the JSON with regular expressions
@@ -210,6 +211,7 @@ func guildRoleCreateEdit(
 	ephRoleName string,
 	guild *discordgo.Guild,
 ) (ephRole *discordgo.Role, err error) {
+
 	// Create a new blank role
 	ephRole, err = s.GuildRoleCreate(guild.ID)
 	if err != nil {
@@ -247,121 +249,152 @@ func guildRoleCreateEdit(
 		return
 	}
 
-	// Organize the role within the existing roles
-	// Find all voice channels
-	guildChannels, err := s.GuildChannels(guild.ID)
+	err = guildRoleReorder(s, guild.ID)
+
+	return
+}
+
+type orderedRoles []*discordgo.Role
+
+// String satisfies the Stringer interface for orderedRoles
+func (oR orderedRoles) String() string {
+	str := ""
+
+	positions := make(map[int]*discordgo.Role)
+
+	for _, role := range oR {
+		positions[role.Position] = role
+	}
+
+	for i := len(positions) - 1; i >= 0; i-- {
+		if positions[i] != nil {
+			str = fmt.Sprintf(
+				"%s\nPosition: %d, Name: %s",
+				str,
+				positions[i].Position,
+				positions[i].Name,
+			)
+		} else {
+			str = fmt.Sprintf(
+				"%s\nPosition: %s, Name: %s",
+				str,
+				"nil",
+				"nil",
+			)
+		}
+	}
+
+	return str
+}
+
+// guildRoleReorder orders roles in the order in which the channels appear
+func guildRoleReorder(s *discordgo.Session, guildID string) (err error) {
+	// Get guild from our internal state
+	guild, err := s.State.Guild(guildID)
 	if err != nil {
-		err = fmt.Errorf("unable to get guild channels: %s", err.Error())
+		err = fmt.Errorf("unable to get guild from internal state: %s", err.Error())
 
 		return
 	}
 
-	currentChannelOrder := make(map[int]*discordgo.Channel)
+	log.WithField("roles", orderedRoles(guild.Roles)).Debugf("Original role order")
 
-	for _, channel := range guildChannels {
+	voiceChannelOrder := make(map[int]*discordgo.Channel)
+
+	// Find the order of all voice channels
+	for _, channel := range guild.Channels {
 		if channel.Type != discordgo.ChannelTypeGuildVoice {
 			continue
 		}
 
-		currentChannelOrder[channel.Position] = channel
+		voiceChannelOrder[channel.Position] = channel
 	}
 
-	channelOrderListString := ""
-	for i := 0; i < len(currentChannelOrder); i++ {
-		channelOrderListString = fmt.Sprintf(
+	voiceChannelOrderString := ""
+	for i := 0; i < len(voiceChannelOrder); i++ {
+		voiceChannelOrderString = fmt.Sprintf(
 			"%s\norder: %d, name: %s",
-			channelOrderListString,
+			voiceChannelOrderString,
 			i,
-			currentChannelOrder[i].Name,
+			voiceChannelOrder[i].Name,
 		)
 	}
 
-	log.WithField("channels", channelOrderListString).Debugf("Current channel order")
+	log.WithField("channels", voiceChannelOrderString).Debugf("Current channel order")
 
-	guildRoles, err := s.GuildRoles(guild.ID)
-	if err != nil {
-		err = fmt.Errorf("unable to get guild roles: %s", err.Error())
+	roleOrder := make(map[int]*discordgo.Role)
+	roleNameMap := make(map[string]*discordgo.Role)
 
-		return
-	}
+	botRolePosition := 0
+	numEphRoles := 0
 
-	currentRoleOrder := make(map[int]*discordgo.Role)
-	botRolePosition := -1
+	log.WithField("roles", orderedRoles(guild.Roles)).Debugf("Original role order")
 
-	for _, role := range guildRoles {
-		currentRoleOrder[role.Position] = role
+	for _, role := range guild.Roles {
+		roleOrder[role.Position] = role
+		roleNameMap[role.Name] = role
 
+		// Found the BOTNAME role
 		if role.Name == BOTNAME {
 			botRolePosition = role.Position
+
+			continue
+		}
+
+		// Found an ephemeral role
+		if strings.HasPrefix(role.Name, ROLEPREFIX) {
+			numEphRoles++
 		}
 	}
 
-	if botRolePosition == -1 {
+	if botRolePosition == 0 {
 		err = fmt.Errorf("unable to get find bot role in guild: %s", err.Error())
 
 		return
 	}
 
-	newRoleOrder := make([]*discordgo.Role, 0, len(currentRoleOrder)+1)
+	ephRolesOrdered := make([]*discordgo.Role, 0, len(guild.Roles))
 
-	// Add the pre-existing lower roles
-	for i := 0; i < botRolePosition; i++ {
-		if currentRoleOrder[i] != nil {
-			if i == 0 { // @everybody
-				newRoleOrder = append(newRoleOrder, currentRoleOrder[i])
-				continue
-			}
+	for i := 0; i < len(voiceChannelOrder); i++ {
+		roleName := ROLEPREFIX + voiceChannelOrder[i].Name
 
-			if currentRoleOrder[i].Name == ephRole.Name {
-				continue // Manually insert later
-			}
-
-			currentRoleOrder[i].Position = currentRoleOrder[i].Position - 1
-			newRoleOrder = append(newRoleOrder, currentRoleOrder[i])
+		if ephRole, found := roleNameMap[roleName]; found {
+			ephRolesOrdered = append(ephRolesOrdered, ephRole)
 		}
 	}
 
-	// Add our new role
-	ephRole.Position = botRolePosition - 1
-	newRoleOrder = append(newRoleOrder, ephRole)
+	newRoleOrder := make([]*discordgo.Role, 0, len(guild.Roles))
 
-	// Add the bot role and remaining higher roles
-	for j := botRolePosition; j < len(newRoleOrder); j++ {
-		newRoleOrder = append(newRoleOrder, currentRoleOrder[j])
+	// roleOrder[0] == @everybody
+	newRoleOrder = append(newRoleOrder, roleOrder[0])
+
+	for i := 1; i <= botRolePosition-numEphRoles; i++ {
+		roleOrder[i].Position = i - 1
+		newRoleOrder = append(newRoleOrder, roleOrder[i])
 	}
 
-	roleOrderListString := ""
-	for i := 0; i < len(currentRoleOrder); i++ {
-		if currentRoleOrder[i] != nil {
-			roleOrderListString = fmt.Sprintf(
-				"%s\norder: %d, name: %s",
-				roleOrderListString,
-				i,
-				currentRoleOrder[i].Name,
-			)
-		}
+	// Add our ordered roles
+	for i := 0; i < len(ephRolesOrdered); i++ {
+		ephRolesOrdered[i].Position = (botRolePosition - numEphRoles) + i
+		newRoleOrder = append(newRoleOrder, ephRolesOrdered[i])
 	}
 
-	log.WithField("roles", roleOrderListString).Debugf("Current role order")
-
-	newRoleOrderListString := ""
-	for i := 0; i < len(newRoleOrder); i++ {
-		if newRoleOrder[i] != nil {
-			newRoleOrderListString = fmt.Sprintf(
-				"%s\norder: %d, name: %s",
-				newRoleOrderListString,
-				i,
-				newRoleOrder[i].Name,
-			)
-		}
+	// Add the remaining roles above us
+	for i := botRolePosition; i < len(roleOrder); i++ {
+		roleOrder[i].Position = i
+		newRoleOrder = append(newRoleOrder, roleOrder[i])
 	}
 
-	log.WithField("roles", newRoleOrderListString).Debugf("New role order")
+	log.WithField("roles", orderedRoles(newRoleOrder)).Debugf("New role order")
 
-	_, err = s.GuildRoleReorder(guild.ID, newRoleOrder)
+	reorderedRoles, err := s.GuildRoleReorder(guild.ID, newRoleOrder)
 	if err != nil {
-		log.WithError(err).WithField("newRoleOrder", newRoleOrder).Debugf("Unable to order new channel")
+		log.WithError(err).
+			WithField("newRoleOrder", newRoleOrder).
+			Debugf("Unable to order new channel")
 	}
+
+	log.WithField("roles", orderedRoles(reorderedRoles)).Debugf("Reordered role order")
 
 	return
 }
@@ -373,6 +406,7 @@ func guildRoleMemberCleanup(
 	guild *discordgo.Guild,
 	guildRoles []*discordgo.Role,
 ) {
+
 	guildMember, err := s.GuildMember(guild.ID, user.ID)
 	if err != nil {
 		log.WithError(err).WithFields(logrus.Fields{
