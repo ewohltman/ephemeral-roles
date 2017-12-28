@@ -17,7 +17,7 @@ type DiscordAPIResponse struct {
 	Message string `json:"message"`
 }
 
-// String implements the Stringer interface for field names in logs
+// (dAR *DiscordAPIResponse) String implements the Stringer interface for field names in logs
 func (dAR *DiscordAPIResponse) String() string {
 	return fmt.Sprintf("Code: %d, Message: %s", dAR.Code, dAR.Message)
 }
@@ -50,22 +50,22 @@ func (dErr *discordError) Error() string {
 // orderedChannels is a custom type for channel organization
 type orderedChannels []*discordgo.Channel
 
-// (orderedChannels) Len is to satisfy sort.Interface interface
+// (oC orderedChannels) Len is to satisfy sort.Interface interface
 func (oC orderedChannels) Len() int {
 	return len(oC)
 }
 
-// (orderedChannels) Less is to satisfy sort.Interface interface
+// (oC orderedChannels) Less is to satisfy sort.Interface interface
 func (oC orderedChannels) Less(i, j int) bool {
 	return oC[i].Position < oC[j].Position
 }
 
-// (orderedChannels) Swap is to satisfy sort.Interface interface
+// (oC orderedChannels) Swap is to satisfy sort.Interface interface
 func (oC orderedChannels) Swap(i, j int) {
 	oC[i].Position, oC[j].Position = oC[j].Position, oC[i].Position
 }
 
-// (orderedChannels) String satisfies the fmt.Stringer interface
+// (oC orderedChannels) String satisfies the fmt.Stringer interface
 func (oC orderedChannels) String() string {
 	if !sort.IsSorted(oC) {
 		sort.Stable(oC)
@@ -107,22 +107,22 @@ func (oC orderedChannels) voiceChannels() (oVC orderedChannels) {
 // orderedRoles is a custom type for role organization
 type orderedRoles []*discordgo.Role
 
-// (orderedRoles) Len is to satisfy sort.Interface interface
+// (oR orderedRoles) Len is to satisfy sort.Interface interface
 func (oR orderedRoles) Len() int {
 	return len(oR)
 }
 
-// (orderedRoles) Less is to satisfy sort.Interface interface
+// (oR orderedRoles) Less is to satisfy sort.Interface interface
 func (oR orderedRoles) Less(i, j int) bool {
 	return oR[i].Position < oR[j].Position
 }
 
-// (orderedRoles) Swap is to satisfy sort.Interface interface
+// (oR orderedRoles) Swap is to satisfy sort.Interface interface
 func (oR orderedRoles) Swap(i, j int) {
 	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position
 }
 
-// (orderedRoles) String satisfies the fmt.Stringer interface
+// (oR orderedRoles) String satisfies the fmt.Stringer interface
 func (oR orderedRoles) String() string {
 	if !sort.IsSorted(oR) {
 		sort.Stable(oR)
