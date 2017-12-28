@@ -16,11 +16,11 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// check if the message starts with our keyword
+	// Check if the message starts with our keyword
 	if strings.HasPrefix(m.Content, BOTKEYWORD+" ") {
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
-			log.WithError(err).Errorf("Unable to find channel")
+			log.WithError(err).Debugf("Unable to find channel")
 
 			return
 		}
@@ -28,7 +28,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Find the guild for that channel.
 		g, err := s.State.Guild(c.GuildID)
 		if err != nil {
-			log.WithError(err).Errorf("Unable to find guild")
+			log.WithError(err).Debugf("Unable to find guild")
 
 			return
 		}
@@ -43,9 +43,15 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			"contentTokens": contentTokens,
 		}).Debugf("New message")
 
-		logLevel := ""
 		if len(contentTokens) > 2 { // [BOT_KEYWORD] [command] [options] :: !eph log_level debug
-			switch strings.ToLower(strings.TrimSpace(contentTokens[1])) {
+			logFields := logrus.Fields{
+				"author":  m.Author.Username,
+				"channel": c.Name,
+				"guild":   g.Name,
+				"content": m.Content,
+			}
+
+			switch strings.ToLower(contentTokens[1]) {
 			case "info":
 				// TODO: Reply to bot command info
 				// It should provide information about
@@ -59,25 +65,38 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				// triggering other bots' commands.
 			case "log_level":
 				if len(contentTokens) >= 3 {
-					logLevel = contentTokens[2]
+					levelOpt := strings.ToLower(contentTokens[2])
+
+					logFields["LOG_LEVEL"] = levelOpt
+
+					switch levelOpt {
+					case "debug":
+						updateLogLevel(levelOpt)
+						log.WithFields(logFields).Debugf("Logging level changed")
+					case "info":
+						updateLogLevel(levelOpt)
+						log.WithFields(logFields).Infof("Logging level changed")
+					case "warn":
+						updateLogLevel(levelOpt)
+						log.WithFields(logFields).Warnf("Logging level changed")
+					case "error":
+						updateLogLevel(levelOpt)
+						log.WithFields(logFields).Errorf("Logging level changed")
+					case "fatal":
+						updateLogLevel(levelOpt)
+					case "panic":
+						updateLogLevel(levelOpt)
+					}
 				}
 			default:
-				// Silently fail
+				// Silently fail for unrecognized command
 			}
-
-			if logLevel != "" {
-				os.Setenv("LOG_LEVEL", logLevel)
-
-				logging.Reinitialize()
-			}
-
-			log.WithFields(logrus.Fields{
-				"author":    m.Author.Username,
-				"channel":   c.Name,
-				"guild":     g.Name,
-				"content":   m.Content,
-				"LOG_LEVEL": logLevel,
-			}).Infof("Logging level changed")
 		}
 	}
+}
+
+func updateLogLevel(levelOpt string) {
+	os.Setenv("LOG_LEVEL", levelOpt)
+
+	logging.Reinitialize()
 }

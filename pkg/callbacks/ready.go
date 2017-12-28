@@ -8,8 +8,8 @@ import (
 // Ready is the callback function for the Ready event from Discord
 func Ready(s *discordgo.Session, event *discordgo.Ready) {
 	log.WithFields(logrus.Fields{
-		"guildCount": len(event.Guilds),
-	}).Infof(BOTNAME + " Ready")
+		"server_count": len(event.Guilds),
+	}).Infof("\"" + BOTNAME + "\" Bot Ready")
 
 	idleSince := 0
 

@@ -34,7 +34,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	// Get the user
 	user, err := s.User(vsu.UserID)
 	if err != nil {
-		log.WithError(err).Errorf("Unable to determine user in VoiceStateUpdate")
+		log.WithError(err).Debugf("Unable to determine user in VoiceStateUpdate")
 
 		return
 	}
@@ -44,16 +44,19 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	if err != nil {
 		log.WithError(err).WithFields(logrus.Fields{
 			"user": user.Username,
-		}).Errorf("Unable to determine guild in VoiceStateUpdate")
+		}).Debugf("Unable to determine guild in VoiceStateUpdate")
 
 		return
 	}
 
-	// Context-appropriate logging is handled within getGuildRoles
 	guildRoles, err := getGuildRoles(s, guild)
 	if err != nil {
+		// Context-appropriate logging is handled within getGuildRoles
 		return
 	}
+
+	// Revoke all ephemeral roles from this user and start clean
+	guildRoleMemberCleanup(s, user, guild, guildRoles)
 
 	// User disconnect event
 	if vsu.ChannelID == "" {
@@ -61,9 +64,6 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 			"user":  user.Username,
 			"guild": guild.Name,
 		}).Debugf("User disconnected from voice channels and ephemeral roles revoked")
-
-		// Revoke all ephemeral roles from this user
-		guildRoleMemberCleanup(s, user, guild, guildRoles)
 
 		return
 	}
@@ -73,7 +73,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 		log.WithError(err).WithFields(logrus.Fields{
 			"user":  user.Username,
 			"guild": guild.Name,
-		}).Errorf("Unable to determine channel in VoiceStateUpdate")
+		}).Debugf("Unable to determine channel in VoiceStateUpdate")
 
 		return
 	}
@@ -85,9 +85,6 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 		if role.Name == ROLEPREFIX+channel.Name {
 			ephRole = role
 
-			// User not in role, revoke any existing ephemeral roles
-			guildRoleMemberCleanup(s, user, guild, guildRoles)
-
 			// Add member to ephemeral role
 			err = s.GuildMemberRoleAdd(guild.ID, user.ID, ephRole.ID)
 			if err != nil {
@@ -96,7 +93,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 					"guild":   guild.Name,
 					"channel": channel.Name,
 					"role":    ephRole.Name,
-				}).Errorf("Unable to add user to ephemeral role")
+				}).Debugf("Unable to add user to ephemeral role")
 
 				return
 			}
@@ -122,7 +119,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 			log.WithError(err).WithFields(logrus.Fields{
 				"guild": guild.Name,
 				"role":  ROLEPREFIX + channel.Name,
-			}).Errorf("Error managing ephemeral role")
+			}).Debugf("Error managing ephemeral role")
 
 			return
 		}
@@ -135,7 +132,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 				"guild":   guild.Name,
 				"channel": channel.Name,
 				"role":    ephRole.Name,
-			}).Errorf("Unable to add user to ephemeral role")
+			}).Debugf("Unable to add user to ephemeral role")
 
 			return
 		}
@@ -161,7 +158,6 @@ func getGuildRoles(
 	s *discordgo.Session,
 	guild *discordgo.Guild,
 ) (roles []*discordgo.Role, err error) {
-
 	roles, err = s.GuildRoles(guild.ID)
 	if err != nil {
 		// Find the JSON with regular expressions
@@ -181,7 +177,7 @@ func getGuildRoles(
 			log.WithError(err).WithFields(logrus.Fields{
 				"guild": guild.Name,
 				"json":  errJSONString,
-			}).Errorf("Unable to unmarshal Discord API JSON response while determining roles in guild")
+			}).Debugf("Unable to unmarshal Discord API JSON response while determining roles in guild")
 
 			return
 		}
@@ -201,7 +197,7 @@ func getGuildRoles(
 			"guild":      guild.Name,
 			"http_error": dErr.HTTPResponseMessage,
 			"api_error":  *dErr.APIResponse,
-		}).Errorf("Unable to determine roles in guild")
+		}).Debugf("Unable to determine roles in guild")
 
 		return
 	}
@@ -212,8 +208,8 @@ func getGuildRoles(
 func guildRoleCreateEdit(
 	s *discordgo.Session,
 	ephRoleName string,
-	guild *discordgo.Guild) (ephRole *discordgo.Role, err error) {
-
+	guild *discordgo.Guild,
+) (ephRole *discordgo.Role, err error) {
 	// Create a new blank role
 	ephRole, err = s.GuildRoleCreate(guild.ID)
 	if err != nil {
@@ -364,20 +360,25 @@ func guildRoleCreateEdit(
 
 	_, err = s.GuildRoleReorder(guild.ID, newRoleOrder)
 	if err != nil {
-		log.WithError(err).WithField("newRoleOrder", newRoleOrder).Errorf("Unable to order new channel")
+		log.WithError(err).WithField("newRoleOrder", newRoleOrder).Debugf("Unable to order new channel")
 	}
 
 	return
 }
 
 // guildRoleMemberCleanup revokes all ephemeral roles from user in guild
-func guildRoleMemberCleanup(s *discordgo.Session, user *discordgo.User, guild *discordgo.Guild, guildRoles []*discordgo.Role) {
+func guildRoleMemberCleanup(
+	s *discordgo.Session,
+	user *discordgo.User,
+	guild *discordgo.Guild,
+	guildRoles []*discordgo.Role,
+) {
 	guildMember, err := s.GuildMember(guild.ID, user.ID)
 	if err != nil {
 		log.WithError(err).WithFields(logrus.Fields{
 			"user":  user.Username,
 			"guild": guild.Name,
-		}).Errorf("Unable to determine member in VoiceStateUpdate")
+		}).Debugf("Unable to determine member in VoiceStateUpdate")
 
 		return
 	}
@@ -397,7 +398,9 @@ func guildRoleMemberCleanup(s *discordgo.Session, user *discordgo.User, guild *d
 						"user":  user.Username,
 						"guild": guild.Name,
 						"role":  role.Name,
-					}).Errorf("Unable to remove role on VoiceStateUpdate")
+					}).Debugf("Unable to remove role on VoiceStateUpdate")
+
+					return
 				}
 
 				log.WithFields(logrus.Fields{
@@ -408,5 +411,4 @@ func guildRoleMemberCleanup(s *discordgo.Session, user *discordgo.User, guild *d
 			}
 		}
 	}
-
 }

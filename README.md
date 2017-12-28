@@ -10,8 +10,7 @@
 
 1. [Invite](https://discordapp.com/oauth2/authorize?client_id=392419127626694676&scope=bot&permissions=268435456) the `Ephemeral Roles` bot to your Discord server
 2. Ensure the new `Ephemeral Roles` role is at the top (or as near as possible) to the server's list of roles
-    1. If you're not sure how to do that, or why it should be done, take a quick read over Discord's excellent [Role Management 101](https://support.discordapp.com/hc/en-us/articles/214836687-Role-Management-101) guide
-3. If you have any private voice channels, ensure the new `Ephemeral Roles` role has the `Connect` permission for each private voice channel that you want managed (non-private voice channels are managed automatically)
+    1. If you're not sure how or why to do that, take a quick read over Discord's excellent [Role Management 101](https://support.discordapp.com/hc/en-us/articles/214836687-Role-Management-101) guide
 4. Enjoy!
 
 ----

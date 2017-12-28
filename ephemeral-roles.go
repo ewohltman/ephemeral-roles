@@ -133,6 +133,8 @@ func guildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
 }
 
 func main() {
+	log.Debugf("Bot starting up")
+
 	// Check for BOT_TOKEN, we need this to connect to Discord
 	token, found := os.LookupEnv("BOT_TOKEN")
 	if !found || token == "" {
@@ -163,18 +165,20 @@ func main() {
 		port = "8080"
 	}
 
-	// Check for DISCORDBOTS_ORG_TOKEN, we need this for optional discordbots.org integration
-	discordBotsToken, found := os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
+	// Check for DISCORDBOTS_ORG_TOKEN and BOT_ID, we need these for optional discordbots.org integration
+	discordBotsToken := ""
+	botID := ""
+
+	discordBotsToken, found = os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
 	if !found || discordBotsToken == "" {
 		log.WithField("warn", "DISCORDBOTS_ORG_TOKEN not defined in environment variables").
 			Warnf("Integration with discordbots.org integration disabled")
-	}
-
-	// Check for BOT_ID, we need this for optional discordbots.org integration
-	botID, found := os.LookupEnv("BOT_ID")
-	if !found || botID == "" {
-		log.WithField("warn", "BOT_ID not defined in environment variables").
-			Warnf("Integration with discordbots.org integration disabled")
+	} else {
+		botID, found = os.LookupEnv("BOT_ID")
+		if !found || botID == "" {
+			log.WithField("warn", "BOT_ID not defined in environment variables").
+				Warnf("Integration with discordbots.org integration disabled")
+		}
 	}
 
 	// Create a new Discord session using the provided bot token
