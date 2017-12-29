@@ -139,7 +139,9 @@ func getGuildRoles(
 	guildID string,
 ) (roles []*discordgo.Role, dErr *discordError) {
 
-	roles, err := s.GuildRoles(guildID)
+	var err error
+
+	roles, err = s.GuildRoles(guildID)
 	if err != nil {
 		// Find the JSON with regular expressions
 		rx := regexp.MustCompile("{.*}")
@@ -241,9 +243,9 @@ func guildRoleReorder(s *discordgo.Session, guildID string) error {
 	}
 
 	origRoleOrder := orderedRoles(guildRoles)
-	sort.Sort(origRoleOrder)
+	origRoleOrder.sortRoles()
 
-	log.WithField("roles", orderedRoles(origRoleOrder)).Debugf("Original role order")
+	log.WithField("roles", origRoleOrder).Debugf("Original role order")
 
 	return nil
 }

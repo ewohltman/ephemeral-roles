@@ -17,13 +17,13 @@ type DiscordAPIResponse struct {
 	Message string `json:"message"`
 }
 
-// (dAR *DiscordAPIResponse) String implements the Stringer interface for field names in logs
+// (dAR *DiscordAPIResponse) String satisfies the fmt.Stringer interface for field names in logs
 func (dAR *DiscordAPIResponse) String() string {
 	return fmt.Sprintf("Code: %d, Message: %s", dAR.Code, dAR.Message)
 }
 
-// discordError is a helper struct for encapsulating API error responses for
-// logging
+// discordError is a convenience struct for encapsulating API error responses
+// for logging
 type discordError struct {
 	HTTPResponseMessage string
 	APIResponse         *DiscordAPIResponse
@@ -32,7 +32,12 @@ type discordError struct {
 
 // (dErr *discordError) Error satisfies the error interface
 func (dErr *discordError) Error() string {
-	buf := bytes.NewBuffer([]byte("error from Discord API. "))
+	return "error from Discord API: " + dErr.String()
+}
+
+// (dErr *discordError) String satisfies the fmt.Stringer interface
+func (dErr *discordError) String() string {
+	buf := bytes.NewBuffer([]byte{})
 
 	if dErr.CustomMessage != "" {
 		buf.Write([]byte("CustomMessage: " + dErr.CustomMessage + ", "))
@@ -50,19 +55,20 @@ func (dErr *discordError) Error() string {
 // orderedChannels is a custom type for channel organization
 type orderedChannels []*discordgo.Channel
 
-// (oC orderedChannels) Len is to satisfy sort.Interface interface
+// (oC orderedChannels) Len is to satisfy the sort.Interface interface
 func (oC orderedChannels) Len() int {
 	return len(oC)
 }
 
-// (oC orderedChannels) Less is to satisfy sort.Interface interface
+// (oC orderedChannels) Less is to satisfy the sort.Interface interface
 func (oC orderedChannels) Less(i, j int) bool {
 	return oC[i].Position < oC[j].Position
 }
 
-// (oC orderedChannels) Swap is to satisfy sort.Interface interface
+// (oC orderedChannels) Swap is to satisfy the sort.Interface interface
 func (oC orderedChannels) Swap(i, j int) {
 	oC[i].Position, oC[j].Position = oC[j].Position, oC[i].Position
+	oC[i], oC[j] = oC[j], oC[i]
 }
 
 // (oC orderedChannels) String satisfies the fmt.Stringer interface
@@ -107,26 +113,25 @@ func (oC orderedChannels) voiceChannels() (oVC orderedChannels) {
 // orderedRoles is a custom type for role organization
 type orderedRoles []*discordgo.Role
 
-// (oR orderedRoles) Len is to satisfy sort.Interface interface
+// (oR orderedRoles) Len is to satisfy the sort.Interface interface
 func (oR orderedRoles) Len() int {
 	return len(oR)
 }
 
-// (oR orderedRoles) Less is to satisfy sort.Interface interface
+// (oR orderedRoles) Less is to satisfy the sort.Interface interface
 func (oR orderedRoles) Less(i, j int) bool {
 	return oR[i].Position < oR[j].Position
 }
 
-// (oR orderedRoles) Swap is to satisfy sort.Interface interface
+// (oR orderedRoles) Swap is to satisfy the sort.Interface interface
 func (oR orderedRoles) Swap(i, j int) {
 	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position
+	oR[i], oR[j] = oR[j], oR[i]
 }
 
 // (oR orderedRoles) String satisfies the fmt.Stringer interface
 func (oR orderedRoles) String() string {
-	if !sort.IsSorted(oR) {
-		sort.Stable(oR)
-	}
+	oR.sortRoles()
 
 	bufStr := ""
 
@@ -142,4 +147,23 @@ func (oR orderedRoles) String() string {
 	}
 
 	return bufStr
+}
+
+// (oR orderedRoles) sortRoles is a convenience method for sorting roles
+func (oR orderedRoles) sortRoles() {
+	for index, role := range oR {
+		if role.Name == "@everyone" { // @everyone should be the lowest
+			if role.Position != 0 { // ...and it's not
+				oR.Swap(index, 0)
+			}
+		}
+
+		if role.Name == BOTNAME { // Our bot role should be the highest
+			if role.Position != len(oR)-1 { // ...and it's not
+				oR.Swap(index, len(oR)-1)
+			}
+		}
+	}
+
+	sort.Stable(oR)
 }
