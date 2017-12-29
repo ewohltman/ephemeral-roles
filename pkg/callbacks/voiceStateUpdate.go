@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -232,9 +231,7 @@ func guildRoleReorder(s *discordgo.Session, guildID string) error {
 		return err
 	}
 
-	origVoiceChannelOrder := orderedChannels(guildChannels).voiceChannels()
-	sort.Stable(origVoiceChannelOrder)
-
+	origVoiceChannelOrder := orderedChannels(guildChannels).voiceChannelsSort()
 	log.WithField("channels", origVoiceChannelOrder).Debugf("Original voice channel order")
 
 	guildRoles, dErr := getGuildRoles(s, guildID)
@@ -242,9 +239,7 @@ func guildRoleReorder(s *discordgo.Session, guildID string) error {
 		return err
 	}
 
-	origRoleOrder := orderedRoles(guildRoles)
-	origRoleOrder.sortRoles()
-
+	origRoleOrder := orderedRoles(guildRoles).sort()
 	log.WithField("roles", origRoleOrder).Debugf("Original role order")
 
 	return nil

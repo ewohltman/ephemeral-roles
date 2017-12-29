@@ -92,9 +92,9 @@ func (oC orderedChannels) String() string {
 	return bufStr
 }
 
-// (oC orderedChannels) voiceChannels is a convenience method for returning
+// (oC orderedChannels) voiceChannelsSort is a convenience method for returning
 // the ordered voice channels in a generic orderedChannels
-func (oC orderedChannels) voiceChannels() (oVC orderedChannels) {
+func (oC orderedChannels) voiceChannelsSort() (oVC orderedChannels) {
 	oVC = make([]*discordgo.Channel, 0, len(oC))
 
 	for _, channel := range oC {
@@ -125,13 +125,14 @@ func (oR orderedRoles) Less(i, j int) bool {
 
 // (oR orderedRoles) Swap is to satisfy the sort.Interface interface
 func (oR orderedRoles) Swap(i, j int) {
-	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position
 	oR[i], oR[j] = oR[j], oR[i]
 }
 
 // (oR orderedRoles) String satisfies the fmt.Stringer interface
 func (oR orderedRoles) String() string {
-	oR.sortRoles()
+	if !sort.IsSorted(oR) {
+		oR.sort()
+	}
 
 	bufStr := ""
 
@@ -149,8 +150,8 @@ func (oR orderedRoles) String() string {
 	return bufStr
 }
 
-// (oR orderedRoles) sortRoles is a convenience method for sorting roles
-func (oR orderedRoles) sortRoles() {
+// (oR orderedRoles) sort is a convenience method for sorting roles
+func (oR orderedRoles) sort() orderedRoles {
 	for index, role := range oR {
 		if role.Name == "@everyone" { // @everyone should be the lowest
 			if role.Position != 0 { // ...and it's not
@@ -166,4 +167,6 @@ func (oR orderedRoles) sortRoles() {
 	}
 
 	sort.Stable(oR)
+
+	return oR
 }
