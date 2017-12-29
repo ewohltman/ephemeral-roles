@@ -1,4 +1,5 @@
 # ephemeral-roles
+
 | <img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100"> | [![Discord Bots](https://discordbots.org/api/widget/status/392419127626694676.svg)](https://discordbots.org/bot/392419127626694676)<br/>[![Travis CI](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.org/ewohltman/ephemeral-roles.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles)<br/>[![GoDoc](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg?status.svg)](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg) |
 | :------: | :------: |
 
@@ -8,10 +9,16 @@
 
 ## Quickstart
 
-1. [Invite](https://discordapp.com/oauth2/authorize?client_id=392419127626694676&scope=bot&permissions=268435456) the `Ephemeral Roles` bot to your Discord server
-2. Ensure the new `Ephemeral Roles` role is at the top (or as near as possible) to the server's list of roles
-    1. If you're not sure how or why to do that, take a quick read over Discord's excellent [Role Management 101](https://support.discordapp.com/hc/en-us/articles/214836687-Role-Management-101) guide
-4. Enjoy!
+1. [Invite](https://discordapp.com/api/oauth2/authorize?client_id=392419127626694676&permissions=268435456&scope=bot)
+the `Ephemeral Roles` bot to your Discord server
+    1. The `Manage Roles` permission is required, which the invite link above
+    provides by automatically creating an appropriate role in your server for
+    `Ephemeral Roles` 
+2. Ensure the new `Ephemeral Roles` role is at the top (or as near as possible)
+to the server's list of roles
+    1. If you're not sure how or why to do that, take a quick read over
+    Discord's excellent [Role Management 101](https://support.discordapp.com/hc/en-us/articles/214836687-Role-Management-101) guide
+3. Enjoy!
 
 ----
 
@@ -58,11 +65,10 @@ ROLE_PREFIX={[keyword]} # Prefix to put before ephemeral channels to stand out
 
 **Optional:**
 ```
-ROLE_COLOR_HEX2DEC=16753920 # RGB color in hex to dec for the ephemeral roles.  Default: orange
-PORT=8080 # Port to bind for local HTTP server.  Default: 8080
-LOG_LEVEL=info # Supported: debug, info, warn, error, fatal, panic.  Default: info
-LOG_TIMEZONE_LOCATION=UTC # time.Location strings, e.g. "America/New_York".  Default: runtime time.Local
-
+ROLE_COLOR_HEX2DEC=16753920 # RGB color in hex to dec. Default: orange
+PORT=8080 # Port to bind for local HTTP server. Default: 8080
+LOG_LEVEL=info # Levels: debug, info, warn, error, fatal, panic. Default: info
+LOG_TIMEZONE_LOCATION=UTC # "America/New_York". Default: runtime time.Local
 ```
 
 **Optional integration with [discordrus](https://github.com/kz/discordrus):**
