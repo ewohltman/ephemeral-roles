@@ -283,23 +283,44 @@ func guildRoleCreateEdit(
 // guildRoleReorder orders roles in the order in which the channels appear
 func guildRoleReorder(s *discordgo.Session, guildID string) error {
 	// Get channels via API using s.GuildChannels() for most up-to-date data
-	guildChannels, err := s.GuildChannels(guildID)
+	/*guildChannels, err := s.GuildChannels(guildID)
 	if err != nil {
 		err = fmt.Errorf("unable to get guild from API: %s", err.Error())
 
 		return err
-	}
+	}*/
 
-	origVoiceChannelOrder := orderedChannels(guildChannels).voiceChannelsSort()
-	log.WithField("channels", origVoiceChannelOrder).Debugf("Original voice channel order")
+	// voiceChannels := orderedChannels(guildChannels).voiceChannelsSort()
+	// log.WithField("channels", voiceChannels).Debugf("Original voice channel order")
 
 	guildRoles, dErr := getGuildRoles(s, guildID)
 	if dErr != nil {
-		return err
+		return dErr
 	}
 
-	origRoleOrder := orderedRoles(guildRoles).sort()
-	log.WithField("roles", origRoleOrder).Debugf("Original role order")
+	roles := orderedRoles(guildRoles).sort()
+
+	// Bubble the ephemeral roles up to our bot role to preserve order
+	for index, role := range roles {
+		if strings.HasPrefix(role.Name, ROLEPREFIX) {
+			for j := index; j < len(roles)-1; j++ {
+				tmpPos := roles[j].Position
+				roles[j].Position = roles[j+1].Position
+				roles[j+1].Position = tmpPos
+			}
+		}
+	}
+
+	roles = roles.sort()
+
+	log.WithField("roles", roles).Debugf("New role order")
+
+	_, err := s.GuildRoleReorder(guildID, roles)
+	if err != nil {
+		err = fmt.Errorf("unable to reorder guild roles from API: %s", err.Error())
+
+		return err
+	}
 
 	return nil
 }

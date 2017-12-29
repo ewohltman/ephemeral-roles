@@ -126,28 +126,7 @@ func (oR orderedRoles) Less(i, j int) bool {
 // (oR orderedRoles) Swap is to satisfy the sort.Interface interface
 func (oR orderedRoles) Swap(i, j int) {
 	oR[i], oR[j] = oR[j], oR[i]
-}
-
-// (oR orderedRoles) String satisfies the fmt.Stringer interface
-func (oR orderedRoles) String() string {
-	if !sort.IsSorted(oR) {
-		oR.sort()
-	}
-
-	bufStr := ""
-
-	for index, role := range oR {
-		bufStr = fmt.Sprintf(
-			"%s\nindex: %d, position: %d, managed: %t, name: %s",
-			bufStr,
-			index,
-			role.Position,
-			role.Managed,
-			role.Name,
-		)
-	}
-
-	return bufStr
+	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position
 }
 
 // (oR orderedRoles) sort is a convenience method for sorting roles
@@ -155,13 +134,17 @@ func (oR orderedRoles) sort() orderedRoles {
 	for index, role := range oR {
 		if role.Name == "@everyone" { // @everyone should be the lowest
 			if role.Position != 0 { // ...and it's not
-				oR.Swap(index, 0)
+				tmpPos := oR[0].Position
+				oR[0].Position = oR[index].Position
+				oR[index].Position = tmpPos
 			}
 		}
 
 		if role.Name == BOTNAME { // Our bot role should be the highest
 			if role.Position != len(oR)-1 { // ...and it's not
-				oR.Swap(index, len(oR)-1)
+				tmpPos := oR[len(oR)-1].Position
+				oR[len(oR)-1].Position = oR[index].Position
+				oR[index].Position = tmpPos
 			}
 		}
 	}
@@ -169,4 +152,20 @@ func (oR orderedRoles) sort() orderedRoles {
 	sort.Stable(oR)
 
 	return oR
+}
+
+// (oR orderedRoles) String satisfies the fmt.Stringer interface
+func (oR orderedRoles) String() string {
+	bufStr := ""
+
+	for i := 0; i < len(oR); i++ {
+		bufStr = fmt.Sprintf(
+			"%s\nposition: %d, name: %s",
+			bufStr,
+			oR[i].Position,
+			oR[i].Name,
+		)
+	}
+
+	return bufStr
 }
