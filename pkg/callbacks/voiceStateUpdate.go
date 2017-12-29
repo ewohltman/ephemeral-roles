@@ -31,7 +31,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	}
 
 	// Revoke all ephemeral roles from this user and start clean
-	guildCleanupMemberEphemeralRoles(s, user, guild)
+	cleanupMemberEphemeralRoles(s, user, guild)
 
 	if vsu.ChannelID == "" { // User disconnect
 		log.WithFields(logrus.Fields{
@@ -131,13 +131,72 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	return
 }
 
+// cleanupMemberEphemeralRoles revokes all ephemeral roles from user in guild
+func cleanupMemberEphemeralRoles(s *discordgo.Session, user *discordgo.User, guild *discordgo.Guild) {
+	// Get guild member
+	guildMember, err := s.GuildMember(guild.ID, user.ID)
+	if err != nil {
+		log.WithError(err).
+			WithFields(logrus.Fields{
+				"user":  user.Username,
+				"guild": guild.Name,
+			}).
+			Debugf("Unable to determine member in VoiceStateUpdate")
+
+		return
+	}
+
+	// Map our member roles
+	memberRoleIDs := make(map[string]bool)
+	for _, roleID := range guildMember.Roles {
+		memberRoleIDs[roleID] = true
+	}
+
+	// Get guild roles
+	guildRoles, dErr := getGuildRoles(s, guild.ID)
+	if dErr != nil {
+		log.WithError(err).
+			WithFields(logrus.Fields{
+				"user":  user.Username,
+				"guild": guild.Name,
+			}).
+			Debugf("Unable to determine member in VoiceStateUpdate")
+
+		return
+	}
+
+	// Check all guild roles for ephemeral roles.  If our member has this role,
+	// revoke it from them
+	for _, role := range guildRoles {
+		if strings.HasPrefix(role.Name, ROLEPREFIX) { // Found ephemeral role
+			if memberRoleIDs[role.ID] { // Member has this ephemeral role
+				// Remove the role
+				err := s.GuildMemberRoleRemove(guild.ID, user.ID, role.ID)
+				if err != nil {
+					log.WithError(err).
+						WithFields(logrus.Fields{
+							"user":  user.Username,
+							"role":  role.Name,
+							"guild": guild.Name,
+						}).
+						Debugf("Unable to remove role on VoiceStateUpdate")
+
+					return
+				}
+
+				log.WithFields(logrus.Fields{
+					"user":  user.Username,
+					"role":  role.Name,
+					"guild": guild.Name,
+				}).Debugf("Removed role")
+			}
+		}
+	}
+}
+
 // getGuildRoles handles role lookups using dErr *discordError as a means to
 // provide context to API errors
-func getGuildRoles(
-	s *discordgo.Session,
-	guildID string,
-) (roles []*discordgo.Role, dErr *discordError) {
-
+func getGuildRoles(s *discordgo.Session, guildID string) (roles []*discordgo.Role, dErr *discordError) {
 	var err error
 
 	roles, err = s.GuildRoles(guildID)
@@ -243,72 +302,4 @@ func guildRoleReorder(s *discordgo.Session, guildID string) error {
 	log.WithField("roles", origRoleOrder).Debugf("Original role order")
 
 	return nil
-}
-
-// guildCleanupMemberEphemeralRoles revokes all ephemeral roles from user in guild
-func guildCleanupMemberEphemeralRoles(
-	s *discordgo.Session,
-	user *discordgo.User,
-	guild *discordgo.Guild,
-) {
-
-	// Get guild member
-	guildMember, err := s.GuildMember(guild.ID, user.ID)
-	if err != nil {
-		log.WithError(err).
-			WithFields(logrus.Fields{
-				"user":  user.Username,
-				"guild": guild.Name,
-			}).
-			Debugf("Unable to determine member in VoiceStateUpdate")
-
-		return
-	}
-
-	// Map our member roles
-	memberRoleIDs := make(map[string]bool)
-	for _, roleID := range guildMember.Roles {
-		memberRoleIDs[roleID] = true
-	}
-
-	// Get guild roles
-	guildRoles, dErr := getGuildRoles(s, guild.ID)
-	if dErr != nil {
-		log.WithError(err).
-			WithFields(logrus.Fields{
-				"user":  user.Username,
-				"guild": guild.Name,
-			}).
-			Debugf("Unable to determine member in VoiceStateUpdate")
-
-		return
-	}
-
-	// Check all guild roles for ephemeral roles.  If our member has this role,
-	// revoke it from them
-	for _, role := range guildRoles {
-		if strings.HasPrefix(role.Name, ROLEPREFIX) { // Found ephemeral role
-			if memberRoleIDs[role.ID] { // Member has this ephemeral role
-				// Remove the role
-				err := s.GuildMemberRoleRemove(guild.ID, user.ID, role.ID)
-				if err != nil {
-					log.WithError(err).
-						WithFields(logrus.Fields{
-							"user":  user.Username,
-							"role":  role.Name,
-							"guild": guild.Name,
-						}).
-						Debugf("Unable to remove role on VoiceStateUpdate")
-
-					return
-				}
-
-				log.WithFields(logrus.Fields{
-					"user":  user.Username,
-					"role":  role.Name,
-					"guild": guild.Name,
-				}).Debugf("Removed role")
-			}
-		}
-	}
 }
