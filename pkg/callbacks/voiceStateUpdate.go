@@ -283,17 +283,6 @@ func guildRoleCreateEdit(
 
 // guildRoleReorder orders roles in the order in which the channels appear
 func guildRoleReorder(s *discordgo.Session, guildID string) error {
-	// Get channels via API using s.GuildChannels() for most up-to-date data
-	/*guildChannels, err := s.GuildChannels(guildID)
-	if err != nil {
-		err = fmt.Errorf("unable to get guild from API: %s", err.Error())
-
-		return err
-	}*/
-
-	// voiceChannels := orderedChannels(guildChannels).voiceChannelsSort()
-	// log.WithField("channels", voiceChannels).Debugf("Original voice channel order")
-
 	guildRoles, dErr := getGuildRoles(s, guildID)
 	if dErr != nil {
 		return dErr
