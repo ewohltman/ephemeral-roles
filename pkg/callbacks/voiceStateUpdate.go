@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -31,7 +32,7 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	}
 
 	// Revoke all ephemeral roles from this user and start clean
-	guildCleanupMemberEphemeralRoles(s, user, guild)
+	cleanupMemberEphemeralRoles(s, user, guild)
 
 	if vsu.ChannelID == "" { // User disconnect
 		log.WithFields(logrus.Fields{
@@ -131,13 +132,72 @@ func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	return
 }
 
+// cleanupMemberEphemeralRoles revokes all ephemeral roles from user in guild
+func cleanupMemberEphemeralRoles(s *discordgo.Session, user *discordgo.User, guild *discordgo.Guild) {
+	// Get guild member
+	guildMember, err := s.GuildMember(guild.ID, user.ID)
+	if err != nil {
+		log.WithError(err).
+			WithFields(logrus.Fields{
+				"user":  user.Username,
+				"guild": guild.Name,
+			}).
+			Debugf("Unable to determine member in VoiceStateUpdate")
+
+		return
+	}
+
+	// Map our member roles
+	memberRoleIDs := make(map[string]bool)
+	for _, roleID := range guildMember.Roles {
+		memberRoleIDs[roleID] = true
+	}
+
+	// Get guild roles
+	guildRoles, dErr := getGuildRoles(s, guild.ID)
+	if dErr != nil {
+		log.WithError(err).
+			WithFields(logrus.Fields{
+				"user":  user.Username,
+				"guild": guild.Name,
+			}).
+			Debugf("Unable to determine member in VoiceStateUpdate")
+
+		return
+	}
+
+	// Check all guild roles for ephemeral roles.  If our member has this role,
+	// revoke it from them
+	for _, role := range guildRoles {
+		if strings.HasPrefix(role.Name, ROLEPREFIX) { // Found ephemeral role
+			if memberRoleIDs[role.ID] { // Member has this ephemeral role
+				// Remove the role
+				err := s.GuildMemberRoleRemove(guild.ID, user.ID, role.ID)
+				if err != nil {
+					log.WithError(err).
+						WithFields(logrus.Fields{
+							"user":  user.Username,
+							"role":  role.Name,
+							"guild": guild.Name,
+						}).
+						Debugf("Unable to remove role on VoiceStateUpdate")
+
+					return
+				}
+
+				log.WithFields(logrus.Fields{
+					"user":  user.Username,
+					"role":  role.Name,
+					"guild": guild.Name,
+				}).Debugf("Removed role")
+			}
+		}
+	}
+}
+
 // getGuildRoles handles role lookups using dErr *discordError as a means to
 // provide context to API errors
-func getGuildRoles(
-	s *discordgo.Session,
-	guildID string,
-) (roles []*discordgo.Role, dErr *discordError) {
-
+func getGuildRoles(s *discordgo.Session, guildID string) (roles []*discordgo.Role, dErr *discordError) {
 	var err error
 
 	roles, err = s.GuildRoles(guildID)
@@ -224,91 +284,69 @@ func guildRoleCreateEdit(
 // guildRoleReorder orders roles in the order in which the channels appear
 func guildRoleReorder(s *discordgo.Session, guildID string) error {
 	// Get channels via API using s.GuildChannels() for most up-to-date data
-	guildChannels, err := s.GuildChannels(guildID)
+	/*guildChannels, err := s.GuildChannels(guildID)
 	if err != nil {
 		err = fmt.Errorf("unable to get guild from API: %s", err.Error())
 
 		return err
-	}
+	}*/
 
-	origVoiceChannelOrder := orderedChannels(guildChannels).voiceChannelsSort()
-	log.WithField("channels", origVoiceChannelOrder).Debugf("Original voice channel order")
+	// voiceChannels := orderedChannels(guildChannels).voiceChannelsSort()
+	// log.WithField("channels", voiceChannels).Debugf("Original voice channel order")
 
 	guildRoles, dErr := getGuildRoles(s, guildID)
 	if dErr != nil {
-		return err
+		return dErr
 	}
 
-	origRoleOrder := orderedRoles(guildRoles).sort()
-	log.WithField("roles", origRoleOrder).Debugf("Original role order")
+	roles := orderedRoles(guildRoles)
 
-	return nil
-}
+	log.WithField("roles", roles).Debugf("Old role order")
 
-// guildCleanupMemberEphemeralRoles revokes all ephemeral roles from user in guild
-func guildCleanupMemberEphemeralRoles(
-	s *discordgo.Session,
-	user *discordgo.User,
-	guild *discordgo.Guild,
-) {
+	sort.SliceStable(
+		roles,
+		func(i, j int) bool {
+			return roles[i].Position < roles[j].Position
+		},
+	)
 
-	// Get guild member
-	guildMember, err := s.GuildMember(guild.ID, user.ID)
-	if err != nil {
-		log.WithError(err).
-			WithFields(logrus.Fields{
-				"user":  user.Username,
-				"guild": guild.Name,
-			}).
-			Debugf("Unable to determine member in VoiceStateUpdate")
-
-		return
+	// Alignment correction if Discord is slow to update
+	for index, role := range roles {
+		if role.Position != index {
+			role.Position = index
+		}
 	}
 
-	// Map our member roles
-	memberRoleIDs := make(map[string]bool)
-	for _, roleID := range guildMember.Roles {
-		memberRoleIDs[roleID] = true
+	for index, role := range roles {
+		if role.Name == "@everyone" && role.Position != 0 { // @everyone should be the lowest
+			roles.swap(index, 0)
+		}
+
+		if role.Name == BOTNAME && role.Position != len(roles)-1 { // BOTNAME should be the highest
+			roles.swap(index, len(roles)-1)
+		}
 	}
 
-	// Get guild roles
-	guildRoles, dErr := getGuildRoles(s, guild.ID)
-	if dErr != nil {
-		log.WithError(err).
-			WithFields(logrus.Fields{
-				"user":  user.Username,
-				"guild": guild.Name,
-			}).
-			Debugf("Unable to determine member in VoiceStateUpdate")
-
-		return
-	}
-
-	// Check all guild roles for ephemeral roles.  If our member has this role,
-	// revoke it from them
-	for _, role := range guildRoles {
-		if strings.HasPrefix(role.Name, ROLEPREFIX) { // Found ephemeral role
-			if memberRoleIDs[role.ID] { // Member has this ephemeral role
-				// Remove the role
-				err := s.GuildMemberRoleRemove(guild.ID, user.ID, role.ID)
-				if err != nil {
-					log.WithError(err).
-						WithFields(logrus.Fields{
-							"user":  user.Username,
-							"role":  role.Name,
-							"guild": guild.Name,
-						}).
-						Debugf("Unable to remove role on VoiceStateUpdate")
-
-					return
+	// Bubble the ephemeral roles up
+	for index, role := range roles {
+		if strings.HasPrefix(role.Name, ROLEPREFIX) {
+			for j := index; j < len(roles)-2; j++ {
+				// Stop bubbling at the bottom of the top-most group
+				if !strings.HasPrefix(roles[j+1].Name, ROLEPREFIX) {
+					roles.swap(j, j+1)
 				}
-
-				log.WithFields(logrus.Fields{
-					"user":  user.Username,
-					"role":  role.Name,
-					"guild": guild.Name,
-				}).Debugf("Removed role")
 			}
 		}
 	}
+
+	log.WithField("roles", roles).Debugf("New role order")
+
+	_, err := s.GuildRoleReorder(guildID, roles)
+	if err != nil {
+		err = fmt.Errorf("unable to reorder guild roles from API: %s", err.Error())
+
+		return err
+	}
+
+	return nil
 }
