@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -298,20 +299,45 @@ func guildRoleReorder(s *discordgo.Session, guildID string) error {
 		return dErr
 	}
 
-	roles := orderedRoles(guildRoles).sort()
+	roles := orderedRoles(guildRoles)
 
-	// Bubble the ephemeral roles up to our bot role to preserve order
+	log.WithField("roles", roles).Debugf("Old role order")
+
+	sort.SliceStable(
+		roles,
+		func(i, j int) bool {
+			return roles[i].Position < roles[j].Position
+		},
+	)
+
+	// Alignment correction if Discord is slow to update
 	for index, role := range roles {
-		if strings.HasPrefix(role.Name, ROLEPREFIX) {
-			for j := index; j < len(roles)-1; j++ {
-				tmpPos := roles[j].Position
-				roles[j].Position = roles[j+1].Position
-				roles[j+1].Position = tmpPos
-			}
+		if role.Position != index {
+			role.Position = index
 		}
 	}
 
-	roles = roles.sort()
+	for index, role := range roles {
+		if role.Name == "@everyone" && role.Position != 0 { // @everyone should be the lowest
+			roles.swap(index, 0)
+		}
+
+		if role.Name == BOTNAME && role.Position != len(roles)-1 { // BOTNAME should be the highest
+			roles.swap(index, len(roles)-1)
+		}
+	}
+
+	// Bubble the ephemeral roles up
+	for index, role := range roles {
+		if strings.HasPrefix(role.Name, ROLEPREFIX) {
+			for j := index; j < len(roles)-2; j++ {
+				// Stop bubbling at the bottom of the top-most group
+				if !strings.HasPrefix(roles[j+1].Name, ROLEPREFIX) {
+					roles.swap(j, j+1)
+				}
+			}
+		}
+	}
 
 	log.WithField("roles", roles).Debugf("New role order")
 

@@ -113,59 +113,25 @@ func (oC orderedChannels) voiceChannelsSort() (oVC orderedChannels) {
 // orderedRoles is a custom type for role organization
 type orderedRoles []*discordgo.Role
 
-// (oR orderedRoles) Len is to satisfy the sort.Interface interface
-func (oR orderedRoles) Len() int {
-	return len(oR)
-}
-
-// (oR orderedRoles) Less is to satisfy the sort.Interface interface
-func (oR orderedRoles) Less(i, j int) bool {
-	return oR[i].Position < oR[j].Position
-}
-
-// (oR orderedRoles) Swap is to satisfy the sort.Interface interface
-func (oR orderedRoles) Swap(i, j int) {
-	oR[i], oR[j] = oR[j], oR[i]
-	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position
-}
-
-// (oR orderedRoles) sort is a convenience method for sorting roles
-func (oR orderedRoles) sort() orderedRoles {
-	for index, role := range oR {
-		if role.Name == "@everyone" { // @everyone should be the lowest
-			if role.Position != 0 { // ...and it's not
-				tmpPos := oR[0].Position
-				oR[0].Position = oR[index].Position
-				oR[index].Position = tmpPos
-			}
-		}
-
-		if role.Name == BOTNAME { // Our bot role should be the highest
-			if role.Position != len(oR)-1 { // ...and it's not
-				tmpPos := oR[len(oR)-1].Position
-				oR[len(oR)-1].Position = oR[index].Position
-				oR[index].Position = tmpPos
-			}
-		}
-	}
-
-	sort.Stable(oR)
-
-	return oR
-}
-
 // (oR orderedRoles) String satisfies the fmt.Stringer interface
 func (oR orderedRoles) String() string {
 	bufStr := ""
 
 	for i := 0; i < len(oR); i++ {
 		bufStr = fmt.Sprintf(
-			"%s\nposition: %d, name: %s",
+			"%s\nindex: %d, position: %d, name: %s",
 			bufStr,
+			i,
 			oR[i].Position,
 			oR[i].Name,
 		)
 	}
 
 	return bufStr
+}
+
+func (oR orderedRoles) swap(i, j int) {
+	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position
+
+	oR[i], oR[j] = oR[j], oR[i]
 }
