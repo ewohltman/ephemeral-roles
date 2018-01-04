@@ -3,7 +3,6 @@ package callbacks
 import (
 	"bytes"
 	"fmt"
-	"sort"
 	"strconv"
 
 	"github.com/ewohltman/discordgo"
@@ -48,64 +47,6 @@ func (dErr *discordError) String() string {
 	buf.Write([]byte("APIResponse.Message: " + dErr.APIResponse.Message))
 
 	return buf.String()
-}
-
-// **** BEGIN: Channel organization *******************************************
-
-// orderedChannels is a custom type for channel organization
-type orderedChannels []*discordgo.Channel
-
-// (oC orderedChannels) Len is to satisfy the sort.Interface interface
-func (oC orderedChannels) Len() int {
-	return len(oC)
-}
-
-// (oC orderedChannels) Less is to satisfy the sort.Interface interface
-func (oC orderedChannels) Less(i, j int) bool {
-	return oC[i].Position < oC[j].Position
-}
-
-// (oC orderedChannels) Swap is to satisfy the sort.Interface interface
-func (oC orderedChannels) Swap(i, j int) {
-	oC[i].Position, oC[j].Position = oC[j].Position, oC[i].Position
-	oC[i], oC[j] = oC[j], oC[i]
-}
-
-// (oC orderedChannels) String satisfies the fmt.Stringer interface
-func (oC orderedChannels) String() string {
-	if !sort.IsSorted(oC) {
-		sort.Stable(oC)
-	}
-
-	bufStr := ""
-
-	for index, channel := range oC {
-		bufStr = fmt.Sprintf(
-			"%s\nindex: %d, position: %d, name: %s",
-			bufStr,
-			index,
-			channel.Position,
-			channel.Name,
-		)
-	}
-
-	return bufStr
-}
-
-// (oC orderedChannels) voiceChannelsSort is a convenience method for returning
-// the ordered voice channels in a generic orderedChannels
-func (oC orderedChannels) voiceChannelsSort() (oVC orderedChannels) {
-	oVC = make([]*discordgo.Channel, 0, len(oC))
-
-	for _, channel := range oC {
-		if channel.Type == discordgo.ChannelTypeGuildVoice {
-			oVC = append(oVC, channel)
-		}
-	}
-
-	sort.Stable(oVC)
-
-	return
 }
 
 // **** BEGIN: Role organization **********************************************
