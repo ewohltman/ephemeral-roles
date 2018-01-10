@@ -74,7 +74,6 @@ func newServer(options ...func(*Server)) *Server {
 			_, err := w.Write(response)
 			if err != nil {
 				log.WithError(err).Errorf("Error writing /guilds HTTP response")
-
 				return
 			}
 		},
@@ -108,9 +107,7 @@ func monitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID st
 			).Infof(dgBotSession.State.User.Username + " joined new guild")
 
 			guildsUpdate(dgBotSession, token, botID)
-		}
-
-		if len(dgBotSession.State.Guilds) < checkNum {
+		} else {
 			log.Infof(dgBotSession.State.User.Username + " removed from guild")
 
 			guildsUpdate(dgBotSession, token, botID)
@@ -140,23 +137,13 @@ func main() {
 	if !found || token == "" {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
 	}
-
-	// Check for BOT_NAME, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("BOT_NAME")
-	if !found {
-		log.Fatalf("BOT_NAME not defined in environment variables")
-	}
-
-	// Check for BOT_KEYWORD, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("BOT_KEYWORD")
-	if !found {
-		log.Fatalf("BOT_KEYWORD not defined in environment variables")
-	}
-
-	// Check for ROLE_PREFIX, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("ROLE_PREFIX")
-	if !found {
-		log.Fatalf("ROLE_PREFIX not defined in environment variables")
+        
+	// Check for string from slice, these are not needed now, but are needed in the callbacks
+	for _, envVar := range []string{"BOT_NAME", "BOT_KEYWORD", "ROLE_PREFIX"} {
+		_, found = os.LookupEnv(envVar)
+		if !found {
+			log.Fatalf("%s not defined in environment variables")
+		}
 	}
 
 	// Check for PORT, we need this to for our HTTP server in our container
