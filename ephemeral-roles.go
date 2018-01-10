@@ -95,19 +95,22 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func monitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
-	for true {
+	for {
 		isc.mu.RLock()
 		checkNum := isc.numGuilds
 		isc.mu.RUnlock()
 
-		if len(dgBotSession.State.Guilds) > checkNum {
+		guildsNum := len(dgBotSession.State.Guilds)
+
+		switch {
+		case guildsNum > checkNum:
 			log.WithField(
 				"guild",
 				dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
 			).Infof(dgBotSession.State.User.Username + " joined new guild")
 
 			guildsUpdate(dgBotSession, token, botID)
-		} else {
+		case guildsNum < checkNum:
 			log.Infof(dgBotSession.State.User.Username + " removed from guild")
 
 			guildsUpdate(dgBotSession, token, botID)
@@ -137,12 +140,12 @@ func main() {
 	if !found || token == "" {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
 	}
-        
+
 	// Check for string from slice, these are not needed now, but are needed in the callbacks
 	for _, envVar := range []string{"BOT_NAME", "BOT_KEYWORD", "ROLE_PREFIX"} {
 		_, found = os.LookupEnv(envVar)
 		if !found {
-			log.Fatalf("%s not defined in environment variables")
+			log.Fatalf("%s not defined in environment variables", envVar)
 		}
 	}
 
@@ -157,6 +160,7 @@ func main() {
 	botID := ""
 
 	discordBotsToken, found = os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
+
 	if !found || discordBotsToken == "" {
 		log.WithField("warn", "DISCORDBOTS_ORG_TOKEN not defined in environment variables").
 			Warnf("Integration with discordbots.org integration disabled")
@@ -214,7 +218,7 @@ func main() {
 	log.Warnf("Caught graceful shutdown signal")
 
 	// Cleanly close down the Discord session
-	dgBotSession.Close()
+	defer dgBotSession.Close()
 
 	// Cleanly shutdown the HTTP server
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
