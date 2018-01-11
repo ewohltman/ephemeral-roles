@@ -188,6 +188,9 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
+	
+	// Cleanly close down the Discord session
+	defer dgBotSession.Close()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGHUP)
@@ -216,9 +219,6 @@ func main() {
 	<-stop
 
 	log.Warnf("Caught graceful shutdown signal")
-
-	// Cleanly close down the Discord session
-	defer dgBotSession.Close()
 
 	// Cleanly shutdown the HTTP server
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
