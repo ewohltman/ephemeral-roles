@@ -74,7 +74,6 @@ func newServer(options ...func(*Server)) *Server {
 			_, err := w.Write(response)
 			if err != nil {
 				log.WithError(err).Errorf("Error writing /guilds HTTP response")
-
 				return
 			}
 		},
@@ -96,21 +95,22 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func monitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
-	for true {
+	for {
 		isc.mu.RLock()
 		checkNum := isc.numGuilds
 		isc.mu.RUnlock()
 
-		if len(dgBotSession.State.Guilds) > checkNum {
+		guildsNum := len(dgBotSession.State.Guilds)
+
+		switch {
+		case guildsNum > checkNum:
 			log.WithField(
 				"guild",
 				dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
 			).Infof(dgBotSession.State.User.Username + " joined new guild")
 
 			guildsUpdate(dgBotSession, token, botID)
-		}
-
-		if len(dgBotSession.State.Guilds) < checkNum {
+		case guildsNum < checkNum:
 			log.Infof(dgBotSession.State.User.Username + " removed from guild")
 
 			guildsUpdate(dgBotSession, token, botID)
@@ -141,22 +141,12 @@ func main() {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
 	}
 
-	// Check for BOT_NAME, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("BOT_NAME")
-	if !found {
-		log.Fatalf("BOT_NAME not defined in environment variables")
-	}
-
-	// Check for BOT_KEYWORD, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("BOT_KEYWORD")
-	if !found {
-		log.Fatalf("BOT_KEYWORD not defined in environment variables")
-	}
-
-	// Check for ROLE_PREFIX, we don't need it now but it's required in the callbacks
-	_, found = os.LookupEnv("ROLE_PREFIX")
-	if !found {
-		log.Fatalf("ROLE_PREFIX not defined in environment variables")
+	// Check for string from slice, these are not needed now, but are needed in the callbacks
+	for _, envVar := range []string{"BOT_NAME", "BOT_KEYWORD", "ROLE_PREFIX"} {
+		_, found = os.LookupEnv(envVar)
+		if !found {
+			log.Fatalf("%s not defined in environment variables", envVar)
+		}
 	}
 
 	// Check for PORT, we need this to for our HTTP server in our container
@@ -170,6 +160,7 @@ func main() {
 	botID := ""
 
 	discordBotsToken, found = os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
+
 	if !found || discordBotsToken == "" {
 		log.WithField("warn", "DISCORDBOTS_ORG_TOKEN not defined in environment variables").
 			Warnf("Integration with discordbots.org integration disabled")
@@ -197,6 +188,9 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
+	
+	// Cleanly close down the Discord session
+	defer dgBotSession.Close()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGHUP)
@@ -225,9 +219,6 @@ func main() {
 	<-stop
 
 	log.Warnf("Caught graceful shutdown signal")
-
-	// Cleanly close down the Discord session
-	dgBotSession.Close()
 
 	// Cleanly shutdown the HTTP server
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
