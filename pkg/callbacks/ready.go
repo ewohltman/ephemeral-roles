@@ -1,7 +1,7 @@
 package callbacks
 
 import (
-	"github.com/ewohltman/discordgo"
+	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
 
