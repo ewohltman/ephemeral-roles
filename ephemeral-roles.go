@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ewohltman/discordgo"
+	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/pkg/discordBotsOrg"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"

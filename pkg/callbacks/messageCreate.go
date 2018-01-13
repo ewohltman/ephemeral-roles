@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ewohltman/discordgo"
+	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/sirupsen/logrus"
 )

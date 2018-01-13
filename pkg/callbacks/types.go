@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ewohltman/discordgo"
+	"github.com/bwmarrin/discordgo"
 )
 
 // **** BEGIN: API response structs and associated methods ********************
