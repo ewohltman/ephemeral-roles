@@ -143,8 +143,8 @@ func main() {
 
 	// Check for string from slice, these are not needed now, but are needed in the callbacks
 	for _, envVar := range []string{"BOT_NAME", "BOT_KEYWORD", "ROLE_PREFIX"} {
-		_, found = os.LookupEnv(envVar)
-		if !found {
+		v, found = os.LookupEnv(envVar)
+		if !found || v == "" {
 			log.Fatalf("%s not defined in environment variables", envVar)
 		}
 	}
