@@ -128,7 +128,16 @@ func guildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
 	isc.numGuilds = len(isc.guildList)
 
 	if token != "" && botID != "" {
-		discordBotsOrg.Update(token, botID, isc.numGuilds)
+		response, err := discordBotsOrg.Update(token, botID, isc.numGuilds)
+		if err != nil {
+			log.WithError(err).Warnf("unable to update guild count")
+
+			return
+		}
+
+		if response != "{}" {
+			log.WithField("response", response).Warnf("discordbots.org integration: abnormal response")
+		}
 	}
 }
 
@@ -166,6 +175,7 @@ func main() {
 			Warnf("Integration with discordbots.org integration disabled")
 	} else {
 		botID, found = os.LookupEnv("BOT_ID")
+
 		if !found || botID == "" {
 			log.WithField("warn", "BOT_ID not defined in environment variables").
 				Warnf("Integration with discordbots.org integration disabled")
@@ -188,7 +198,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
-	
+
 	// Cleanly close down the Discord session
 	defer dgBotSession.Close()
 
