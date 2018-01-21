@@ -1,147 +1,21 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
-	"sync"
 	"syscall"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
-	"github.com/ewohltman/ephemeral-roles/pkg/discordBotsOrg"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
-	"github.com/sirupsen/logrus"
+	"github.com/ewohltman/ephemeral-roles/pkg/server"
 )
 
-// internalStateCache is a mutex protected cache of values
-type internalStateCache struct {
-	mu        sync.RWMutex
-	guildList []*discordgo.Guild
-	numGuilds int
-}
-
-// Server is the struct for the internal HTTP server
-type Server struct {
-	logger *logrus.Logger
-	mux    *http.ServeMux
-}
-
-var log = logging.Instance()
-var isc *internalStateCache
-
-func newServer(options ...func(*Server)) *Server {
-	s := &Server{
-		logger: log,
-		mux:    http.NewServeMux(),
-	}
-
-	for _, f := range options {
-		f(s)
-	}
-
-	// Do something special with /status later?
-	s.mux.HandleFunc(
-		"/status",
-		func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
-		},
-	)
-
-	// List the guilds our bot is a member of
-	s.mux.HandleFunc(
-		"/guilds",
-		func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
-
-			isc.mu.RLock()
-			defer isc.mu.RUnlock()
-
-			buf := bytes.NewBuffer([]byte{})
-			for _, guild := range isc.guildList {
-				buf.Write([]byte(guild.Name + "\n"))
-			}
-
-			response := buf.Bytes()
-
-			w.Header().Set("Content-Type", "text/plain")
-			w.Header().Set("Content-Length", strconv.Itoa(len(response)))
-
-			_, err := w.Write(response)
-			if err != nil {
-				log.WithError(err).Errorf("Error writing /guilds HTTP response")
-				return
-			}
-		},
-	)
-
-	s.mux.HandleFunc(
-		"/",
-		func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
-		},
-	)
-
-	return s
-}
-
-// (s *Server) ServeHTTP satisfies the http.Handler interface
-func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
-}
-
-func monitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
-	for {
-		isc.mu.RLock()
-		checkNum := isc.numGuilds
-		isc.mu.RUnlock()
-
-		guildsNum := len(dgBotSession.State.Guilds)
-
-		switch {
-		case guildsNum > checkNum:
-			log.WithField(
-				"guild",
-				dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
-			).Infof(dgBotSession.State.User.Username + " joined new guild")
-
-			guildsUpdate(dgBotSession, token, botID)
-		case guildsNum < checkNum:
-			log.Infof(dgBotSession.State.User.Username + " removed from guild")
-
-			guildsUpdate(dgBotSession, token, botID)
-		}
-
-		time.Sleep(time.Second * 5)
-	}
-}
-
-func guildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
-	isc.mu.Lock()
-	defer isc.mu.Unlock()
-
-	isc.guildList = dgBotSession.State.Guilds
-	isc.numGuilds = len(isc.guildList)
-
-	if token != "" && botID != "" {
-		response, err := discordBotsOrg.Update(token, botID, isc.numGuilds)
-		if err != nil {
-			log.WithError(err).Warnf("unable to update guild count")
-
-			return
-		}
-
-		if response != "{}" {
-			log.WithField("response", response).Warnf("discordbots.org integration: abnormal response")
-		}
-	}
-}
-
 func main() {
+	var log = logging.Instance()
+
 	log.Debugf("Bot starting up")
 
 	// Check for BOT_TOKEN, we need this to connect to Discord
@@ -206,17 +80,9 @@ func main() {
 	signal.Notify(stop, syscall.SIGHUP)
 	signal.Notify(stop, os.Interrupt)
 
-	httpServer := &http.Server{
-		Addr: ":" + port,
-		Handler: newServer(func(s *Server) {
-			s.logger = log
-		},
-		),
-	}
+	go server.MonitorGuildsUpdate(dgBotSession, discordBotsToken, botID)
 
-	isc = &internalStateCache{}
-	guildsUpdate(dgBotSession, discordBotsToken, botID)
-	go monitorGuildsUpdate(dgBotSession, discordBotsToken, botID)
+	httpServer := server.New(port)
 
 	log.Debugf("Starting internal HTTP server instance")
 	go func() {
