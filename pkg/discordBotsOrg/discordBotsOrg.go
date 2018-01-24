@@ -3,38 +3,31 @@ package discordBotsOrg
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
-
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 const discordBotsURL = "https://discordbots.org"
-
-var log = logging.Instance()
 
 type serverUpdate struct {
 	ServerCount int `json:"server_count"`
 }
 
 // Update POSTs a server_count update to discordbots.org
-func Update(token string, botID string, serverCount int) {
-	botID, found := os.LookupEnv("BOT_ID")
-	if !found || botID == "" {
-		log.WithField("warn", "BOT_ID not defined in environment variables").
-			Errorf("Cannot POST updates to " + discordBotsURL)
+func Update(token string, botID string, serverCount int) (string, error) {
+	rawString := discordBotsURL + "/api/bots/" + botID + "/stats"
 
-		return
-	}
-
-	updateURL, err := url.Parse(discordBotsURL + "/api/bots/" + botID + "/stats")
+	updateURL, err := url.Parse(rawString)
 	if err != nil {
-		log.WithError(err).Errorf("Cannot POST updates to " + discordBotsURL)
-
-		return
+		return "", errors.New(
+			"discordbots.org integration disabled: unable to parse (" +
+				rawString +
+				"): " +
+				err.Error(),
+		)
 	}
 
 	update := &serverUpdate{
@@ -43,9 +36,10 @@ func Update(token string, botID string, serverCount int) {
 
 	updateJSON, err := json.Marshal(update)
 	if err != nil {
-		log.WithError(err).Errorf("Error marshaling JSON body")
-
-		return
+		return "", errors.New(
+			"discordbots.org integration: error marshaling JSON body: " +
+				err.Error(),
+		)
 	}
 
 	client := &http.Client{}
@@ -65,20 +59,24 @@ func Update(token string, botID string, serverCount int) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.WithError(err).Errorf("Error updating " + discordBotsURL)
-
-		return
+		return "", errors.New(
+			"discordbots.org integration: error updating (" +
+				discordBotsURL +
+				"): " +
+				err.Error(),
+		)
 	}
 	defer resp.Body.Close()
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.WithError(err).Errorf("Error reading response from " + discordBotsURL)
-
-		return
+		return "", errors.New(
+			"discordbots.org integration: error reading response from (" +
+				discordBotsURL +
+				"): " +
+				err.Error(),
+		)
 	}
 
-	if string(bodyBytes) != "{}" {
-		log.WithField("response", string(bodyBytes)).Warnf("Abnormal " + discordBotsURL + " response")
-	}
+	return string(bodyBytes), nil
 }
