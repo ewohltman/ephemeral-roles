@@ -6,27 +6,54 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+const devChannel = "393998570690183168"
+
 func TestMessageCreate(t *testing.T) {
-	testBotMessage := &discordgo.MessageCreate{
+	dgTestBotSession.ChannelMessageSendComplex(
+		devChannel,
+		&discordgo.MessageSend{
+			Content: "AUTOMATED TESTING",
+		},
+	)
+
+	content := ""
+
+	// bot
+	botMsg := &discordgo.MessageCreate{
 		Message: &discordgo.Message{
 			Author: &discordgo.User{
-				Username: "TEST BOT USER",
+				Username: "AUTOMATED TEST BOT USER",
 				Bot:      true,
 			},
 		},
 	}
+	MessageCreate(dgTestBotSession, botMsg)
 
-	MessageCreate(dgTestBotSession, testBotMessage)
-
-	testNonKeyphraseMessage := &discordgo.MessageCreate{
+	// non keyphrase
+	content = "this should not show up!"
+	nonKeyphraseMsg := &discordgo.MessageCreate{
 		Message: &discordgo.Message{
 			Author: &discordgo.User{
-				Username: "TEST USER",
+				Username: "AUTOMATED TEST USER",
 				Bot:      false,
 			},
-			Content: "abcd",
+			ChannelID: devChannel,
+			Content:   content,
 		},
 	}
+	MessageCreate(dgTestBotSession, nonKeyphraseMsg)
 
-	MessageCreate(dgTestBotSession, testNonKeyphraseMessage)
+	// keyphrase
+	content = BOTKEYWORD + " AUTOMATED TEST"
+	keyphraseMsg := &discordgo.MessageCreate{
+		Message: &discordgo.Message{
+			Author: &discordgo.User{
+				Username: "AUTOMATED TEST USER",
+				Bot:      false,
+			},
+			ChannelID: devChannel,
+			Content:   content,
+		},
+	}
+	MessageCreate(dgTestBotSession, keyphraseMsg)
 }

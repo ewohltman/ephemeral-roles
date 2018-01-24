@@ -27,5 +27,8 @@ func TestMain(m *testing.M) {
 	}
 	defer dgTestBotSession.Close()
 
+	for len(dgTestBotSession.State.Guilds) == 0 {
+	}
+
 	os.Exit(m.Run())
 }

@@ -29,6 +29,12 @@ func TestMain(m *testing.M) {
 	}
 	defer dgTestBotSession.Close()
 
+	for len(dgTestBotSession.State.Guilds) == 0 {
+	}
+
+	// Initialize
+	guildsUpdate(dgTestBotSession, token, "")
+
 	os.Exit(m.Run())
 }
 
@@ -45,21 +51,21 @@ func TestMonitorGuildsUpdate(t *testing.T) {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
 	}
 
+	// No change
 	isc.mu.Lock()
 	isc.numGuilds = len(dgTestBotSession.State.Guilds)
 	isc.mu.Unlock()
-
 	MonitorGuildsUpdate(dgTestBotSession, token, "")
 
-	isc.mu.Lock()
-	isc.numGuilds = len(dgTestBotSession.State.Guilds) + 1
-	isc.mu.Unlock()
-
-	MonitorGuildsUpdate(dgTestBotSession, token, "")
-
+	// Added to guild
 	isc.mu.Lock()
 	isc.numGuilds = len(dgTestBotSession.State.Guilds) - 1
 	isc.mu.Unlock()
+	MonitorGuildsUpdate(dgTestBotSession, token, "")
 
+	// Removed from guild
+	isc.mu.Lock()
+	isc.numGuilds = len(dgTestBotSession.State.Guilds) + 1
+	isc.mu.Unlock()
 	MonitorGuildsUpdate(dgTestBotSession, token, "")
 }
