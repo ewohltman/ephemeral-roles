@@ -5,7 +5,7 @@
   branch = "develop"
   name = "github.com/bwmarrin/discordgo"
   packages = ["."]
-  revision = "8591961512a5b77b96492743050e96674350bdaa"
+  revision = "a0faf9a0d0a5f51ad5bc1bca493ef8c61019c67b"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -34,7 +34,7 @@
     "salsa20/salsa",
     "ssh/terminal"
   ]
-  revision = "13931e22f9e72ea58bb73048bc752b48c6d4d4ac"
+  revision = "3d37316aaa6bd9929127ac9a527abf408178ea7b"
 
 [[projects]]
   branch = "master"
@@ -43,7 +43,7 @@
     "unix",
     "windows"
   ]
-  revision = "2c42eef0765b9837fbdab12011af7830f55f88f0"
+  revision = "af50095a40f9041b3b38960738837185c26e9419"
 
 [solve-meta]
   analyzer-name = "dep"
