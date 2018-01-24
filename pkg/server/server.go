@@ -98,30 +98,14 @@ func server(options ...func(*S)) *S {
 // MonitorGuildsUpdate will monitor for changes to isc.numGuilds and update
 // discordbots.org appropriately
 func MonitorGuildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
-	// Initialize
-	discordBotsOrgUpdate(dgBotSession, token, botID)
-
 	if serverTest {
-		isc.mu.Lock()
-		isc.numGuilds = len(dgBotSession.State.Guilds)
-		isc.mu.Unlock()
-
-		monitorGuilds(dgBotSession, token, botID)
-
-		isc.mu.Lock()
-		isc.numGuilds = len(dgBotSession.State.Guilds) + 1
-		isc.mu.Unlock()
-
-		monitorGuilds(dgBotSession, token, botID)
-
-		isc.mu.Lock()
-		isc.numGuilds = len(dgBotSession.State.Guilds) - 1
-		isc.mu.Unlock()
-
 		monitorGuilds(dgBotSession, token, botID)
 
 		return
 	}
+
+	// Initialize
+	guildsUpdate(dgBotSession, token, botID)
 
 	for {
 		monitorGuilds(dgBotSession, token, botID)
@@ -144,21 +128,22 @@ func monitorGuilds(dgBotSession *discordgo.Session, token string, botID string) 
 			dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
 		).Infof(dgBotSession.State.User.Username + " joined new guild")
 
-		discordBotsOrgUpdate(dgBotSession, token, botID)
+		guildsUpdate(dgBotSession, token, botID)
 	case guildsNum < checkNum:
 		log.Infof(dgBotSession.State.User.Username + " removed from guild")
 
-		discordBotsOrgUpdate(dgBotSession, token, botID)
+		guildsUpdate(dgBotSession, token, botID)
 	}
 }
 
-func discordBotsOrgUpdate(dgBotSession *discordgo.Session, token string, botID string) {
+func guildsUpdate(dgBotSession *discordgo.Session, token string, botID string) {
 	isc.mu.Lock()
 	defer isc.mu.Unlock()
 
 	isc.guildList = dgBotSession.State.Guilds
 	isc.numGuilds = len(isc.guildList)
 
+	// discordbots.org integration
 	if token != "" && botID != "" {
 		response, err := discordBotsOrg.Update(token, botID, isc.numGuilds)
 		if err != nil {

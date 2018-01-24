@@ -45,5 +45,21 @@ func TestMonitorGuildsUpdate(t *testing.T) {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
 	}
 
+	isc.mu.Lock()
+	isc.numGuilds = len(dgTestBotSession.State.Guilds)
+	isc.mu.Unlock()
+
+	MonitorGuildsUpdate(dgTestBotSession, token, "")
+
+	isc.mu.Lock()
+	isc.numGuilds = len(dgTestBotSession.State.Guilds) + 1
+	isc.mu.Unlock()
+
+	MonitorGuildsUpdate(dgTestBotSession, token, "")
+
+	isc.mu.Lock()
+	isc.numGuilds = len(dgTestBotSession.State.Guilds) - 1
+	isc.mu.Unlock()
+
 	MonitorGuildsUpdate(dgTestBotSession, token, "")
 }
