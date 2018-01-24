@@ -6,11 +6,11 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const devChannel = "393998570690183168"
+const devTextChannelID = "393998570690183168"
 
 func TestMessageCreate(t *testing.T) {
 	dgTestBotSession.ChannelMessageSendComplex(
-		devChannel,
+		devTextChannelID,
 		&discordgo.MessageSend{
 			Content: "AUTOMATED TESTING",
 		},
@@ -37,7 +37,7 @@ func TestMessageCreate(t *testing.T) {
 				Username: "AUTOMATED TEST USER",
 				Bot:      false,
 			},
-			ChannelID: devChannel,
+			ChannelID: devTextChannelID,
 			Content:   content,
 		},
 	}
@@ -51,7 +51,7 @@ func TestMessageCreate(t *testing.T) {
 				Username: "AUTOMATED TEST USER",
 				Bot:      false,
 			},
-			ChannelID: devChannel,
+			ChannelID: devTextChannelID,
 			Content:   content,
 		},
 	}
