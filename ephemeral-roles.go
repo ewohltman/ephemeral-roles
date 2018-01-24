@@ -52,7 +52,7 @@ func main() {
 
 		if !found || botID == "" {
 			log.WithField("warn", "BOT_ID not defined in environment variables").
-				Warnf("Integration with discordbots.org integration disabled")
+				Warnf("Integration with discordbots.org disabled")
 		}
 	}
 
@@ -87,7 +87,7 @@ func main() {
 	log.Debugf("Starting internal HTTP server instance")
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
-			log.WithError(err).Errorf("Internal HTTP server error")
+			log.WithError(err).Warnf("Internal HTTP server")
 		}
 	}()
 
