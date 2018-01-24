@@ -9,7 +9,7 @@ import (
 func Ready(s *discordgo.Session, event *discordgo.Ready) {
 	log.WithFields(logrus.Fields{
 		"server_count": len(event.Guilds),
-	}).Infof("\"" + BOTNAME + "\" Bot Ready")
+	}).Infof("\"" + BOTNAME + "\" Ready")
 
 	idleSince := 0
 
