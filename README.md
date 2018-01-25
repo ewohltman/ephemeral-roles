@@ -59,8 +59,8 @@ variables.
 ```
 BOT_TOKEN= # Discord Bot Token
 BOT_NAME= # Discord Bot Name
-BOT_KEYWORD=![keyword] # Keyphrase to monitor incomming messages to begin with
-ROLE_PREFIX={[keyword]} # Prefix to put before ephemeral channels to stand out
+BOT_KEYWORD=![keyword] # Keyword to monitor incoming messages for
+ROLE_PREFIX={[keyword]} # Prefix to put before ephemeral roles to stand out
 ```
 
 **Optional:**
