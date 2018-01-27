@@ -20,17 +20,5 @@
 #  version = "2.4.0"
 
 [[constraint]]
-  name = "github.com/ewohltman/discordrus"
-  version = "1.1.0"
-
-[[constraint]]
-  name = "github.com/sirupsen/logrus"
-  version = "1.0.4"
-
-[[constraint]]
   branch = "develop"
   name = "github.com/bwmarrin/discordgo"
-
-[[constraint]]
-  branch = "develop"
-  name = "github.com/ewohltman/discordgo"

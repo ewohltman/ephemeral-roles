@@ -88,4 +88,4 @@ BOT_ID= # Discord Bot Client ID
 
 | [dep](https://github.com/golang/dep) Graph |
 | :------: |
-| ![Dependency graph](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/dep_status_visual.png) |
+| ![Dependency graph](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/dep_status_visual.png) |

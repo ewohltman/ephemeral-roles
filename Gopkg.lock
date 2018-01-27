@@ -34,7 +34,7 @@
     "salsa20/salsa",
     "ssh/terminal"
   ]
-  revision = "3d37316aaa6bd9929127ac9a527abf408178ea7b"
+  revision = "0efb9460aaf800c6376acf625be2853bceac2e06"
 
 [[projects]]
   branch = "master"
@@ -43,11 +43,11 @@
     "unix",
     "windows"
   ]
-  revision = "af50095a40f9041b3b38960738837185c26e9419"
+  revision = "ff2a66f350cefa5c93a634eadb5d25bb60c85a9c"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c3066151e18cf0ac3e087ab6e3bae6e6132c7afc83ae043d4d0ba7dc84ca02e8"
+  inputs-digest = "b63efebe95831f95d6ea2f038ff0a6d4788d574668b8756c49a72a926dab1360"
   solver-name = "gps-cdcl"
   solver-version = 1
