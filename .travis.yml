@@ -2,13 +2,15 @@ language: go
 go:
 - 1.x
 sudo: false
+before_install:
+  - go get github.com/mattn/goveralls
 before_script:
-- go vet ./...
-- go test ./...
+  - go vet ./...
+  - $GOPATH/bin/goveralls -service=travis-ci
 script:
-- go build -i -o bin/ephemeral-roles ephemeral-roles.go
+  - go build -i -o bin/ephemeral-roles ephemeral-roles.go
 before_deploy:
-- zip -r ephemeral-roles.zip .
+  - zip -r ephemeral-roles.zip .
 deploy:
   provider: elasticbeanstalk
   skip_cleanup: true
