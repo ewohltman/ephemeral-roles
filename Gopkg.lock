@@ -5,7 +5,7 @@
   branch = "develop"
   name = "github.com/bwmarrin/discordgo"
   packages = ["."]
-  revision = "ffa9956c9b41e8e2a10c26a254389854e016b006"
+  revision = "82c8cf21b216a2507bfd815484b4a91183662d4c"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -16,14 +16,14 @@
 [[projects]]
   name = "github.com/kz/discordrus"
   packages = ["."]
-  revision = "233680a87a4b99f0b9a96fa0390847a8ec35ed66"
-  version = "v1.1.0"
+  revision = "4b0227675a430a5edd93bb115fc2ec27621ea46c"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "d682213848ed68c0a260ca37d6dd5ace8423f5ba"
-  version = "v1.0.4"
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
 
 [[projects]]
   branch = "master"
@@ -34,7 +34,7 @@
     "salsa20/salsa",
     "ssh/terminal"
   ]
-  revision = "650f4a345ab4e5b245a3034b110ebc7299e68186"
+  revision = "1a580b3eff7814fc9b40602fd35256c63b50f491"
 
 [[projects]]
   branch = "master"
@@ -43,7 +43,7 @@
     "unix",
     "windows"
   ]
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "7c87d13f8e835d2fb3a70a2912c811ed0c1d241b"
 
 [solve-meta]
   analyzer-name = "dep"
