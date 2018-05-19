@@ -73,15 +73,76 @@ func TestLevelColor(t *testing.T) {
 		Fatal: 6,
 	}
 
-	// Test default colors
-	expectedDefaultColorForError := DefaultLevelColors.Error
-	if expectedDefaultColorForError != DefaultLevelColors.LevelColor(logrus.ErrorLevel) {
-		t.Error("Error color for default LevelColor is not as expected")
+	defaultColors := []struct {
+		expected int
+		input    logrus.Level
+	}{
+		{
+			input:    logrus.DebugLevel,
+			expected: DefaultLevelColors.Debug,
+		},
+		{
+			input:    logrus.InfoLevel,
+			expected: DefaultLevelColors.Info,
+		},
+		{
+			input:    logrus.WarnLevel,
+			expected: DefaultLevelColors.Warn,
+		},
+		{
+			input:    logrus.ErrorLevel,
+			expected: DefaultLevelColors.Error,
+		},
+		{
+			input:    logrus.PanicLevel,
+			expected: DefaultLevelColors.Panic,
+		},
+		{
+			input:    logrus.FatalLevel,
+			expected: DefaultLevelColors.Fatal,
+		},
 	}
 
-	// Test custom colors
-	expectedCustomColorForPanic := customLevelColors.Panic
-	if expectedCustomColorForPanic != customLevelColors.LevelColor(logrus.PanicLevel) {
-		t.Error("Panic color for custom LevelColor is not as expected")
+	for _, c := range defaultColors {
+		if c.expected != DefaultLevelColors.LevelColor(c.input) {
+			t.Errorf("Error color for default: %s is not as expected", c.input)
+		}
 	}
+
+	customColors := []struct {
+		expected int
+		input    logrus.Level
+	}{
+		{
+			expected: customLevelColors.Debug,
+			input:    logrus.DebugLevel,
+		},
+		{
+			expected: customLevelColors.Info,
+			input:    logrus.InfoLevel,
+		},
+		{
+			expected: customLevelColors.Warn,
+			input:    logrus.WarnLevel,
+		},
+		{
+			expected: customLevelColors.Error,
+			input:    logrus.ErrorLevel,
+		},
+		{
+			expected: customLevelColors.Panic,
+			input:    logrus.PanicLevel,
+		},
+		{
+			expected: customLevelColors.Fatal,
+			input:    logrus.FatalLevel,
+		},
+	}
+
+	for _, c := range customColors {
+		if c.expected != customLevelColors.LevelColor(c.input) {
+			t.Errorf("Panic color for custom: %s is not as expected", c.input)
+		}
+	}
+
 }

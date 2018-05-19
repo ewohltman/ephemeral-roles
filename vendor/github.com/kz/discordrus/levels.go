@@ -39,9 +39,11 @@ func (lc LevelColors) LevelColor(l logrus.Level) int {
 	case logrus.WarnLevel:
 		return lc.Warn
 	case logrus.ErrorLevel:
-		return lc.Fatal
+		return lc.Error
 	case logrus.PanicLevel:
 		return lc.Panic
+	case logrus.FatalLevel:
+		return lc.Fatal
 	default:
 		return lc.Warn
 	}
