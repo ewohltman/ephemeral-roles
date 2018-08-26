@@ -96,6 +96,12 @@ BOT_ID= # Discord Bot Client ID
 
 ----
 
+## Monitoring
+
+**[Prometheus](https://prometheus.io/) metrics are exposed on the `/metrics` HTTP end-point**
+
+----
+
 ## Dependencies
 
 | [dep](https://github.com/golang/dep) Graph |
