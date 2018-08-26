@@ -10,6 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/discordBotsOrg"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
 
@@ -83,6 +84,9 @@ func server(options ...func(*S)) *S {
 			}
 		},
 	)
+
+	// Expose Prometheus metrics
+	s.mux.Handle("/metrics", promhttp.Handler())
 
 	// Default handler
 	s.mux.HandleFunc(
