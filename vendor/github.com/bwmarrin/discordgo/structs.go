@@ -177,6 +177,10 @@ type Invite struct {
 	Revoked   bool      `json:"revoked"`
 	Temporary bool      `json:"temporary"`
 	Unique    bool      `json:"unique"`
+
+	// will only be filled when using InviteWithCounts
+	ApproximatePresenceCount int `json:"approximate_presence_count"`
+	ApproximateMemberCount   int `json:"approximate_member_count"`
 }
 
 // ChannelType is the type of a Channel
@@ -235,6 +239,9 @@ type Channel struct {
 	// A list of permission overwrites present for the channel.
 	PermissionOverwrites []*PermissionOverwrite `json:"permission_overwrites"`
 
+	// The user limit of the voice channel.
+	UserLimit int `json:"user_limit"`
+
 	// The ID of the parent channel, if the channel is under a category
 	ParentID string `json:"parent_id"`
 }
@@ -272,6 +279,19 @@ type Emoji struct {
 	Managed       bool     `json:"managed"`
 	RequireColons bool     `json:"require_colons"`
 	Animated      bool     `json:"animated"`
+}
+
+// MessageFormat returns a correctly formatted Emoji for use in Message content and embeds
+func (e *Emoji) MessageFormat() string {
+	if e.ID != "" && e.Name != "" {
+		if e.Animated {
+			return "<a:" + e.APIName() + ">"
+		}
+
+		return "<:" + e.APIName() + ">"
+	}
+
+	return e.APIName()
 }
 
 // APIName returns an correctly formatted API name for use in the MessageReactions endpoints.
@@ -577,7 +597,7 @@ type Member struct {
 	GuildID string `json:"guild_id"`
 
 	// The time at which the member joined the guild, in ISO8601.
-	JoinedAt string `json:"joined_at"`
+	JoinedAt Timestamp `json:"joined_at"`
 
 	// The nickname of the member, if they have one.
 	Nick string `json:"nick"`
@@ -593,6 +613,11 @@ type Member struct {
 
 	// A list of IDs of the roles which are possessed by the member.
 	Roles []string `json:"roles"`
+}
+
+// Mention creates a member mention
+func (m *Member) Mention() string {
+	return "<@!" + m.User.ID + ">"
 }
 
 // A Settings stores data for a specific users Discord client settings.
@@ -909,6 +934,7 @@ const (
 	ErrCodeUnknownToken       = 10012
 	ErrCodeUnknownUser        = 10013
 	ErrCodeUnknownEmoji       = 10014
+	ErrCodeUnknownWebhook     = 10015
 
 	ErrCodeBotsCannotUseEndpoint  = 20001
 	ErrCodeOnlyBotsCanUseEndpoint = 20002

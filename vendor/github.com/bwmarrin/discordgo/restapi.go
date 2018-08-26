@@ -38,6 +38,7 @@ var (
 	ErrPruneDaysBounds         = errors.New("the number of days should be more than or equal to 1")
 	ErrGuildNoIcon             = errors.New("guild does not have an icon set")
 	ErrGuildNoSplash           = errors.New("guild does not have a splash set")
+	ErrUnauthorized            = errors.New("HTTP request was unauthorized. This could be because the provided token was not a bot token. Please add \"Bot \" to the start of your token. https://discordapp.com/developers/docs/reference#authentication-example-bot-token-authorization-header")
 )
 
 // Request is the same as RequestWithBucketID but the bucket id is the same as the urlStr
@@ -89,7 +90,7 @@ func (s *Session) RequestWithLockedBucket(method, urlStr, contentType string, b 
 
 	req.Header.Set("Content-Type", contentType)
 	// TODO: Make a configurable static variable.
-	req.Header.Set("User-Agent", fmt.Sprintf("DiscordBot (https://github.com/bwmarrin/discordgo, v%s)", VERSION))
+	req.Header.Set("User-Agent", "DiscordBot (https://github.com/bwmarrin/discordgo, v"+VERSION+")")
 
 	if s.Debug {
 		for k, v := range req.Header {
@@ -129,13 +130,9 @@ func (s *Session) RequestWithLockedBucket(method, urlStr, contentType string, b 
 	}
 
 	switch resp.StatusCode {
-
 	case http.StatusOK:
 	case http.StatusCreated:
 	case http.StatusNoContent:
-
-		// TODO check for 401 response, invalidate token if we get one.
-
 	case http.StatusBadGateway:
 		// Retry sending request if possible
 		if sequence < s.MaxRestRetries {
@@ -145,7 +142,6 @@ func (s *Session) RequestWithLockedBucket(method, urlStr, contentType string, b 
 		} else {
 			err = fmt.Errorf("Exceeded Max retries HTTP %s, %s", resp.Status, response)
 		}
-
 	case 429: // TOO MANY REQUESTS - Rate limiting
 		rl := TooManyRequests{}
 		err = json.Unmarshal(response, &rl)
@@ -161,7 +157,12 @@ func (s *Session) RequestWithLockedBucket(method, urlStr, contentType string, b 
 		// this method can cause longer delays than required
 
 		response, err = s.RequestWithLockedBucket(method, urlStr, contentType, b, s.Ratelimiter.LockBucketObject(bucket), sequence)
-
+	case http.StatusUnauthorized:
+		if strings.Index(s.Token, "Bot ") != 0 {
+			s.log(LogInformational, ErrUnauthorized.Error())
+			err = ErrUnauthorized
+		}
+		fallthrough
 	default: // Error condition
 		err = newRestError(req, resp, response)
 	}
@@ -249,7 +250,7 @@ func (s *Session) Register(username string) (token string, err error) {
 // even use.
 func (s *Session) Logout() (err error) {
 
-	//  _, err = s.Request("POST", LOGOUT, fmt.Sprintf(`{"token": "%s"}`, s.Token))
+	//  _, err = s.Request("POST", LOGOUT, `{"token": "` + s.Token + `"}`)
 
 	if s.Token == "" {
 		return
@@ -427,7 +428,7 @@ func (s *Session) UserGuilds(limit int, beforeID, afterID string) (st []*UserGui
 	uri := EndpointUserGuilds("@me")
 
 	if len(v) > 0 {
-		uri = fmt.Sprintf("%s?%s", uri, v.Encode())
+		uri += "?" + v.Encode()
 	}
 
 	body, err := s.RequestWithBucketID("GET", uri, nil, EndpointUserGuilds(""))
@@ -742,7 +743,7 @@ func (s *Session) GuildMembers(guildID string, after string, limit int) (st []*M
 	}
 
 	if len(v) > 0 {
-		uri = fmt.Sprintf("%s?%s", uri, v.Encode())
+		uri += "?" + v.Encode()
 	}
 
 	body, err := s.RequestWithBucketID("GET", uri, nil, EndpointGuildMembers(guildID))
@@ -1064,7 +1065,7 @@ func (s *Session) GuildPruneCount(guildID string, days uint32) (count uint32, er
 		Pruned uint32 `json:"pruned"`
 	}{}
 
-	uri := EndpointGuildPrune(guildID) + fmt.Sprintf("?days=%d", days)
+	uri := EndpointGuildPrune(guildID) + "?days=" + strconv.FormatUint(uint64(days), 10)
 	body, err := s.RequestWithBucketID("GET", uri, nil, EndpointGuildPrune(guildID))
 	if err != nil {
 		return
@@ -1285,6 +1286,58 @@ func (s *Session) GuildAuditLog(guildID, userID, beforeID string, actionType, li
 	return
 }
 
+// GuildEmojiCreate creates a new emoji
+// guildID : The ID of a Guild.
+// name    : The Name of the Emoji.
+// image   : The base64 encoded emoji image, has to be smaller than 256KB.
+// roles   : The roles for which this emoji will be whitelisted, can be nil.
+func (s *Session) GuildEmojiCreate(guildID, name, image string, roles []string) (emoji *Emoji, err error) {
+
+	data := struct {
+		Name  string   `json:"name"`
+		Image string   `json:"image"`
+		Roles []string `json:"roles,omitempty"`
+	}{name, image, roles}
+
+	body, err := s.RequestWithBucketID("POST", EndpointGuildEmojis(guildID), data, EndpointGuildEmojis(guildID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &emoji)
+	return
+}
+
+// GuildEmojiEdit modifies an emoji
+// guildID : The ID of a Guild.
+// emojiID : The ID of an Emoji.
+// name    : The Name of the Emoji.
+// roles   : The roles for which this emoji will be whitelisted, can be nil.
+func (s *Session) GuildEmojiEdit(guildID, emojiID, name string, roles []string) (emoji *Emoji, err error) {
+
+	data := struct {
+		Name  string   `json:"name"`
+		Roles []string `json:"roles,omitempty"`
+	}{name, roles}
+
+	body, err := s.RequestWithBucketID("PATCH", EndpointGuildEmoji(guildID, emojiID), data, EndpointGuildEmojis(guildID))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &emoji)
+	return
+}
+
+// GuildEmojiDelete deletes an Emoji.
+// guildID : The ID of a Guild.
+// emojiID : The ID of an Emoji.
+func (s *Session) GuildEmojiDelete(guildID, emojiID string) (err error) {
+
+	_, err = s.RequestWithBucketID("DELETE", EndpointGuildEmoji(guildID, emojiID), nil, EndpointGuildEmojis(guildID))
+	return
+}
+
 // ------------------------------------------------------------------------------------------------
 // Functions specific to Discord Channels
 // ------------------------------------------------------------------------------------------------
@@ -1370,7 +1423,7 @@ func (s *Session) ChannelMessages(channelID string, limit int, beforeID, afterID
 		v.Set("around", aroundID)
 	}
 	if len(v) > 0 {
-		uri = fmt.Sprintf("%s?%s", uri, v.Encode())
+		uri += "?" + v.Encode()
 	}
 
 	body, err := s.RequestWithBucketID("GET", uri, nil, EndpointChannelMessages(channelID))
@@ -1665,7 +1718,8 @@ func (s *Session) ChannelInviteCreate(channelID string, i Invite) (st *Invite, e
 		MaxAge    int  `json:"max_age"`
 		MaxUses   int  `json:"max_uses"`
 		Temporary bool `json:"temporary"`
-	}{i.MaxAge, i.MaxUses, i.Temporary}
+		Unique    bool `json:"unique"`
+	}{i.MaxAge, i.MaxUses, i.Temporary, i.Unique}
 
 	body, err := s.RequestWithBucketID("POST", EndpointChannelInvites(channelID), data, EndpointChannelInvites(channelID))
 	if err != nil {
@@ -1709,6 +1763,19 @@ func (s *Session) ChannelPermissionDelete(channelID, targetID string) (err error
 func (s *Session) Invite(inviteID string) (st *Invite, err error) {
 
 	body, err := s.RequestWithBucketID("GET", EndpointInvite(inviteID), nil, EndpointInvite(""))
+	if err != nil {
+		return
+	}
+
+	err = unmarshal(body, &st)
+	return
+}
+
+// InviteWithCounts returns an Invite structure of the given invite including approximate member counts
+// inviteID : The invite code
+func (s *Session) InviteWithCounts(inviteID string) (st *Invite, err error) {
+
+	body, err := s.RequestWithBucketID("GET", EndpointInvite(inviteID)+"?with_counts=true", nil, EndpointInvite(""))
 	if err != nil {
 		return
 	}
@@ -2036,7 +2103,7 @@ func (s *Session) MessageReactions(channelID, messageID, emojiID string, limit i
 	}
 
 	if len(v) > 0 {
-		uri = fmt.Sprintf("%s?%s", uri, v.Encode())
+		uri += "?" + v.Encode()
 	}
 
 	body, err := s.RequestWithBucketID("GET", uri, nil, EndpointMessageReaction(channelID, "", "", ""))
