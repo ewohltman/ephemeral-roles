@@ -11,11 +11,23 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+)
+
+var prometheusVoiceStateUpdateCounter = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: "ephemeral_roles",
+		Name:      "voice_state_update_events",
+		Help:      "Total VoiceStateUpdate events",
+	},
 )
 
 // VoiceStateUpdate is the callback function for the VoiceStateUpdate event from Discord
 func VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
+	// Increment the total number of VoiceStateUpdate events
+	prometheusVoiceStateUpdateCounter.Inc()
+
 	// Get the user
 	user, err := s.User(vsu.UserID)
 	if err != nil {

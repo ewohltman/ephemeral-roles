@@ -6,11 +6,23 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+)
+
+var prometheusMessageCreateCounter = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: "ephemeral_roles",
+		Name:      "message_create_events",
+		Help:      "Total MessageCreate events",
+	},
 )
 
 // MessageCreate is the callback function for the MessageCreate event from Discord
 func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Increment the total number of MessageCreate events
+	prometheusMessageCreateCounter.Inc()
+
 	// Ignore all messages from bots
 	if m.Author.Bot {
 		return
