@@ -3,21 +3,21 @@ go:
 - 1.x
 sudo: false
 before_install:
-  - go get github.com/mattn/goveralls
+- go get github.com/mattn/goveralls
 before_script:
-  - go vet ./...
-  - $GOPATH/bin/goveralls -service=travis-ci
+- go vet ./...
+- "$GOPATH/bin/goveralls -service=travis-ci"
 script:
-  - go build -i -o bin/ephemeral-roles ephemeral-roles.go
+- go build -i -o bin/ephemeral-roles ephemeral-roles.go
 before_deploy:
-  - zip -r ephemeral-roles.zip .
+- zip -r ephemeral-roles.zip .
 deploy:
   provider: elasticbeanstalk
   skip_cleanup: true
   region: us-east-1
   access_key_id: AKIAJUUEKXMZKF4T6VHQ
   secret_access_key:
-      secure: "PcU+5SosTLXSnWzwrxntqIMkUTjSnYmq2zdksT8QWUS51mexSpnA+hhe+59Q2yl68yNZoHhf4kPuZvyRGAqHsP1x6Y0aHaCMVN6Lnj7KYqPm2yh4MwvqUVgK76TbtpNZhCPsNE72QgAN5ojuHGGUgRYx5/cUHiynYNH5+FW6BtpCxSx1/7Zei/0kDZ3R4ZQcbFIX3tDgn0nq+Ih3yjhknQQA8RfDwXcbN3HCftWYZh/e1Niajnbwd5+u9ocW0Ckm+3LElj1q481kJWUZuCTnsCpQG9A8Uzto8UBNNlSaz+KaVEcjVp/eDqpuQtvKdfZNIuov8b7fUIWsoeL6HP5DxbqfqJ+hnwNNG4hwGWzbnuToNfqFOYkd5tQX5iPIGyhnunQHwQzVjJbcoiHpu8RIsWSC2y/CQLhetBj5CKh/YunDwKMSa48neeZeISoB6KgDwOZk9UcTUlubWBj1j95xNNOjLsbNsp90UbSCj69aECwwrTLtl5Aa6hsaJKr8BLVK6gugm8bj3C3mpO9K22XS0c6tb8/7MRlnpJPcAJcXyGfexl7g8LJ0h0rX4WtyvkiLa/JBvCXsGFuc+Y8d33VdZ2W2uHlfOQDl1UMRQNZ+ltBHAsPuzoPrfq2x+DplaiTs5NjZHX//sXyUuTkwgovTCBtFb3GHOiRrz7TuyNlzG44="
+    secure: EJVQPh3+6KIXh33jX1E+wV9IH0B0Cf5/QrvJ+4lBqh0cDEY89pJnPj3T9pn3uUc4AP+WOHwJF1q2dGH4Ay/SSDFa/PklfiqntbEGX4hpvGAZ6t5z+KKJh4rU9FcDSAv5eqMEfnxQvXkVJj49MSaM6N9BCAlpY1Cy9eq04W+is18GdFsRhwQxsur/3jk5M0GxJTW3E7ldyp/AdD8un8YiXrrqPOsafCHyXpFr4G4xcBOqoAjhxti56P/Vcl2MTfEZxidR4U/K/XEJzKXn+4BIqyPDEsuZof1jFTb6FRCcBUpnPIfNND2gztUcgNlbMndYP60smfSi/L3+js4u+S3IgS3hR9jOMVtI9ib0gOJCeznTCB0330FgmGSPnrU0d7PhfIR7QYFgKHzPCype7hgn51zaRVxDpcy+N53KOoEel3l96oJZuQeFp6DGGZYMOPICltvZY4xpe6Tyi910bw5Y/nfJC4ZG+ewKYYAbtZHxaGAAp5/uQ2hA/V5m41KYrHBgq517vkVqyGsBuNwmJZB3v/kLaeQVM45QTuxL6FJpU+351ohnUQrxpuX+KQSaDBpxiBCRW2vUnKjg2+3AJ3t0xcu6GJaMXZPfY8kuMLQz4ttzvKvZn+uSzZ2i2luQlWjlBjrR+fGkFAQFHfmZPTZIEI8Db6J5eY1m8UX1yRcRfl8=
   zip_file: ephemeral-roles.zip
   app: ephemeral-roles
   env: ephemeral-roles
@@ -26,3 +26,5 @@ deploy:
   on:
     repo: ewohltman/ephemeral-roles
     branch: master
+test:
+  secure: jZNvzMl23A2azsO5r05RrAx+jteDo1oLXtFFXcVaBaT+osnZut7LzBpEK/9fKmQSrtGIMlxvUlV7+rz75f6xUv7rfWAmAEg+VhnjCHq9UyTEY9z9+nM3MXYnJ97JqHIWeduYLmazioVmSKnFRN5wuHbJKiGyp533nu/6AWTCqOjAillRjGTrUNZv9+Un9yrhJ+G9zyDrtkdhKQvh4ACaKCTib9Rup1GO/CEsKYeG186z+hPI/YKpfMj+cu6TkfU32pSh7uX2sAP0LdhBHErS0AuEECgv3Pc6y50tzXwQwwXD4ol3LhU4M1ZiP2xMWwo2BHqbFtd2+4Vt0W1B7thxRzO3qXJO8bsJdSUPXJ0k3wy3mtWllK8cYcKph8ihLOKgrUosqu7bT0MLe4K83OUwET4cNBlgytJINkppuTF+h+Z6qbW2jxbTfZstSVDEruOJwbAN3xrk/cKmhwxmFrYlTUgY/BleB5GdsYLC8+yHPiDDCAqj/K2rQSG//PETpJHsPjTVt8P6Jb55kWZqwrhx09w/ruWPUe84AcmO9TxEnLxN6Kid1/tpuRXibEDwGfHASNcmmjsfYWb8mVv9zk9zoqMUQqeIZYj1z9Dbra/vuxRsUwFmPZFt51JVUlW6y9PHRlbPUN73rKXasybUBKzdI1NbvYu5g1h/QZsZaXip41w=
