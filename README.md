@@ -50,7 +50,19 @@ all voice channels `Ephemeral Roles` will revoke all *ephemeral roles*.
 
 ----
 
-## Contributing
+## Monitoring
+
+A **[Prometheus](https://prometheus.io/)** and **[Grafana](https://grafana.com/)** instance have been set up to monitor `Ephemeral Roles` metrics.
+
+Prometheus metrics are exposed via a `/metrics` HTTP end-point.
+
+| [botmon.ephemeral-roles.com](http://botmon.ephemeral-roles.com) |
+| :------: |
+| <a href="http://botmon.ephemeral-roles.com"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/bot-metrics.png"></a> |
+
+----
+
+## Contributing to the project
 
 Contributions are very welcome, however please follow the below guidelines.
 
@@ -93,18 +105,6 @@ DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord inte
 DISCORDBOTS_ORG_TOKEN= # Token from discordbots.org for POSTing updates
 BOT_ID= # Discord Bot Client ID
 ```
-
-----
-
-## Monitoring
-
-**[Prometheus](https://prometheus.io/)** metrics are exposed on a `/metrics` HTTP end-point
-
-A Prometheus and **[Grafana](https://grafana.com/)** instance have been set up to monitor `Ephemeral Roles` metrics here:
-
-| [botmon.ephemeral-roles.com](http://botmon.ephemeral-roles.com) |
-| :------: |
-| ![Botmon](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/bot-metrics.png) |
 
 ----
 
