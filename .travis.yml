@@ -16,9 +16,8 @@ deploy:
   wait-until-deployed: true
   zip_file: "ephemeral-roles.zip"
   provider: "elasticbeanstalk"
-  access_key_id: "AKIAJUUEKXMZKF4T6VHQ"
-  secret_access_key:
-    secure: "A5TNs8F6rwaSQb3kXEyotGklr81XL/UZduyeotlwo6Cia9nRb5ZRVCJivAKKKKLOiusTNuH+KgtcYg8tI6NpKPTEjkCToGZIwyx4ve//Xl3mHRM2DkWws1beNPli+LyraswTLq9HST6oNoQNei+wnxtawvVKUkLFtgE4O2yaXNS2zreDB+s36SWgAARaBPq48KYPT5HQ1DQdoG7l6HtPC+FiM4MsyFrqAByNFI7Ii4ckktaHEgGAY3VHRWVthZ2XNQtYnoNEWjuAPnc5xAVX9jSJT+NnZbOSTn3F0QPTogef7MUTWQZOpxx7eF3lyahMRL/qY3rLJ4NGPoHvG9zx674iSek0kCMmazCuLkAfzDUa8lQIPvYRvdZHG2zfrpqQXD153Ui1nsd74jSrbF2bd67B0w/TfO7/Rk5o7MZIY9GMoZzk3m6k9FAhGnQsUpkTXquz02LZXIF453fdddlTNHgI9Da9KN7MzgsYzQSIuoRrVwRGPl8MoUgPk4+OoXTBTOa1TgrZmeWCuAcSaid7cXLYMFuTpBBmrtUR6WoMyOgB1fcNCucT/xvltvZLixcW+jZSHGODpBYKb7k1s8qkm2Ww2CeDZYeIjbg87AcKWgjO+zcS66HtpycvpUM2S7oir9HH2Ld0zr5YaA8go7lFtj17Xgd8UtVqpHEoNEq325s="
+  access_key_id: "${BEANSTALK_KEY_ID}"
+  secret_access_key: "${BEANSTALK_KEY_SECRET}"
   region: "us-east-1"
   app: "ephemeral-roles"
   env: "ephemeral-roles"
