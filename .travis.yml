@@ -13,15 +13,15 @@ before_deploy:
 - zip -r ephemeral-roles.zip .
 deploy:
   provider: elasticbeanstalk
-  skip_cleanup: true
-  region: us-east-1
   access_key_id: AKIAJUUEKXMZKF4T6VHQ
   secret_access_key:
-    secure: EJVQPh3+6KIXh33jX1E+wV9IH0B0Cf5/QrvJ+4lBqh0cDEY89pJnPj3T9pn3uUc4AP+WOHwJF1q2dGH4Ay/SSDFa/PklfiqntbEGX4hpvGAZ6t5z+KKJh4rU9FcDSAv5eqMEfnxQvXkVJj49MSaM6N9BCAlpY1Cy9eq04W+is18GdFsRhwQxsur/3jk5M0GxJTW3E7ldyp/AdD8un8YiXrrqPOsafCHyXpFr4G4xcBOqoAjhxti56P/Vcl2MTfEZxidR4U/K/XEJzKXn+4BIqyPDEsuZof1jFTb6FRCcBUpnPIfNND2gztUcgNlbMndYP60smfSi/L3+js4u+S3IgS3hR9jOMVtI9ib0gOJCeznTCB0330FgmGSPnrU0d7PhfIR7QYFgKHzPCype7hgn51zaRVxDpcy+N53KOoEel3l96oJZuQeFp6DGGZYMOPICltvZY4xpe6Tyi910bw5Y/nfJC4ZG+ewKYYAbtZHxaGAAp5/uQ2hA/V5m41KYrHBgq517vkVqyGsBuNwmJZB3v/kLaeQVM45QTuxL6FJpU+351ohnUQrxpuX+KQSaDBpxiBCRW2vUnKjg2+3AJ3t0xcu6GJaMXZPfY8kuMLQz4ttzvKvZn+uSzZ2i2luQlWjlBjrR+fGkFAQFHfmZPTZIEI8Db6J5eY1m8UX1yRcRfl8=
-  zip_file: ephemeral-roles.zip
+    secure: A5TNs8F6rwaSQb3kXEyotGklr81XL/UZduyeotlwo6Cia9nRb5ZRVCJivAKKKKLOiusTNuH+KgtcYg8tI6NpKPTEjkCToGZIwyx4ve//Xl3mHRM2DkWws1beNPli+LyraswTLq9HST6oNoQNei+wnxtawvVKUkLFtgE4O2yaXNS2zreDB+s36SWgAARaBPq48KYPT5HQ1DQdoG7l6HtPC+FiM4MsyFrqAByNFI7Ii4ckktaHEgGAY3VHRWVthZ2XNQtYnoNEWjuAPnc5xAVX9jSJT+NnZbOSTn3F0QPTogef7MUTWQZOpxx7eF3lyahMRL/qY3rLJ4NGPoHvG9zx674iSek0kCMmazCuLkAfzDUa8lQIPvYRvdZHG2zfrpqQXD153Ui1nsd74jSrbF2bd67B0w/TfO7/Rk5o7MZIY9GMoZzk3m6k9FAhGnQsUpkTXquz02LZXIF453fdddlTNHgI9Da9KN7MzgsYzQSIuoRrVwRGPl8MoUgPk4+OoXTBTOa1TgrZmeWCuAcSaid7cXLYMFuTpBBmrtUR6WoMyOgB1fcNCucT/xvltvZLixcW+jZSHGODpBYKb7k1s8qkm2Ww2CeDZYeIjbg87AcKWgjO+zcS66HtpycvpUM2S7oir9HH2Ld0zr5YaA8go7lFtj17Xgd8UtVqpHEoNEq325s=
+  region: us-east-1
   app: ephemeral-roles
   env: ephemeral-roles
   bucket_name: ephemeral-roles
+  zip_file: ephemeral-roles.zip
+  skip_cleanup: true
   wait-until-deployed: true
   on:
     repo: ewohltman/ephemeral-roles
