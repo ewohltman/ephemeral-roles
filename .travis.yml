@@ -1,30 +1,30 @@
 language: go
 go:
-- 1.x
+  - 1.x
 sudo: false
 before_install:
-- go get github.com/mattn/goveralls
+  - go get github.com/mattn/goveralls
 before_script:
-- go vet ./...
-- "$GOPATH/bin/goveralls -service=travis-ci"
+  - go vet ./...
+  - "$GOPATH/bin/goveralls -service=travis-ci"
 script:
-- go build -i -o bin/ephemeral-roles ephemeral-roles.go
+  - go build -i -o bin/ephemeral-roles ephemeral-roles.go
 before_deploy:
-- zip -r ephemeral-roles.zip .
+  - zip -r ephemeral-roles.zip .
 deploy:
-  provider: elasticbeanstalk
-  access_key_id: AKIAJUUEKXMZKF4T6VHQ
+  provider: "elasticbeanstalk"
+  access_key_id: "AKIAJUUEKXMZKF4T6VHQ"
   secret_access_key:
-    secure: A5TNs8F6rwaSQb3kXEyotGklr81XL/UZduyeotlwo6Cia9nRb5ZRVCJivAKKKKLOiusTNuH+KgtcYg8tI6NpKPTEjkCToGZIwyx4ve//Xl3mHRM2DkWws1beNPli+LyraswTLq9HST6oNoQNei+wnxtawvVKUkLFtgE4O2yaXNS2zreDB+s36SWgAARaBPq48KYPT5HQ1DQdoG7l6HtPC+FiM4MsyFrqAByNFI7Ii4ckktaHEgGAY3VHRWVthZ2XNQtYnoNEWjuAPnc5xAVX9jSJT+NnZbOSTn3F0QPTogef7MUTWQZOpxx7eF3lyahMRL/qY3rLJ4NGPoHvG9zx674iSek0kCMmazCuLkAfzDUa8lQIPvYRvdZHG2zfrpqQXD153Ui1nsd74jSrbF2bd67B0w/TfO7/Rk5o7MZIY9GMoZzk3m6k9FAhGnQsUpkTXquz02LZXIF453fdddlTNHgI9Da9KN7MzgsYzQSIuoRrVwRGPl8MoUgPk4+OoXTBTOa1TgrZmeWCuAcSaid7cXLYMFuTpBBmrtUR6WoMyOgB1fcNCucT/xvltvZLixcW+jZSHGODpBYKb7k1s8qkm2Ww2CeDZYeIjbg87AcKWgjO+zcS66HtpycvpUM2S7oir9HH2Ld0zr5YaA8go7lFtj17Xgd8UtVqpHEoNEq325s=
-  region: us-east-1
-  app: ephemeral-roles
-  env: ephemeral-roles
-  bucket_name: ephemeral-roles
-  zip_file: ephemeral-roles.zip
+    secure: "A5TNs8F6rwaSQb3kXEyotGklr81XL/UZduyeotlwo6Cia9nRb5ZRVCJivAKKKKLOiusTNuH+KgtcYg8tI6NpKPTEjkCToGZIwyx4ve//Xl3mHRM2DkWws1beNPli+LyraswTLq9HST6oNoQNei+wnxtawvVKUkLFtgE4O2yaXNS2zreDB+s36SWgAARaBPq48KYPT5HQ1DQdoG7l6HtPC+FiM4MsyFrqAByNFI7Ii4ckktaHEgGAY3VHRWVthZ2XNQtYnoNEWjuAPnc5xAVX9jSJT+NnZbOSTn3F0QPTogef7MUTWQZOpxx7eF3lyahMRL/qY3rLJ4NGPoHvG9zx674iSek0kCMmazCuLkAfzDUa8lQIPvYRvdZHG2zfrpqQXD153Ui1nsd74jSrbF2bd67B0w/TfO7/Rk5o7MZIY9GMoZzk3m6k9FAhGnQsUpkTXquz02LZXIF453fdddlTNHgI9Da9KN7MzgsYzQSIuoRrVwRGPl8MoUgPk4+OoXTBTOa1TgrZmeWCuAcSaid7cXLYMFuTpBBmrtUR6WoMyOgB1fcNCucT/xvltvZLixcW+jZSHGODpBYKb7k1s8qkm2Ww2CeDZYeIjbg87AcKWgjO+zcS66HtpycvpUM2S7oir9HH2Ld0zr5YaA8go7lFtj17Xgd8UtVqpHEoNEq325s="
+  region: "us-east-1"
+  app: "ephemeral-roles"
+  env: "ephemeral-roles"
+  bucket_name: "ephemeral-roles"
+  zip_file: "ephemeral-roles.zip"
   skip_cleanup: true
   wait-until-deployed: true
   on:
-    repo: ewohltman/ephemeral-roles
-    branch: master
+    repo: "ewohltman/ephemeral-roles"
+    branch: "master"
 test:
-  secure: jZNvzMl23A2azsO5r05RrAx+jteDo1oLXtFFXcVaBaT+osnZut7LzBpEK/9fKmQSrtGIMlxvUlV7+rz75f6xUv7rfWAmAEg+VhnjCHq9UyTEY9z9+nM3MXYnJ97JqHIWeduYLmazioVmSKnFRN5wuHbJKiGyp533nu/6AWTCqOjAillRjGTrUNZv9+Un9yrhJ+G9zyDrtkdhKQvh4ACaKCTib9Rup1GO/CEsKYeG186z+hPI/YKpfMj+cu6TkfU32pSh7uX2sAP0LdhBHErS0AuEECgv3Pc6y50tzXwQwwXD4ol3LhU4M1ZiP2xMWwo2BHqbFtd2+4Vt0W1B7thxRzO3qXJO8bsJdSUPXJ0k3wy3mtWllK8cYcKph8ihLOKgrUosqu7bT0MLe4K83OUwET4cNBlgytJINkppuTF+h+Z6qbW2jxbTfZstSVDEruOJwbAN3xrk/cKmhwxmFrYlTUgY/BleB5GdsYLC8+yHPiDDCAqj/K2rQSG//PETpJHsPjTVt8P6Jb55kWZqwrhx09w/ruWPUe84AcmO9TxEnLxN6Kid1/tpuRXibEDwGfHASNcmmjsfYWb8mVv9zk9zoqMUQqeIZYj1z9Dbra/vuxRsUwFmPZFt51JVUlW6y9PHRlbPUN73rKXasybUBKzdI1NbvYu5g1h/QZsZaXip41w=
+  secure: "jZNvzMl23A2azsO5r05RrAx+jteDo1oLXtFFXcVaBaT+osnZut7LzBpEK/9fKmQSrtGIMlxvUlV7+rz75f6xUv7rfWAmAEg+VhnjCHq9UyTEY9z9+nM3MXYnJ97JqHIWeduYLmazioVmSKnFRN5wuHbJKiGyp533nu/6AWTCqOjAillRjGTrUNZv9+Un9yrhJ+G9zyDrtkdhKQvh4ACaKCTib9Rup1GO/CEsKYeG186z+hPI/YKpfMj+cu6TkfU32pSh7uX2sAP0LdhBHErS0AuEECgv3Pc6y50tzXwQwwXD4ol3LhU4M1ZiP2xMWwo2BHqbFtd2+4Vt0W1B7thxRzO3qXJO8bsJdSUPXJ0k3wy3mtWllK8cYcKph8ihLOKgrUosqu7bT0MLe4K83OUwET4cNBlgytJINkppuTF+h+Z6qbW2jxbTfZstSVDEruOJwbAN3xrk/cKmhwxmFrYlTUgY/BleB5GdsYLC8+yHPiDDCAqj/K2rQSG//PETpJHsPjTVt8P6Jb55kWZqwrhx09w/ruWPUe84AcmO9TxEnLxN6Kid1/tpuRXibEDwGfHASNcmmjsfYWb8mVv9zk9zoqMUQqeIZYj1z9Dbra/vuxRsUwFmPZFt51JVUlW6y9PHRlbPUN73rKXasybUBKzdI1NbvYu5g1h/QZsZaXip41w="
