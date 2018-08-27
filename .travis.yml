@@ -1,17 +1,20 @@
 language: go
 go:
-  - 1.x
+- 1.x
 sudo: false
 before_install:
-  - go get github.com/mattn/goveralls
+- go get github.com/mattn/goveralls
 before_script:
-  - go vet ./...
-  - "$GOPATH/bin/goveralls -service=travis-ci"
+- go vet ./...
+- "$GOPATH/bin/goveralls -service=travis-ci"
 script:
-  - go build -i -o bin/ephemeral-roles ephemeral-roles.go
+- go build -i -o bin/ephemeral-roles ephemeral-roles.go
 before_deploy:
-  - zip -r ephemeral-roles.zip .
+- zip -r ephemeral-roles.zip .
 deploy:
+  skip_cleanup: true
+  wait-until-deployed: true
+  zip_file: "ephemeral-roles.zip"
   provider: "elasticbeanstalk"
   access_key_id: "AKIAJUUEKXMZKF4T6VHQ"
   secret_access_key:
@@ -20,9 +23,6 @@ deploy:
   app: "ephemeral-roles"
   env: "ephemeral-roles"
   bucket_name: "ephemeral-roles"
-  zip_file: "ephemeral-roles.zip"
-  skip_cleanup: true
-  wait-until-deployed: true
   on:
     repo: "ewohltman/ephemeral-roles"
     branch: "master"
