@@ -98,7 +98,13 @@ BOT_ID= # Discord Bot Client ID
 
 ## Monitoring
 
-**[Prometheus](https://prometheus.io/) metrics are exposed on the `/metrics` HTTP end-point**
+**[Prometheus](https://prometheus.io/)** metrics are exposed on a `/metrics` HTTP end-point
+
+A Prometheus and **[Grafana](https://grafana.com/)** instance have been set up to monitor `Ephemeral Roles` metrics here:
+
+| [botmon.ephemeral-roles.com](http://botmon.ephemeral-roles.com) |
+| :------: |
+| ![Botmon](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/bot-metrics.png) |
 
 ----
 
