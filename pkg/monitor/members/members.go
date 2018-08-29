@@ -34,14 +34,14 @@ func init() {
 	}
 }
 
-func Monitor(dgBotSession *discordgo.Session, token string, botID string) {
+func Monitor(dgBotSession *discordgo.Session) {
 	for {
-		check(dgBotSession, token, botID)
+		check(dgBotSession)
 		time.Sleep(time.Second * 5)
 	}
 }
 
-func check(dgBotSession *discordgo.Session, token string, botID string) {
+func check(dgBotSession *discordgo.Session) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 

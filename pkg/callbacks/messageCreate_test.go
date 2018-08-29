@@ -7,12 +7,15 @@ import (
 )
 
 func TestMessageCreate(t *testing.T) {
-	dgTestBotSession.ChannelMessageSendComplex(
+	_, err := dgTestBotSession.ChannelMessageSendComplex(
 		devTextChannelID,
 		&discordgo.MessageSend{
 			Content: "AUTOMATED TESTING",
 		},
 	)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// message from a bot
 	sendBotMessasge()

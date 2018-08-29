@@ -98,6 +98,9 @@ func main() {
 	defer cancelFunc()
 
 	httpServer.Shutdown(ctx)
+	if err != nil {
+		log.Error(err)
+	}
 
 	return
 }

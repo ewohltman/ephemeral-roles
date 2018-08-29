@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestMonitor(t *testing.T) {
-	check(dgTestBotSession, token, botID)
+	check(dgTestBotSession)
 	update(100)
-	check(dgTestBotSession, token, botID)
+	check(dgTestBotSession)
 }
