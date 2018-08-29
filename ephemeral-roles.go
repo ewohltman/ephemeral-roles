@@ -97,7 +97,7 @@ func main() {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
 
-	httpServer.Shutdown(ctx)
+	err = httpServer.Shutdown(ctx)
 	if err != nil {
 		log.Error(err)
 	}
