@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -15,15 +16,23 @@ type membersCache struct {
 
 var (
 	cache = &membersCache{}
+	log   = logging.Instance()
 
 	prometheusMembersGauge = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: "ephemeral_roles",
-			Name:      "count_members",
-			Help:      "Total members count",
+			Name:      "members_count",
+			Help:      "Total Members count",
 		},
 	)
 )
+
+func init() {
+	err := prometheus.Register(prometheusMembersGauge)
+	if err != nil {
+		log.WithError(err).Error("Unable to register Members gauge with Prometheus")
+	}
+}
 
 func Monitor(dgBotSession *discordgo.Session, token string, botID string) {
 	for {

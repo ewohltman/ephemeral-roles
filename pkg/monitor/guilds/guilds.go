@@ -26,11 +26,18 @@ var (
 	prometheusGuildsGauge = prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: "ephemeral_roles",
-			Name:      "count_members",
-			Help:      "Total members count",
+			Name:      "guilds_count",
+			Help:      "Total Guilds count",
 		},
 	)
 )
+
+func init() {
+	err := prometheus.Register(prometheusGuildsGauge)
+	if err != nil {
+		log.WithError(err).Error("Unable to register Guilds gauge with Prometheus")
+	}
+}
 
 func HTTPHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()

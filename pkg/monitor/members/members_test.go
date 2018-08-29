@@ -5,14 +5,12 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 var (
 	dgTestBotSession *discordgo.Session
 	token            string
 	botID            string
-	log              = logging.Instance()
 )
 
 func TestMain(m *testing.M) {
