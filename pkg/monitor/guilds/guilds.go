@@ -100,7 +100,6 @@ func writeLog(numGuilds int, checkNum int, dgBotSession *discordgo.Session) {
 func update(dgBotSession *discordgo.Session, token string, botID string) {
 	cache.guildList = dgBotSession.State.Guilds
 	cache.numGuilds = len(cache.guildList)
-
 	prometheusGuildsGauge.Set(float64(cache.numGuilds))
 
 	// discordbots.org integration

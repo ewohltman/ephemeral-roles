@@ -11,7 +11,7 @@ import (
 
 type membersCache struct {
 	mu         sync.RWMutex
-	numMembers int
+	numMembers float64
 }
 
 var (
@@ -46,21 +46,20 @@ func check(dgBotSession *discordgo.Session, token string, botID string) {
 	defer cache.mu.Unlock()
 
 	checkNum := cache.numMembers
-	numMembers := 0
+	numMembers := float64(0)
 
 	for _, guild := range dgBotSession.State.Guilds {
-		numMembers += guild.MemberCount
+		numMembers += float64(guild.MemberCount)
 	}
 
 	if numMembers == checkNum {
 		return
 	}
 
-	update(numMembers, dgBotSession, token, botID)
+	update(numMembers)
 }
 
-func update(numMembers int, dgBotSession *discordgo.Session, token string, botID string) {
+func update(numMembers float64) {
 	cache.numMembers = numMembers
-
-	prometheusMembersGauge.Set(float64(cache.numMembers))
+	prometheusMembersGauge.Set(cache.numMembers)
 }
