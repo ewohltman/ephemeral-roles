@@ -43,7 +43,6 @@ func main() {
 	botID := ""
 
 	discordBotsToken, found = os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
-
 	if !found || discordBotsToken == "" {
 		log.WithField("warn", "DISCORDBOTS_ORG_TOKEN not defined in environment variables").
 			Warnf("Integration with discordbots.org integration disabled")
@@ -80,9 +79,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGHUP)
 	signal.Notify(stop, os.Interrupt)
 
-	go server.MonitorGuildsUpdate(dgBotSession, discordBotsToken, botID)
-
-	httpServer := server.New(port)
+	httpServer := server.New(port, dgBotSession, discordBotsToken, botID)
 
 	log.Debugf("Starting internal HTTP server instance")
 	go func() {

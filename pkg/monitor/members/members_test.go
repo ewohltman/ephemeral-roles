@@ -1,4 +1,4 @@
-package server
+package members
 
 import (
 	"os"
@@ -8,14 +8,13 @@ import (
 )
 
 var (
+	dgTestBotSession *discordgo.Session
 	token            string
 	botID            string
-	dgTestBotSession *discordgo.Session
 )
 
 func TestMain(m *testing.M) {
 	var found bool
-
 	token, found = os.LookupEnv("BOT_TOKEN")
 	if !found || token == "" {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
@@ -42,10 +41,8 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestNew(t *testing.T) {
-
-	testServer := New("8080", dgTestBotSession, token, botID)
-	if testServer == nil {
-		t.Errorf("Failed creating new internal HTTP server")
-	}
+func TestMonitor(t *testing.T) {
+	check(dgTestBotSession, token, botID)
+	update(100, dgTestBotSession, token, botID)
+	check(dgTestBotSession, token, botID)
 }

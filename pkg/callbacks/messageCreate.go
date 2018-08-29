@@ -55,7 +55,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			"contentTokens": contentTokens,
 		}).Debugf("New message")
 
-		if len(contentTokens) > 2 { // [BOT_KEYWORD] [command] [options] :: !eph log_level debug
+		if len(contentTokens) >= 2 { // [BOT_KEYWORD] [command] [options] :: !eph log_level debug
 			logFields := logrus.Fields{
 				"author":  m.Author.Username,
 				"channel": c.Name,

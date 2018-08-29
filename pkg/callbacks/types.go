@@ -2,7 +2,6 @@ package callbacks
 
 import (
 	"bytes"
-	"fmt"
 	"strconv"
 
 	"github.com/bwmarrin/discordgo"
@@ -17,9 +16,9 @@ type DiscordAPIResponse struct {
 }
 
 // (dAR *DiscordAPIResponse) String satisfies the fmt.Stringer interface for field names in logs
-func (dAR *DiscordAPIResponse) String() string {
+/*func (dAR *DiscordAPIResponse) String() string {
 	return fmt.Sprintf("Code: %d, Message: %s", dAR.Code, dAR.Message)
-}
+}*/
 
 // discordError is a convenience struct for encapsulating API error responses
 // for logging
@@ -55,7 +54,7 @@ func (dErr *discordError) String() string {
 type orderedRoles []*discordgo.Role
 
 // (oR orderedRoles) String satisfies the fmt.Stringer interface
-func (oR orderedRoles) String() string {
+/*func (oR orderedRoles) String() string {
 	bufStr := ""
 
 	for i := 0; i < len(oR); i++ {
@@ -69,7 +68,7 @@ func (oR orderedRoles) String() string {
 	}
 
 	return bufStr
-}
+}*/
 
 func (oR orderedRoles) swap(i, j int) {
 	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position

@@ -10,16 +10,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var log = logging.Instance()
+var (
+	BOTNAME = os.Getenv("BOT_NAME")
 
-// BOTNAME is the name of the bot
-var BOTNAME = os.Getenv("BOT_NAME")
+	// Keyword message prefix the bot should watch for
+	BOTKEYWORD = os.Getenv("BOT_KEYWORD")
 
-// BOTKEYWORD is the keyword message prefix the bot should watch for
-var BOTKEYWORD = os.Getenv("BOT_KEYWORD")
+	// Prefix to add before ephemeral role names
+	ROLEPREFIX = os.Getenv("ROLE_PREFIX") + " "
 
-// ROLEPREFIX is the prefix to add before ephemeral role names
-var ROLEPREFIX = os.Getenv("ROLE_PREFIX") + " "
+	log = logging.Instance()
+)
 
 func init() {
 	err := prometheus.Register(prometheusReadyCounter)

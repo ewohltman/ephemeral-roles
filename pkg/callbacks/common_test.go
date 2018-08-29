@@ -1,13 +1,25 @@
 package callbacks
 
 import (
+	"math/rand"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
+const (
+	devGuildID       = "393496906992713746"
+	devTextChannelID = "393998570690183168"
+	letters          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
+
 var dgTestBotSession *discordgo.Session
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func TestMain(m *testing.M) {
 	token, found := os.LookupEnv("BOT_TOKEN")
@@ -27,7 +39,11 @@ func TestMain(m *testing.M) {
 	}
 	defer dgTestBotSession.Close()
 
-	for len(dgTestBotSession.State.Guilds) == 0 {
+	// Wait for asynchronous status to catch up
+	for dgTestBotSession.State.Guilds == nil || len(dgTestBotSession.State.Guilds) == 0 {
+	}
+
+	for dgTestBotSession.State.Guilds[0].Channels == nil || len(dgTestBotSession.State.Guilds[0].Channels) == 0 {
 	}
 
 	os.Exit(m.Run())
