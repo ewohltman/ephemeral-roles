@@ -1,21 +1,22 @@
-package server
+package monitor
 
 import (
 	"os"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 var (
+	dgTestBotSession *discordgo.Session
 	token            string
 	botID            string
-	dgTestBotSession *discordgo.Session
+	log              = logging.Instance()
 )
 
 func TestMain(m *testing.M) {
 	var found bool
-
 	token, found = os.LookupEnv("BOT_TOKEN")
 	if !found || token == "" {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
@@ -42,10 +43,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestNew(t *testing.T) {
-
-	testServer := New("8080", dgTestBotSession, token, botID)
-	if testServer == nil {
-		t.Errorf("Failed creating new internal HTTP server")
-	}
+func TestStart(t *testing.T) {
+	Start(dgTestBotSession, token, botID)
 }

@@ -1,42 +1,56 @@
 package callbacks
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-const (
-	devGuildID         = "393496906992713746"
-	devVoiceChannelID1 = "393496908062130203"
-	devVoiceChannelID2 = "393497797749375017"
-)
-
 func TestVoiceStateUpdate(t *testing.T) {
-	connect := &discordgo.VoiceStateUpdate{
-		VoiceState: &discordgo.VoiceState{
-			UserID:    dgTestBotSession.State.User.ID,
-			GuildID:   devGuildID,
-			ChannelID: devVoiceChannelID1,
-		},
+	devVoiceChannel1, err := dgTestBotSession.GuildChannelCreate(devGuildID, randString(5), discordgo.ChannelTypeGuildVoice)
+	if err != nil {
+		t.Error(err)
 	}
-	VoiceStateUpdate(dgTestBotSession, connect)
+	defer dgTestBotSession.ChannelDelete(devVoiceChannel1.ID)
 
-	change := &discordgo.VoiceStateUpdate{
-		VoiceState: &discordgo.VoiceState{
-			UserID:    dgTestBotSession.State.User.ID,
-			GuildID:   devGuildID,
-			ChannelID: devVoiceChannelID2,
-		},
+	devVoiceChannel2, err := dgTestBotSession.GuildChannelCreate(devGuildID, randString(5), discordgo.ChannelTypeGuildVoice)
+	if err != nil {
+		t.Error(err)
 	}
-	VoiceStateUpdate(dgTestBotSession, change)
+	defer dgTestBotSession.ChannelDelete(devVoiceChannel2.ID)
 
-	disconnect := &discordgo.VoiceStateUpdate{
+	// connect
+	sendUpdate(devVoiceChannel1.ID)
+
+	//change
+	sendUpdate(devVoiceChannel2.ID)
+
+	// disconnect
+	sendUpdate("")
+
+	// reconnect
+	sendUpdate(devVoiceChannel1.ID)
+
+	// disconnect
+	sendUpdate("")
+}
+
+func randString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Int63()%int64(len(letters))]
+	}
+	return string(b)
+}
+
+func sendUpdate(channelID string) {
+	update := &discordgo.VoiceStateUpdate{
 		VoiceState: &discordgo.VoiceState{
 			UserID:    dgTestBotSession.State.User.ID,
 			GuildID:   devGuildID,
-			ChannelID: "",
+			ChannelID: channelID,
 		},
 	}
-	VoiceStateUpdate(dgTestBotSession, disconnect)
+	VoiceStateUpdate(dgTestBotSession, update)
 }

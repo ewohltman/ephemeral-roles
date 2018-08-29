@@ -15,7 +15,7 @@ func TestUpdate(t *testing.T) {
 		return
 	}
 
-	if response != `{"error":"Invalid value for server_count"}` {
+	if response != `{"error":"Unauthorized"}` {
 		t.Log("warn: discordbots.org integration: unexpected response: " + response)
 	}
 }

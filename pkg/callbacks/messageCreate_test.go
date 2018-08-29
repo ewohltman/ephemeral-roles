@@ -6,8 +6,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const devTextChannelID = "393998570690183168"
-
 func TestMessageCreate(t *testing.T) {
 	dgTestBotSession.ChannelMessageSendComplex(
 		devTextChannelID,
@@ -16,9 +14,41 @@ func TestMessageCreate(t *testing.T) {
 		},
 	)
 
-	content := ""
+	// message from a bot
+	sendBotMessasge()
 
-	// bot
+	// non keyphrase message
+	sendMessage("this should not show up!")
+
+	// keyphrase message
+	sendMessage(BOTKEYWORD + " AUTOMATED TEST")
+
+	// keyphrase info
+	sendMessage(BOTKEYWORD + " info")
+
+	// log_level debug
+	sendMessage(BOTKEYWORD + " log_level debug")
+
+	// log_level info
+	sendMessage(BOTKEYWORD + " log_level info")
+
+	// log_level warn
+	sendMessage(BOTKEYWORD + " log_level warn")
+
+	// log_level error
+	sendMessage(BOTKEYWORD + " log_level error")
+
+	// log_level fatal
+	sendMessage(BOTKEYWORD + " log_level fatal")
+
+	// log_level panic
+	sendMessage(BOTKEYWORD + " log_level panic")
+
+	// log_level info
+	sendMessage(BOTKEYWORD + " log_level info")
+}
+
+func sendBotMessasge() {
 	botMsg := &discordgo.MessageCreate{
 		Message: &discordgo.Message{
 			Author: &discordgo.User{
@@ -28,32 +58,19 @@ func TestMessageCreate(t *testing.T) {
 		},
 	}
 	MessageCreate(dgTestBotSession, botMsg)
+}
 
-	// non keyphrase
-	content = "this should not show up!"
-	nonKeyphraseMsg := &discordgo.MessageCreate{
+func sendMessage(message string) {
+	msg := &discordgo.MessageCreate{
 		Message: &discordgo.Message{
 			Author: &discordgo.User{
 				Username: "AUTOMATED TEST USER",
 				Bot:      false,
 			},
 			ChannelID: devTextChannelID,
-			Content:   content,
+			Content:   message,
 		},
 	}
-	MessageCreate(dgTestBotSession, nonKeyphraseMsg)
 
-	// keyphrase
-	content = BOTKEYWORD + " AUTOMATED TEST"
-	keyphraseMsg := &discordgo.MessageCreate{
-		Message: &discordgo.Message{
-			Author: &discordgo.User{
-				Username: "AUTOMATED TEST USER",
-				Bot:      false,
-			},
-			ChannelID: devTextChannelID,
-			Content:   content,
-		},
-	}
-	MessageCreate(dgTestBotSession, keyphraseMsg)
+	MessageCreate(dgTestBotSession, msg)
 }
