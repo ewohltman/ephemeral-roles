@@ -21,9 +21,12 @@ func TestMessageCreate(t *testing.T) {
 	sendBotMessasge()
 
 	// non keyphrase message
-	sendMessage("this should not show up!")
+	sendMessage("ixnay")
 
-	// keyphrase message
+	// keyphrase message, unrecognized command
+	sendMessage("ixnay")
+
+	// keyphrase message, unrecognized command
 	sendMessage(BOTKEYWORD + "AUTOMATED TEST")
 
 	// keyphrase info
