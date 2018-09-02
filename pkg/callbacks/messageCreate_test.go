@@ -24,7 +24,7 @@ func TestMessageCreate(t *testing.T) {
 	sendMessage("ixnay")
 
 	// keyphrase message, unrecognized command
-	sendMessage("ixnay")
+	sendMessage(BOTKEYWORD + "ixnay")
 
 	// keyphrase message, unrecognized command
 	sendMessage(BOTKEYWORD + "AUTOMATED TEST")
