@@ -77,19 +77,18 @@ func check(dgBotSession *discordgo.Session, token string, botID string) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
-	checkNum := cache.numGuilds
 	numGuilds := len(dgBotSession.State.Guilds)
 
-	if numGuilds == checkNum {
+	if numGuilds == cache.numGuilds {
 		return
 	}
 
-	writeLog(numGuilds, checkNum, dgBotSession)
+	writeLog(numGuilds, dgBotSession)
 	update(dgBotSession, token, botID)
 }
 
-func writeLog(numGuilds int, checkNum int, dgBotSession *discordgo.Session) {
-	if numGuilds > checkNum {
+func writeLog(numGuilds int, dgBotSession *discordgo.Session) {
+	if numGuilds > cache.numGuilds {
 		log.WithField(
 			"guild",
 			dgBotSession.State.Guilds[len(dgBotSession.State.Guilds)-1].Name,
