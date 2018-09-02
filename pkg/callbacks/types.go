@@ -3,8 +3,6 @@ package callbacks
 import (
 	"bytes"
 	"strconv"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 // **** BEGIN: API response structs and associated methods ********************
@@ -49,12 +47,12 @@ func (dErr *discordError) String() string {
 }
 
 // **** BEGIN: Role organization **********************************************
-
+/*
 // orderedRoles is a custom type for role organization
 type orderedRoles []*discordgo.Role
 
 // (oR orderedRoles) String satisfies the fmt.Stringer interface
-/*func (oR orderedRoles) String() string {
+func (oR orderedRoles) String() string {
 	bufStr := ""
 
 	for i := 0; i < len(oR); i++ {
@@ -68,10 +66,11 @@ type orderedRoles []*discordgo.Role
 	}
 
 	return bufStr
-}*/
+}
 
 func (oR orderedRoles) swap(i, j int) {
 	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position
 
 	oR[i], oR[j] = oR[j], oR[i]
 }
+*/
