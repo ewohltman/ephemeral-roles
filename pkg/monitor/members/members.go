@@ -34,6 +34,7 @@ func init() {
 	}
 }
 
+// Monitor sets up an infinite loop checking member changes
 func Monitor(dgBotSession *discordgo.Session) {
 	for {
 		check(dgBotSession)
