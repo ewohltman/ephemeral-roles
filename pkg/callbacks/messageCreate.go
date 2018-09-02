@@ -106,6 +106,11 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func updateLogLevel(levelOpt string) {
-	os.Setenv("LOG_LEVEL", levelOpt)
+	err := os.Setenv("LOG_LEVEL", levelOpt)
+	if err != nil {
+		log.WithError(err).Warn("Unable to set LOG_LEVEL environment variable")
+		return
+	}
+
 	logging.Reinitialize()
 }

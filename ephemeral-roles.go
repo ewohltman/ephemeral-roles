@@ -18,18 +18,18 @@ func main() {
 
 	log.Debugf("Bot starting up")
 
-	// Check for BOT_TOKEN, we need this to connect to Discord
-	token, found := os.LookupEnv("BOT_TOKEN")
-	if !found || token == "" {
-		log.Fatalf("BOT_TOKEN not defined in environment variables")
-	}
-
 	// Check for string from slice, these are not needed now, but are needed in the callbacks
 	for _, envVar := range []string{"BOT_NAME", "BOT_KEYWORD", "ROLE_PREFIX"} {
 		v, found := os.LookupEnv(envVar)
 		if !found || v == "" {
 			log.Fatalf("%s not defined in environment variables", envVar)
 		}
+	}
+
+	// Check for BOT_TOKEN, we need this to connect to Discord
+	token, found := os.LookupEnv("BOT_TOKEN")
+	if !found || token == "" {
+		log.Fatalf("BOT_TOKEN not defined in environment variables")
 	}
 
 	// Check for PORT, we need this to for our HTTP server in our container
@@ -83,7 +83,7 @@ func main() {
 
 	log.Debugf("Starting internal HTTP server instance")
 	go func() {
-		if err := httpServer.ListenAndServe(); err != nil {
+		if serverError := httpServer.ListenAndServe(); serverError != nil {
 			log.WithError(err).Warnf("Internal HTTP server")
 		}
 	}()

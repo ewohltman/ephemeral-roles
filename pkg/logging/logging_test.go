@@ -21,7 +21,10 @@ func TestReinitialize(t *testing.T) {
 
 	testLog := Instance()
 
-	os.Setenv("LOG_LEVEL", "debug")
+	err := os.Setenv("LOG_LEVEL", "debug")
+	if err != nil {
+		t.Error(err)
+	}
 	t.Log("LOG_LEVEL: " + os.Getenv("LOG_LEVEL"))
 	Reinitialize()
 
@@ -29,7 +32,10 @@ func TestReinitialize(t *testing.T) {
 		t.Errorf("Failed runtime logging reinitialization")
 	}
 
-	os.Setenv("LOG_LEVEL", "info")
+	err = os.Setenv("LOG_LEVEL", "info")
+	if err != nil {
+		t.Error(err)
+	}
 	t.Log("LOG_LEVEL: " + os.Getenv("LOG_LEVEL"))
 	Reinitialize()
 
@@ -37,9 +43,10 @@ func TestReinitialize(t *testing.T) {
 		t.Errorf("Failed runtime logging reinitialization")
 	}
 
-	// TODO: Test discordus intergration
-
-	os.Setenv("LOG_LEVEL", originalLevel)
+	err = os.Setenv("LOG_LEVEL", originalLevel)
+	if err != nil {
+		t.Error(err)
+	}
 	t.Log("LOG_LEVEL: " + os.Getenv("LOG_LEVEL"))
 	Reinitialize()
 }
