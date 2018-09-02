@@ -32,6 +32,9 @@ func TestVoiceStateUpdate(t *testing.T) {
 	// reconnect
 	sendUpdate(devVoiceChannel1.ID)
 
+	// reconnect same channel
+	sendUpdate(devVoiceChannel1.ID)
+
 	// disconnect
 	sendUpdate("")
 }

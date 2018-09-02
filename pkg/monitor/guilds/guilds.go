@@ -39,6 +39,7 @@ func init() {
 	}
 }
 
+// HTTPHandler is the function used to handle /guilds HTTP requests
 func HTTPHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
@@ -62,6 +63,7 @@ func HTTPHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Monitor sets up an infinite loop checking guild changes
 func Monitor(dgBotSession *discordgo.Session, token string, botID string) {
 	update(dgBotSession, token, botID)
 

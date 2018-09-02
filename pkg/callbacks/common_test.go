@@ -40,10 +40,9 @@ func TestMain(m *testing.M) {
 	defer dgTestBotSession.Close()
 
 	// Wait for asynchronous status to catch up
-	for dgTestBotSession.State.Guilds == nil || len(dgTestBotSession.State.Guilds) == 0 {
+	for nil == dgTestBotSession.State.Guilds || len(dgTestBotSession.State.Guilds) == 0 {
 	}
-
-	for dgTestBotSession.State.Guilds[0].Channels == nil || len(dgTestBotSession.State.Guilds[0].Channels) == 0 {
+	for nil == dgTestBotSession.State.Guilds[0].Channels || len(dgTestBotSession.State.Guilds[0].Channels) == 0 {
 	}
 
 	os.Exit(m.Run())

@@ -1,6 +1,8 @@
 package callbacks
 
 import (
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -28,7 +30,7 @@ func Ready(s *discordgo.Session, event *discordgo.Ready) {
 	usd := discordgo.UpdateStatusData{
 		IdleSince: &idleSince,
 		Game: &discordgo.Game{
-			Name: BOTKEYWORD,
+			Name: strings.TrimSpace(BOTKEYWORD),
 			Type: discordgo.GameTypeWatching,
 		},
 		AFK:    false,

@@ -11,12 +11,13 @@ import (
 )
 
 var (
+	// BOTNAME is the name of the bot
 	BOTNAME = os.Getenv("BOT_NAME")
 
-	// Keyword message prefix the bot should watch for
-	BOTKEYWORD = os.Getenv("BOT_KEYWORD")
+	// BOTKEYWORD is the message prefix the bot should watch for
+	BOTKEYWORD = os.Getenv("BOT_KEYWORD") + " "
 
-	// Prefix to add before ephemeral role names
+	// ROLEPREFIX is the prefix to add before ephemeral role names
 	ROLEPREFIX = os.Getenv("ROLE_PREFIX") + " "
 
 	log = logging.Instance()
