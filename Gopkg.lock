@@ -11,7 +11,7 @@
   branch = "develop"
   name = "github.com/bwmarrin/discordgo"
   packages = ["."]
-  revision = "56e4d6a57b7768be42eac014a840c75236a4e7e8"
+  revision = "8dc444f78a3d4c5db37dd5f645d5bfc990c2ab46"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -89,7 +89,7 @@
     "salsa20/salsa",
     "ssh/terminal"
   ]
-  revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
+  revision = "182538f80094b6a8efaade63a8fd8e0d9d5843dd"
 
 [[projects]]
   branch = "master"
@@ -98,7 +98,7 @@
     "unix",
     "windows"
   ]
-  revision = "4910a1d54f876d7b22162a85f4d066d3ee649450"
+  revision = "fa5fdf94c78965f1aa8423f0cc50b8b8d728b05a"
 
 [solve-meta]
   analyzer-name = "dep"
