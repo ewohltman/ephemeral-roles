@@ -24,31 +24,31 @@ func TestMessageCreate(t *testing.T) {
 	sendMessage("this should not show up!")
 
 	// keyphrase message
-	sendMessage(BOTKEYWORD + " AUTOMATED TEST")
+	sendMessage(BOTKEYWORD + "AUTOMATED TEST")
 
 	// keyphrase info
-	sendMessage(BOTKEYWORD + " info")
+	sendMessage(BOTKEYWORD + "info")
 
 	// log_level debug
-	sendMessage(BOTKEYWORD + " log_level debug")
+	sendMessage(BOTKEYWORD + "log_level debug")
 
 	// log_level info
-	sendMessage(BOTKEYWORD + " log_level info")
+	sendMessage(BOTKEYWORD + "log_level info")
 
 	// log_level warn
-	sendMessage(BOTKEYWORD + " log_level warn")
+	sendMessage(BOTKEYWORD + "log_level warn")
 
 	// log_level error
-	sendMessage(BOTKEYWORD + " log_level error")
+	sendMessage(BOTKEYWORD + "log_level error")
 
 	// log_level fatal
-	sendMessage(BOTKEYWORD + " log_level fatal")
+	sendMessage(BOTKEYWORD + "log_level fatal")
 
 	// log_level panic
-	sendMessage(BOTKEYWORD + " log_level panic")
+	sendMessage(BOTKEYWORD + "log_level panic")
 
 	// log_level info
-	sendMessage(BOTKEYWORD + " log_level info")
+	sendMessage(BOTKEYWORD + "log_level info")
 }
 
 func sendBotMessasge() {
