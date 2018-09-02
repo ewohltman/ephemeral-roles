@@ -14,7 +14,7 @@ var (
 	BOTNAME = os.Getenv("BOT_NAME")
 
 	// Keyword message prefix the bot should watch for
-	BOTKEYWORD = os.Getenv("BOT_KEYWORD")
+	BOTKEYWORD = os.Getenv("BOT_KEYWORD") + " "
 
 	// Prefix to add before ephemeral role names
 	ROLEPREFIX = os.Getenv("ROLE_PREFIX") + " "
