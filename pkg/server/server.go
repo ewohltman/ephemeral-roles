@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"net/http/pprof"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
@@ -53,6 +54,13 @@ func server(options ...func(*S)) *S {
 
 	// Expose Prometheus metrics
 	s.mux.Handle("/metrics", promhttp.Handler())
+
+	// Expose pprof metrics
+	s.mux.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
+	s.mux.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+	s.mux.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+	s.mux.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+	s.mux.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 
 	// Default handler
 	s.mux.HandleFunc(
