@@ -46,14 +46,13 @@ func check(dgBotSession *discordgo.Session) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
-	checkNum := cache.numMembers
 	numMembers := 0
 
 	for _, guild := range dgBotSession.State.Guilds {
 		numMembers += guild.MemberCount
 	}
 
-	if numMembers == checkNum {
+	if numMembers == cache.numMembers {
 		return
 	}
 
