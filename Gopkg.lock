@@ -11,7 +11,7 @@
   branch = "develop"
   name = "github.com/bwmarrin/discordgo"
   packages = ["."]
-  revision = "8dc444f78a3d4c5db37dd5f645d5bfc990c2ab46"
+  revision = "c8554477e44900990a8fbad29ca17ecb3412e832"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -26,6 +26,12 @@
   version = "v1.4.0"
 
 [[projects]]
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
+  version = "v1.0.1"
+
+[[projects]]
   name = "github.com/kz/discordrus"
   packages = ["."]
   revision = "4b0227675a430a5edd93bb115fc2ec27621ea46c"
@@ -36,6 +42,12 @@
   packages = ["pbutil"]
   revision = "c12348ce28de40eed0136aa2b644d0ee0650e56c"
   version = "v1.0.1"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/prometheus/client_golang"
@@ -71,13 +83,13 @@
     "nfs",
     "xfs"
   ]
-  revision = "05ee40e3a273f7245e8777337fc7b46e533a9a92"
+  revision = "185b4288413d2a0dd0806f78c90dde719829e5ae"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "3e01752db0189b9157070a0e1668a620f9a85da2"
-  version = "v1.0.6"
+  revision = "ad15b42461921f1fb3529b058c6786c6a45d5162"
+  version = "v1.1.1"
 
 [[projects]]
   branch = "master"
@@ -89,7 +101,7 @@
     "salsa20/salsa",
     "ssh/terminal"
   ]
-  revision = "0709b304e793a5edb4a2c0145f281ecdc20838a4"
+  revision = "e3636079e1a4c1f337f212cc5cd2aca108f6c900"
 
 [[projects]]
   branch = "master"
@@ -98,11 +110,11 @@
     "unix",
     "windows"
   ]
-  revision = "917fdcba135dcbaccd57425db91723541b4427c8"
+  revision = "4497e2df6f9e69048a54498c7affbbec3294ad47"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c07840bbe0234fc876f6a700a85cfbd7d917042b70f597bb7b4509c8e7c4a804"
+  inputs-digest = "12ea0dce260330c8e21d677796a2990a2eda8341bf8e8cf83f3029f83f2a81f4"
   solver-name = "gps-cdcl"
   solver-version = 1

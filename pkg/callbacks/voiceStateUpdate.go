@@ -2,13 +2,13 @@ package callbacks
 
 import (
 	"encoding/json"
-	"errors"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -218,14 +218,15 @@ func guildMemberRoles(s *discordgo.Session, user *discordgo.User, guild *discord
 	guildMember, err := s.GuildMember(guild.ID, user.ID)
 	if err != nil {
 		return make([]*discordgo.Role, 0),
-			errors.New("unable to determine member in VoiceStateUpdate: " + err.Error())
+			errors.Wrap(err, "unable to determine member in VoiceStateUpdate: "+err.Error())
 	}
 
 	// Get guild roles
 	guildRoles, dErr := guildRoles(s, guild.ID)
 	if dErr != nil {
-		retErr := errors.New(
-			"unable to determine roles in VoiceStateUpdate: " +
+		retErr := errors.Wrap(
+			err,
+			"unable to determine roles in VoiceStateUpdate: "+
 				dErr.Error(),
 		)
 
@@ -253,7 +254,7 @@ func guildRoleCreateEdit(s *discordgo.Session, ephRoleName string, guild *discor
 	// Create a new blank role
 	ephRole, err := s.GuildRoleCreate(guild.ID)
 	if err != nil {
-		return nil, errors.New("unable to create ephemeral role: " + err.Error())
+		return nil, errors.Wrap(err, "unable to create ephemeral role: "+err.Error())
 	}
 
 	roleColor := defaultRoleColor
