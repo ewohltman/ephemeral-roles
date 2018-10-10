@@ -4,9 +4,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
-	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/pkg/monitor/guilds"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -26,9 +24,7 @@ func (s *S) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // New returns a new pre-configured server instance
-func New(port string, dgBotSession *discordgo.Session, token string, botID string) *http.Server {
-	monitor.Start(dgBotSession, token, botID)
-
+func New(port string) *http.Server {
 	return &http.Server{
 		Addr: ":" + port,
 		Handler: server(
