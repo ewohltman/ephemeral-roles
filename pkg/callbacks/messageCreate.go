@@ -3,7 +3,6 @@ package callbacks
 import (
 	"os"
 	"strings"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/prometheus/client_golang/prometheus"
@@ -35,7 +34,7 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// [BOT_KEYWORD] [command] [options] :: "!eph" "log_level" "debug"
 	contentTokens := strings.Split(strings.TrimSpace(m.Content), " ")
-	if !(len(contentTokens) >= 2) {
+	if len(contentTokens) < 2 {
 		return
 	}
 
@@ -65,16 +64,34 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	switch strings.ToLower(contentTokens[1]) {
 	case "info":
-		// TODO: Reply to bot command info
-		// It should provide information about
-		// the bot such as what framework it is using and the used
-		// version, help commands and, most importantly, who made it.
-		//
-		// Ignore both your own and other bots' messages. This helps
-		// prevent infinite self-loops and potential security exploits.
-		// Using a zero width space such as \u200B and \u180E in the
-		// beginning of each message also prevents your bot from
-		// triggering other bots' commands.
+		embed := discordgo.MessageEmbed{
+			URL: "https://github.com/ewohltman/ephemeral-roles",
+			Title: "Ephemeral Roles",
+			Color: 0xffa500,
+			Footer: &discordgo.MessageEmbedFooter{Text: "Made using the discordgo library"},
+			Image: &discordgo.MessageEmbedImage{URL: "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"},
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name: "About",
+					Value: "Ephemeral Roles is a discord bot designed to assign roles based upon voice channel member presence",
+					Inline: false,
+				},
+				{
+					Name: "Author",
+					Value: "Ephemeral Roles is created by ewohltman",
+					Inline: false,
+				},
+				{
+					Name: "Library",
+					Value: "Ephemeral Roles uses the discordgo library by bwmarrin",
+					Inline: false,
+				},
+			},
+		}
+
+		s.ChannelMessageSendEmbed(m.ChannelID, &embed)
+
+
 	case "log_level":
 		if len(contentTokens) >= 3 {
 			levelOpt := strings.ToLower(contentTokens[2])

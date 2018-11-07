@@ -43,8 +43,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestNew(t *testing.T) {
-
-	testServer := New("8080", dgTestBotSession, token, botID)
+	testServer := New("8080")
 	if testServer == nil {
 		t.Errorf("Failed creating new internal HTTP server")
 	}

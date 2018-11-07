@@ -10,6 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/pkg/server"
 )
 
@@ -68,12 +69,12 @@ func checkEnvironment() {
 	checkOptional()
 }
 
-func runHTTPServer(dgBotSession *discordgo.Session) {
+func runHTTPServer() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGHUP)
 	signal.Notify(stop, os.Interrupt)
 
-	httpServer := server.New(port, dgBotSession, discordBotsToken, botID)
+	httpServer := server.New(port)
 
 	log.Debugf("Starting internal HTTP server instance")
 	go func() {
@@ -120,5 +121,7 @@ func main() {
 	}
 	defer dgBotSession.Close()
 
-	runHTTPServer(dgBotSession)
+	monitor.Start(dgBotSession, token, botID)
+
+	runHTTPServer()
 }
