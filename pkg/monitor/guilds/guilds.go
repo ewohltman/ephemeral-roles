@@ -105,14 +105,10 @@ func update(dgBotSession *discordgo.Session, token string, botID string) {
 
 	// discordbots.org integration
 	if token != "" && botID != "" {
-		response, err := discordBotsOrg.Update(token, botID, cache.numGuilds)
+		err := discordBotsOrg.Update(token, botID, cache.numGuilds)
 		if err != nil {
 			log.WithError(err).Warnf("unable to update guild count")
 			return
-		}
-
-		if response != "{}" {
-			log.WithField("response", response).Warnf("discordbots.org integration: abnormal response")
 		}
 	}
 }
