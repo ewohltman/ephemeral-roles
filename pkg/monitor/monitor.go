@@ -7,7 +7,7 @@ import (
 )
 
 // Start will launch usage monitors in their own goroutines
-func Start(dgBotSession *discordgo.Session, token string, botID string) {
-	go guilds.Monitor(dgBotSession, token, botID)
+func Start(dgBotSession *discordgo.Session) {
+	go guilds.Monitor(dgBotSession)
 	go members.Monitor(dgBotSession)
 }

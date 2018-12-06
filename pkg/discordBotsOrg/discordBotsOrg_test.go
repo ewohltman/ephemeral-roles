@@ -12,8 +12,8 @@ func TestUpdate(t *testing.T) {
 
 	err := Update(token, botID, -1)
 	if err != nil {
-		if !strings.HasSuffix(err.Error(), `{"error":"Invalid value for server_count"}`) {
-			t.Error(err)
+		if !strings.HasSuffix(err.Error(), `{"error":"Forbidden"}`) {
+			t.Log(err)
 		}
 	}
 }

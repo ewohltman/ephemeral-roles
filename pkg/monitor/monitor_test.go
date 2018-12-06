@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	dgTestBotSession *discordgo.Session
 	token            string
 	botID            string
+	dgTestBotSession *discordgo.Session
 	log              = logging.Instance()
 )
 
@@ -44,5 +44,5 @@ func TestMain(m *testing.M) {
 }
 
 func TestStart(t *testing.T) {
-	Start(dgTestBotSession, token, botID)
+	Start(dgTestBotSession)
 }

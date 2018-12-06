@@ -1,23 +1,18 @@
 package guilds
 
 import (
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-var (
-	dgTestBotSession *discordgo.Session
-	token            string
-	botID            string
-)
+var dgTestBotSession *discordgo.Session
 
 func TestMain(m *testing.M) {
 	var found bool
+	var token string
+
 	token, found = os.LookupEnv("BOT_TOKEN")
 	if !found || token == "" {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
@@ -44,26 +39,8 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestHandler(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	w := httptest.NewRecorder()
-	HTTPHandler(w, req)
-
-	resp := w.Result()
-	defer resp.Body.Close()
-
-	_, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		t.Error("unexpected response code from /guilds")
-	}
-}
-
 func TestMonitor(t *testing.T) {
-	check(dgTestBotSession, token, botID)
-	update(dgTestBotSession, token, botID)
-	check(dgTestBotSession, token, botID)
+	check(dgTestBotSession)
+	update(dgTestBotSession)
+	check(dgTestBotSession)
 }

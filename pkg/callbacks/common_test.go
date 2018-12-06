@@ -40,10 +40,36 @@ func TestMain(m *testing.M) {
 	defer dgTestBotSession.Close()
 
 	// Wait for asynchronous status to catch up
-	for nil == dgTestBotSession.State.Guilds || len(dgTestBotSession.State.Guilds) == 0 {
+	// for dgTestBotSession.State.Guilds == nil || !stateContainsGuild(dgTestBotSession.State.Guilds) {
+	for !stateContainsGuild(dgTestBotSession.State.Guilds) {
 	}
-	for nil == dgTestBotSession.State.Guilds[0].Channels || len(dgTestBotSession.State.Guilds[0].Channels) == 0 {
+
+	devGuild, err := dgTestBotSession.State.Guild(devGuildID)
+	if err != nil {
+		log.WithError(err).Fatalf("Error finding dev guild")
+	}
+
+	// for devGuild.Channels == nil || !stateContainsTextChannel(devGuild.Channels) {
+	for !stateContainsTextChannel(devGuild.Channels) {
 	}
 
 	os.Exit(m.Run())
+}
+
+func stateContainsGuild(guilds []*discordgo.Guild) bool {
+	for _, guild := range guilds {
+		if guild.ID == devGuildID {
+			return true
+		}
+	}
+	return false
+}
+
+func stateContainsTextChannel(channels []*discordgo.Channel) bool {
+	for _, channel := range channels {
+		if channel.ID == devTextChannelID {
+			return true
+		}
+	}
+	return false
 }

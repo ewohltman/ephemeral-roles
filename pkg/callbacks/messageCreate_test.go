@@ -18,7 +18,7 @@ func TestMessageCreate(t *testing.T) {
 	}
 
 	// message from a bot
-	sendBotMessasge()
+	sendBotMessage()
 
 	// non keyphrase message
 	sendMessage("ixnay")
@@ -54,15 +54,19 @@ func TestMessageCreate(t *testing.T) {
 	sendMessage(BOTKEYWORD + "log_level info")
 }
 
-func sendBotMessasge() {
+func sendBotMessage() {
 	botMsg := &discordgo.MessageCreate{
 		Message: &discordgo.Message{
 			Author: &discordgo.User{
 				Username: "AUTOMATED TEST BOT USER",
 				Bot:      true,
 			},
+			GuildID:   devGuildID,
+			ChannelID: devTextChannelID,
+			Content:   "AUTOMATED TEST BOT USER",
 		},
 	}
+
 	MessageCreate(dgTestBotSession, botMsg)
 }
 
@@ -73,6 +77,7 @@ func sendMessage(message string) {
 				Username: "AUTOMATED TEST USER",
 				Bot:      false,
 			},
+			GuildID:   devGuildID,
 			ChannelID: devTextChannelID,
 			Content:   message,
 		},
