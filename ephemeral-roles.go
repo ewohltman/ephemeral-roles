@@ -30,7 +30,7 @@ func checkEnvironmentConfig() {
 		log.Fatal(err)
 	}
 
-	err = config.CheckDiscordBotsOrg()
+	_, _, err = config.CheckDiscordBotsOrg()
 	if err != nil {
 		log.Warn(err)
 	}
