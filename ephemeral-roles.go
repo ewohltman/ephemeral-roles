@@ -9,64 +9,31 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
+	"github.com/ewohltman/ephemeral-roles/pkg/config"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/pkg/server"
 )
 
 var (
-	token            string
-	port             string
-	discordBotsToken string
-	botID            string
-	log              = logging.Instance()
+	token string
+	port  string
+	botID string
+	log   = logging.Instance()
 )
 
-func checkRequired() {
-	// Check for string from slice, these are not needed now, but are needed in the callbacks
-	for _, envVar := range []string{"BOT_NAME", "BOT_KEYWORD", "ROLE_PREFIX"} {
-		v, found := os.LookupEnv(envVar)
-		if !found || v == "" {
-			log.Fatalf("%s not defined in environment variables", envVar)
-		}
+func checkEnvironmentConfig() {
+	var err error
+
+	token, port, err = config.CheckRequired()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	var found bool
-
-	// Check for BOT_TOKEN, we need this to connect to Discord
-	token, found = os.LookupEnv("BOT_TOKEN")
-	if !found || token == "" {
-		log.Fatalf("BOT_TOKEN not defined in environment variables")
+	_, _, err = config.CheckDiscordBotsOrg()
+	if err != nil {
+		log.Warn(err)
 	}
-
-	// Check for PORT, we need this to for our HTTP server in our container
-	port, found = os.LookupEnv("PORT")
-	if !found || port == "" {
-		port = "8080"
-	}
-}
-
-func checkOptional() {
-	var found bool
-
-	// Check for DISCORDBOTS_ORG_TOKEN and BOT_ID, we need these for optional discordbots.org integration
-	discordBotsToken, found = os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
-	if !found || discordBotsToken == "" {
-		log.WithField("warn", "DISCORDBOTS_ORG_TOKEN not defined in environment variables").
-			Warnf("Integration with discordbots.org integration disabled")
-	} else {
-		botID, found = os.LookupEnv("BOT_ID")
-
-		if !found || botID == "" {
-			log.WithField("warn", "BOT_ID not defined in environment variables").
-				Warnf("Integration with discordbots.org disabled")
-		}
-	}
-}
-
-func checkEnvironment() {
-	checkRequired()
-	checkOptional()
 }
 
 func runHTTPServer() {
@@ -101,7 +68,7 @@ func runHTTPServer() {
 func main() {
 	log.Debugf("Bot starting up")
 
-	checkEnvironment()
+	checkEnvironmentConfig()
 
 	// Create a new Discord session using the provided bot token
 	dgBotSession, err := discordgo.New("Bot " + token)
@@ -121,7 +88,7 @@ func main() {
 	}
 	defer dgBotSession.Close()
 
-	monitor.Start(dgBotSession, token, botID)
+	monitor.Start(dgBotSession)
 
 	runHTTPServer()
 }

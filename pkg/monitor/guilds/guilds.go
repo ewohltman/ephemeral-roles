@@ -1,13 +1,11 @@
 package guilds
 
 import (
-	"bytes"
-	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/ephemeral-roles/pkg/config"
 	"github.com/ewohltman/ephemeral-roles/pkg/discordBotsOrg"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,8 +18,10 @@ type guildsCache struct {
 }
 
 var (
-	cache = &guildsCache{}
-	log   = logging.Instance()
+	botID               = ""
+	discordBotsOrgToken = ""
+	cache               = &guildsCache{}
+	log                 = logging.Instance()
 
 	prometheusGuildsGauge = prometheus.NewGauge(
 		prometheus.GaugeOpts{
@@ -39,41 +39,40 @@ func init() {
 	}
 }
 
-// HTTPHandler is the function used to handle /guilds HTTP requests
-func HTTPHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	cache.mu.RLock()
-	defer cache.mu.RUnlock()
-
-	buf := bytes.NewBuffer([]byte{})
-	for _, guild := range cache.guildList {
-		buf.Write([]byte(guild.Name + "\n"))
-	}
-
-	response := buf.Bytes()
-
-	w.Header().Set("Content-Type", "text/plain")
-	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
-
-	_, err := w.Write(response)
-	if err != nil {
-		log.WithError(err).Errorf("Error writing /check HTTP response")
-		return
-	}
-}
-
 // Monitor sets up an infinite loop checking guild changes
-func Monitor(dgBotSession *discordgo.Session, token string, botID string) {
-	update(dgBotSession, token, botID)
+func Monitor(dgBotSession *discordgo.Session) {
+	var err error
+
+	botID, discordBotsOrgToken, err = config.CheckDiscordBotsOrg()
+	if err != nil {
+		botID = ""
+		discordBotsOrgToken = ""
+	}
+
+	update(dgBotSession)
 
 	for {
-		check(dgBotSession, token, botID)
+		check(dgBotSession)
 		time.Sleep(time.Second * 5)
 	}
 }
 
-func check(dgBotSession *discordgo.Session, token string, botID string) {
+func update(dgBotSession *discordgo.Session) {
+	cache.guildList = dgBotSession.State.Guilds
+	cache.numGuilds = len(cache.guildList)
+	prometheusGuildsGauge.Set(float64(cache.numGuilds))
+
+	// discordbots.org integration
+	if botID != "" && discordBotsOrgToken != "" {
+		err := discordBotsOrg.Update(discordBotsOrgToken, botID, cache.numGuilds)
+		if err != nil {
+			log.WithError(err).Warnf("unable to update guild count")
+			return
+		}
+	}
+}
+
+func check(dgBotSession *discordgo.Session) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
@@ -84,7 +83,7 @@ func check(dgBotSession *discordgo.Session, token string, botID string) {
 	}
 
 	writeLog(numGuilds, dgBotSession)
-	update(dgBotSession, token, botID)
+	update(dgBotSession)
 }
 
 func writeLog(numGuilds int, dgBotSession *discordgo.Session) {
@@ -95,24 +94,5 @@ func writeLog(numGuilds int, dgBotSession *discordgo.Session) {
 		).Infof(dgBotSession.State.User.Username + " joined new guild")
 	} else {
 		log.Infof(dgBotSession.State.User.Username + " removed from guild")
-	}
-}
-
-func update(dgBotSession *discordgo.Session, token string, botID string) {
-	cache.guildList = dgBotSession.State.Guilds
-	cache.numGuilds = len(cache.guildList)
-	prometheusGuildsGauge.Set(float64(cache.numGuilds))
-
-	// discordbots.org integration
-	if token != "" && botID != "" {
-		response, err := discordBotsOrg.Update(token, botID, cache.numGuilds)
-		if err != nil {
-			log.WithError(err).Warnf("unable to update guild count")
-			return
-		}
-
-		if response != "{}" {
-			log.WithField("response", response).Warnf("discordbots.org integration: abnormal response")
-		}
 	}
 }

@@ -18,12 +18,12 @@ type serverUpdate struct {
 }
 
 // Update POSTs a server_count update to discordbots.org
-func Update(token string, botID string, serverCount int) (string, error) {
+func Update(token string, botID string, serverCount int) error {
 	rawString := discordBotsURL + "/api/bots/" + botID + "/stats"
 
 	updateURL, err := url.Parse(rawString)
 	if err != nil {
-		return "", errors.Wrap(
+		return errors.Wrap(
 			err,
 			"discordbots.org integration disabled: unable to parse ("+
 				rawString+
@@ -38,7 +38,7 @@ func Update(token string, botID string, serverCount int) (string, error) {
 
 	updateJSON, err := json.Marshal(update)
 	if err != nil {
-		return "", errors.Wrap(
+		return errors.Wrap(
 			err,
 			"discordbots.org integration: error marshaling JSON body: "+
 				err.Error(),
@@ -62,7 +62,7 @@ func Update(token string, botID string, serverCount int) (string, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", errors.Wrap(
+		return errors.Wrap(
 			err,
 			"discordbots.org integration: error updating ("+
 				discordBotsURL+
@@ -74,7 +74,7 @@ func Update(token string, botID string, serverCount int) (string, error) {
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.Wrap(
+		return errors.Wrap(
 			err,
 			"discordbots.org integration: error reading response from ("+
 				discordBotsURL+
@@ -83,5 +83,10 @@ func Update(token string, botID string, serverCount int) (string, error) {
 		)
 	}
 
-	return string(bodyBytes), nil
+	body := string(bodyBytes)
+	if body != "{}" {
+		return errors.New("discordbots.org integration: abnormal response: " + body)
+	}
+
+	return nil
 }

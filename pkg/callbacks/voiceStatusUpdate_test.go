@@ -11,12 +11,14 @@ func TestVoiceStateUpdate(t *testing.T) {
 	devVoiceChannel1, err := dgTestBotSession.GuildChannelCreate(devGuildID, randString(5), discordgo.ChannelTypeGuildVoice)
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 	defer dgTestBotSession.ChannelDelete(devVoiceChannel1.ID)
 
 	devVoiceChannel2, err := dgTestBotSession.GuildChannelCreate(devGuildID, randString(5), discordgo.ChannelTypeGuildVoice)
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 	defer dgTestBotSession.ChannelDelete(devVoiceChannel2.ID)
 
