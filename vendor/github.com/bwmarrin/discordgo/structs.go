@@ -872,7 +872,6 @@ const (
 	PermissionVoiceDeafenMembers
 	PermissionVoiceMoveMembers
 	PermissionVoiceUseVAD
-	PermissionVoicePrioritySpeaker = 1 << (iota + 2)
 )
 
 // Constants for general management.
@@ -908,8 +907,7 @@ const (
 		PermissionVoiceMuteMembers |
 		PermissionVoiceDeafenMembers |
 		PermissionVoiceMoveMembers |
-		PermissionVoiceUseVAD |
-		PermissionVoicePrioritySpeaker
+		PermissionVoiceUseVAD
 	PermissionAllChannel = PermissionAllText |
 		PermissionAllVoice |
 		PermissionCreateInstantInvite |
