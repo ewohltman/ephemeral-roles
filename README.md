@@ -1,6 +1,6 @@
 # ephemeral-roles
 
-| <a href="https://discordapp.com/api/oauth2/authorize?client_id=392419127626694676&permissions=268435456&scope=bot"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100"></a><br/>[![Travis CI](https://travis-ci.com/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.com/ewohltman/ephemeral-roles.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles) [![Coverage Status](https://coveralls.io/repos/github/ewohltman/ephemeral-roles/badge.svg?branch=master)](https://coveralls.io/github/ewohltman/ephemeral-roles?branch=master) [![GoDoc](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg?status.svg)](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg) | [![Discord Bots](https://discordbots.org/api/widget/392419127626694676.svg)](https://discordbots.org/bot/ephemeral-roles) |
+| <a href="https://discordapp.com/api/oauth2/authorize?client_id=392419127626694676&permissions=268435456&scope=bot"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100"></a><br/>[![Travis CI](https://travis-ci.com/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.com/ewohltman/ephemeral-roles.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles) [![Coverage Status](https://coveralls.io/repos/github/ewohltman/ephemeral-roles/badge.svg?branch=master)](https://coveralls.io/github/ewohltman/ephemeral-roles?branch=master) [![GoDoc](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg?status.svg)](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg) | [![Discord Bots](https://discordbots.org/api/widget/392419127626694676.svg)](https://discordbots.org/bot/ephemeral-roles) |
 | :------: | :------: |
 
 ### A Discord bot for managing ephemeral roles based upon voice channel member presence
@@ -24,9 +24,9 @@ possible) to the server's list of roles
 
 | Usage/Examples \(Orange roles below are automatically managed by `Ephemeral Roles`\) |
 | :------: |
-| ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/action.gif) |
-| ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/static.png) |
-| ![Ephemeral Roles example role list](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/roles.png) |
+| ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/action.gif) |
+| ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/static.png) |
+| ![Ephemeral Roles example role list](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/roles.png) |
 
 ----
 
@@ -58,7 +58,7 @@ Prometheus metrics are exposed via a `/metrics` HTTP end-point.
 
 | [botmon.ephemeral-roles.com](http://botmon.ephemeral-roles.com) |
 | :------: |
-| <a href="http://botmon.ephemeral-roles.com"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/bot-metrics.png"></a> |
+| <a href="http://botmon.ephemeral-roles.com"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/bot-metrics.png"></a> |
 
 ----
 
@@ -112,4 +112,4 @@ BOT_ID= # Discord Bot Client ID
 
 | [dep](https://github.com/golang/dep) Graph |
 | :------: |
-| ![Dependency graph](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/dep_status_visual.png) |
+| ![Dependency graph](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/dependency_graph.png) |
