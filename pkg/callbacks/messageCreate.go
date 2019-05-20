@@ -23,7 +23,7 @@ var (
 		Title:  "Ephemeral Roles",
 		Color:  0xffa500,
 		Footer: &discordgo.MessageEmbedFooter{Text: "Made using the discordgo library"},
-		Image:  &discordgo.MessageEmbedImage{URL: "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/res/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"},
+		Image:  &discordgo.MessageEmbedImage{URL: "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"},
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "About",
