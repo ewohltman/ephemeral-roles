@@ -6,6 +6,7 @@ import (
 
 // LevelColors is a struct of the possible colors used in Discord color format (0x[RGB] converted to int)
 type LevelColors struct {
+	Trace int
 	Debug int
 	Info  int
 	Warn  int
@@ -16,6 +17,7 @@ type LevelColors struct {
 
 // DefaultLevelColors is a struct of the default colors used
 var DefaultLevelColors = LevelColors{
+	Trace: 3092790,
 	Debug: 10170623,
 	Info:  3581519,
 	Warn:  14327864,
@@ -32,6 +34,8 @@ func LevelThreshold(l logrus.Level) []logrus.Level {
 // LevelColor returns the respective color for the logrus level
 func (lc LevelColors) LevelColor(l logrus.Level) int {
 	switch l {
+	case logrus.TraceLevel:
+		return lc.Trace
 	case logrus.DebugLevel:
 		return lc.Debug
 	case logrus.InfoLevel:

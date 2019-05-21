@@ -1,8 +1,6 @@
 # discordrus | a [Discord](https://discordapp.com/) hook for [Logrus](https://github.com/Sirupsen/logrus) <img src="http://i.imgur.com/hTeVwmJ.png" width="40" height="40" alt=":walrus:" class="emoji" title=":walrus:"/> [![Travis CI](https://api.travis-ci.org/kz/discordrus.svg?branch=master)](https://travis-ci.org/kz/discordrus) [![GoDoc](https://godoc.org/github.com/puddingfactory/logentrus?status.svg)](https://godoc.org/github.com/kz/discordrus)
 
-**Current version:** v1.1.1
-
-![Screenshot of discordrus in action](http://i.imgur.com/zvDNDjV.png)
+![Screenshot of discordrus in action](https://i.imgur.com/q8Tcmjn.png?1)
 
 ## Install
 
@@ -29,13 +27,13 @@ import (
 func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{})
 	logrus.SetOutput(os.Stderr)
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(logrus.TraceLevel)
 
 	logrus.AddHook(discordrus.NewHook(
 		// Use environment variable for security reasons
 		os.Getenv("DISCORDRUS_WEBHOOK_URL"),
 		// Set minimum level to DebugLevel to receive all log entries
-		logrus.DebugLevel,
+		logrus.TraceLevel,
 		&discordrus.Opts{
 			Username:           "Test Username",
 			Author:             "",                         // Setting this to a non-empty string adds the author text to the message header
@@ -44,6 +42,7 @@ func init() {
 			TimestampLocale:    nil,                        // The timestamp uses this locale; if it is unset, it will use time.Local
 			EnableCustomColors: true,                       // If set to true, the below CustomLevelColors will apply
 			CustomLevelColors: &discordrus.LevelColors{
+				Trace: 3092790,
 				Debug: 10170623,
 				Info:  3581519,
 				Warn:  14327864,
