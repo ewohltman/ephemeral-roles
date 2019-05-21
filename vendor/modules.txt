@@ -8,7 +8,7 @@ github.com/golang/protobuf/proto
 github.com/gorilla/websocket
 # github.com/konsorten/go-windows-terminal-sequences v1.0.1
 github.com/konsorten/go-windows-terminal-sequences
-# github.com/kz/discordrus v1.1.1
+# github.com/kz/discordrus v1.2.0
 github.com/kz/discordrus
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
 github.com/matttproud/golang_protobuf_extensions/pbutil
