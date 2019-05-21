@@ -26,8 +26,6 @@ github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7V
 github.com/konsorten/go-windows-terminal-sequences v1.0.1 h1:mweAR1A6xJ3oS2pRaGiHgQ4OO8tzTaLawm8vnODuwDk=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
-github.com/kz/discordrus v1.1.1 h1:j4xd/5cD2Ns09QAiFluUldzE7GZMUIvMyJlehLagNak=
-github.com/kz/discordrus v1.1.1/go.mod h1:cJ3TiJUUuY5Gm3DNYHnnaUa3iol8VBRPzztAeZm7exc=
 github.com/kz/discordrus v1.2.0 h1:r5uplKozPR+TIJ1NUZT758Lv7eukf8+fp3L4uRj+6xs=
 github.com/kz/discordrus v1.2.0/go.mod h1:cJ3TiJUUuY5Gm3DNYHnnaUa3iol8VBRPzztAeZm7exc=
 github.com/matttproud/golang_protobuf_extensions v1.0.1 h1:4hp9jkHxhMHkqkrB3Ix0jegS5sx/RkqARlsWZ6pIwiU=
