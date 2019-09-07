@@ -7,10 +7,10 @@ before_install:
 - go get github.com/mattn/goveralls
 before_script:
 - go vet ./...
-- go test -v -covermode=count -coverprofile=coverage.out
+- go test -v -race -covermode=count -coverprofile=coverage.out ./...
 - "$GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN"
 script:
-- go build -i -o bin/ephemeral-roles ephemeral-roles.go
+- go build -o bin/ephemeral-roles ephemeral-roles.go
 before_deploy:
 - zip -r ephemeral-roles.zip .
 deploy:
