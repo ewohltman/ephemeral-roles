@@ -2,8 +2,6 @@ package callbacks
 
 import (
 	"math/rand"
-	"os"
-	"testing"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -21,7 +19,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func TestMain(m *testing.M) {
+/*func TestMain(m *testing.M) {
 	token, found := os.LookupEnv("BOT_TOKEN")
 	if !found || token == "" {
 		log.Fatalf("BOT_TOKEN not defined in environment variables")
@@ -72,4 +70,4 @@ func stateContainsTextChannel(channels []*discordgo.Channel) bool {
 		}
 	}
 	return false
-}
+}*/
