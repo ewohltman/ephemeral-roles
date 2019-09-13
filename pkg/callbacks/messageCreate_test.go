@@ -7,81 +7,75 @@ import (
 )
 
 func TestMessageCreate(t *testing.T) {
-	_, err := dgTestBotSession.ChannelMessageSendComplex(
-		devTextChannelID,
-		&discordgo.MessageSend{
-			Content: "AUTOMATED TESTING",
-		},
-	)
-	if err != nil {
-		t.Error(err)
-	}
+	botKeyword := "!eph "
+
+	testSession := &discordgo.Session{}
 
 	// message from a bot
-	sendBotMessage()
+	sendBotMessage(testSession)
 
 	// non keyphrase message
-	sendMessage("ixnay")
+	sendMessage(testSession, "ixnay")
 
 	// keyphrase message, unrecognized command
-	sendMessage(BOTKEYWORD + "ixnay")
+	sendMessage(testSession, botKeyword+"ixnay")
 
 	// keyphrase message, unrecognized command
-	sendMessage(BOTKEYWORD + "AUTOMATED TEST")
+	sendMessage(testSession, botKeyword+"AUTOMATED TEST")
 
 	// keyphrase info
-	sendMessage(BOTKEYWORD + "info")
+	sendMessage(testSession, botKeyword+"info")
 
 	// log_level debug
-	sendMessage(BOTKEYWORD + "log_level debug")
+	sendMessage(testSession, botKeyword+"log_level debug")
 
 	// log_level info
-	sendMessage(BOTKEYWORD + "log_level info")
+	sendMessage(testSession, botKeyword+"log_level info")
 
 	// log_level warn
-	sendMessage(BOTKEYWORD + "log_level warn")
+	sendMessage(testSession, botKeyword+"log_level warn")
 
 	// log_level error
-	sendMessage(BOTKEYWORD + "log_level error")
+	sendMessage(testSession, botKeyword+"log_level error")
 
 	// log_level fatal
-	sendMessage(BOTKEYWORD + "log_level fatal")
+	sendMessage(testSession, botKeyword+"log_level fatal")
 
 	// log_level panic
-	sendMessage(BOTKEYWORD + "log_level panic")
+	sendMessage(testSession, botKeyword+"log_level panic")
 
 	// log_level info
-	sendMessage(BOTKEYWORD + "log_level info")
+	sendMessage(testSession, botKeyword+"log_level info")
 }
 
-func sendBotMessage() {
+func sendBotMessage(s *discordgo.Session) {
 	botMsg := &discordgo.MessageCreate{
 		Message: &discordgo.Message{
 			Author: &discordgo.User{
-				Username: "AUTOMATED TEST BOT USER",
+				Username: "",
 				Bot:      true,
 			},
-			GuildID:   devGuildID,
-			ChannelID: devTextChannelID,
-			Content:   "AUTOMATED TEST BOT USER",
+			GuildID:   "",
+			ChannelID: "",
+			Content:   "",
 		},
 	}
 
-	MessageCreate(dgTestBotSession, botMsg)
+	MessageCreate()(s, botMsg)
 }
 
-func sendMessage(message string) {
+func sendMessage(s *discordgo.Session, message string) {
 	msg := &discordgo.MessageCreate{
 		Message: &discordgo.Message{
 			Author: &discordgo.User{
-				Username: "AUTOMATED TEST USER",
+				Username: "",
 				Bot:      false,
 			},
-			GuildID:   devGuildID,
-			ChannelID: devTextChannelID,
+			GuildID:   "",
+			ChannelID: "",
 			Content:   message,
 		},
 	}
 
-	MessageCreate(dgTestBotSession, msg)
+	MessageCreate()(s, msg)
 }

@@ -7,9 +7,11 @@ import (
 )
 
 func TestReady(t *testing.T) {
+	testSession := &discordgo.Session{}
+
 	r := &discordgo.Ready{
 		Guilds: make([]*discordgo.Guild, 0),
 	}
 
-	Ready(dgTestBotSession, r)
+	Ready(testSession, r)
 }

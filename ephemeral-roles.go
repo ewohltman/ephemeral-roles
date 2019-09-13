@@ -78,7 +78,7 @@ func main() {
 
 	// Add event handlers
 	dgBotSession.AddHandler(callbacks.Ready)            // Connection established with Discord
-	dgBotSession.AddHandler(callbacks.MessageCreate)    // Chat messages with BOT_KEYWORD
+	dgBotSession.AddHandler(callbacks.MessageCreate())  // Chat messages with BOT_KEYWORD
 	dgBotSession.AddHandler(callbacks.VoiceStateUpdate) // Updates to voice channel state
 
 	// Open the websocket and begin listening
