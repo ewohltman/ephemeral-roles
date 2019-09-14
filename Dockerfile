@@ -6,6 +6,6 @@ COPY build/package/ephemeral-roles /app
 
 RUN chmod +x /app/ephemeral-roles
 
-EXPOSE 5000
+EXPOSE 8080
 
 CMD /app/ephemeral-roles
