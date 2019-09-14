@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -132,7 +133,9 @@ func main() {
 	log.Debugf("Starting internal HTTP server instance")
 	go func() {
 		if serverError := httpServer.ListenAndServe(); serverError != nil {
-			log.WithError(serverError).Error("Internal server error")
+			if serverError.Error() != http.ErrServerClosed.Error() {
+				log.WithError(serverError).Error("Internal server error")
+			}
 		}
 	}()
 
