@@ -1,7 +1,8 @@
 language: go
 go:
 - 1.x
-sudo: false
+sudo: required
+services: docker
 before_install:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
@@ -22,7 +23,7 @@ deploy:
   secret_access_key: "${BEANSTALK_KEY_SECRET}"
   region: "us-east-1"
   app: "ephemeral-roles"
-  env: "ephemeral-roles"
+  env: "ephemeral-roles-docker"
   bucket_name: "ephemeral-roles"
   on:
     repo: "ewohltman/ephemeral-roles"

@@ -128,7 +128,7 @@ func timeLocalization() (timeLocalization *time.Location, err error) {
 
 	parsedLocation, parseErr := time.LoadLocation(envLocation)
 	if parseErr != nil {
-		err = fmt.Errorf("unable to parse LOG_TIMEZONE_LOCATION: %s", err.Error())
+		err = fmt.Errorf("unable to parse LOG_TIMEZONE_LOCATION: %s", parseErr)
 
 		return
 	}
