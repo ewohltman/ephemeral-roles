@@ -1,1 +1,1 @@
-web: ephemeral-roles
+web: build/package/ephemeral-roles
