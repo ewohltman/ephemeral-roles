@@ -22,7 +22,7 @@ deploy:
   access_key_id: "${BEANSTALK_KEY_ID}"
   secret_access_key: "${BEANSTALK_KEY_SECRET}"
   region: "us-east-1"
-  app: "ephemeral-roles-docker"
+  app: "ephemeral-roles"
   env: "ephemeral-roles-docker"
   bucket_name: "ephemeral-roles"
   on:
