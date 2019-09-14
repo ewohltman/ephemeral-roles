@@ -13,7 +13,7 @@ buildBeanstalk:
 	go build -o bin/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
 
 buildDocker: build
-	docker image build -t ephemeral-roles build/package
+	docker image build -t ewohltman/ephemeral-roles:latest build/package
 
 push:
 	docker push ewohltman/ephemeral-roles:latest
