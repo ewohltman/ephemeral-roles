@@ -1,4 +1,4 @@
-package ephemeral_roles
+package main
 
 import (
 	"context"
