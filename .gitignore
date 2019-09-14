@@ -6,4 +6,5 @@ bin/
 coverage.out
 
 # Binary
+bin/ephemeral-roles
 build/package/ephemeral-roles
