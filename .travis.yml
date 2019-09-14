@@ -15,7 +15,7 @@ script:
 # before_deploy:
 # - zip -r ephemeral-roles.zip .
 deploy:
-  skip_cleanup: false
+  skip_cleanup: true
   wait-until-deployed: true
 #   zip_file: "ephemeral-roles.zip"
   provider: "elasticbeanstalk"
