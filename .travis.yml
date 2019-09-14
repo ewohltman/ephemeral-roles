@@ -1,7 +1,8 @@
 language: go
 go:
 - 1.x
-sudo: false
+sudo: required
+services: docker
 before_install:
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
@@ -10,7 +11,7 @@ before_script:
 - make test
 - "$GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN"
 script:
-- make build
+- make docker
 before_deploy:
 - zip -r ephemeral-roles.zip .
 deploy:
@@ -21,11 +22,11 @@ deploy:
   access_key_id: "${BEANSTALK_KEY_ID}"
   secret_access_key: "${BEANSTALK_KEY_SECRET}"
   region: "us-east-1"
-  app: "ephemeral-roles"
-  env: "ephemeral-roles"
+  app: "ephemeral-roles-docker"
+  env: "ephemeral-roles-docker"
   bucket_name: "ephemeral-roles"
   on:
     repo: "ewohltman/ephemeral-roles"
-    branch: "master"
+    branch: "develop"
 test:
   secure: "jZNvzMl23A2azsO5r05RrAx+jteDo1oLXtFFXcVaBaT+osnZut7LzBpEK/9fKmQSrtGIMlxvUlV7+rz75f6xUv7rfWAmAEg+VhnjCHq9UyTEY9z9+nM3MXYnJ97JqHIWeduYLmazioVmSKnFRN5wuHbJKiGyp533nu/6AWTCqOjAillRjGTrUNZv9+Un9yrhJ+G9zyDrtkdhKQvh4ACaKCTib9Rup1GO/CEsKYeG186z+hPI/YKpfMj+cu6TkfU32pSh7uX2sAP0LdhBHErS0AuEECgv3Pc6y50tzXwQwwXD4ol3LhU4M1ZiP2xMWwo2BHqbFtd2+4Vt0W1B7thxRzO3qXJO8bsJdSUPXJ0k3wy3mtWllK8cYcKph8ihLOKgrUosqu7bT0MLe4K83OUwET4cNBlgytJINkppuTF+h+Z6qbW2jxbTfZstSVDEruOJwbAN3xrk/cKmhwxmFrYlTUgY/BleB5GdsYLC8+yHPiDDCAqj/K2rQSG//PETpJHsPjTVt8P6Jb55kWZqwrhx09w/ruWPUe84AcmO9TxEnLxN6Kid1/tpuRXibEDwGfHASNcmmjsfYWb8mVv9zk9zoqMUQqeIZYj1z9Dbra/vuxRsUwFmPZFt51JVUlW6y9PHRlbPUN73rKXasybUBKzdI1NbvYu5g1h/QZsZaXip41w="
