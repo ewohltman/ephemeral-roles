@@ -8,6 +8,7 @@ test:
 
 build:
 	 go build -o build/package/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
+	 chmod +x build/package/ephemeral-roles
 
 push:
 	docker push ewohltman/ephemeral-roles:latest
