@@ -3,7 +3,7 @@
 //
 // Logging configuration is determined via environment variables upon startup.
 // These variables may be manipulated during runtime and then reflected in the
-// global logging instance via the Reinitialize function call
+// global logging instance via the UpdateLevel function call
 package logging
 
 import (
@@ -15,9 +15,6 @@ import (
 	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
 )
-
-// log is a global logrus instance pointer
-var log *logrus.Logger
 
 // localeFormatter is a custom formatter for logrus
 type localeFormatter struct {
@@ -32,37 +29,31 @@ func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
 	return l.Formatter.Format(e)
 }
 
-// init runs during package initialization, before the main function
-func init() {
-	// Determine timestamp locale
+func New() *logrus.Logger {
 	timestampLocale, err := timeLocalization()
 	if err != nil {
-		timestampLocale = time.Local // Default
+		timestampLocale = time.Local
 	}
 
-	// Instantiate our global logger instance
-	log = &logrus.Logger{
-		Formatter: &localeFormatter{ // Set the log entry formatter
+	log := &logrus.Logger{
+		Formatter: &localeFormatter{
 			&logrus.TextFormatter{},
 			timestampLocale,
 		},
-		Out:   os.Stdout,               // Set the output io.Writer
-		Level: logrus.InfoLevel,        // Set the default log level
-		Hooks: make(logrus.LevelHooks), // Create a blank map of log level hooks
+		Out:   os.Stdout,
+		Level: logrus.InfoLevel,
+		Hooks: make(logrus.LevelHooks),
 	}
 
-	// Follow through with runtime-configurable options
-	Reinitialize()
-}
+	// Check/apply `github.com/kz/discordrus` hook integration
+	discordrusIntegration(log)
 
-// Instance returns the global logger instance pointer
-func Instance() *logrus.Logger {
 	return log
 }
 
-// Reinitialize allows for runtime-updates of the global logging instance's
+// UpdateLevel allows for runtime-updates of the global logging instance's
 // level and resets the hooks with new values from the environment
-func Reinitialize() {
+func UpdateLevel(log *logrus.Logger) {
 	// Update our global logging instance log level
 	log.SetLevel(environmentLevel())
 
@@ -70,12 +61,12 @@ func Reinitialize() {
 	log.Hooks = make(logrus.LevelHooks)
 
 	// Check/apply `github.com/kz/discordrus` hook integration
-	discordrusIntegration()
+	discordrusIntegration(log)
 }
 
 // discordrusIntegration checks to see if we can apply an optional integration
 // support for a `github.com/kz/discordrus` hook
-func discordrusIntegration() {
+func discordrusIntegration(log *logrus.Logger) {
 	if hookURLString, found := os.LookupEnv("DISCORDRUS_WEBHOOK_URL"); found {
 		timeString := ""
 

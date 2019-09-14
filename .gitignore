@@ -1,5 +1,9 @@
 # Project-specific files
 .idea/
 bin/
-ephemeral-roles
-ephemeral-roles.exe
+
+# Test results
+coverage.out
+
+# Binary
+build/package/ephemeral-roles

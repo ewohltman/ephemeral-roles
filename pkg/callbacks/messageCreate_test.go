@@ -1,87 +1,94 @@
 package callbacks
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/mock"
+	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-func TestMessageCreate(t *testing.T) {
-	_, err := dgTestBotSession.ChannelMessageSendComplex(
-		devTextChannelID,
-		&discordgo.MessageSend{
-			Content: "AUTOMATED TESTING",
-		},
-	)
+func TestConfig_MessageCreate(t *testing.T) {
+	session, err := mock.Session()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
+
+	log := logging.New()
+	log.SetLevel(logrus.FatalLevel)
+
+	monitorConfig := &monitor.Config{
+		Log: log,
+	}
+
+	config := &Config{
+		Log:                     log,
+		BotName:                 "testBot",
+		BotKeyword:              "testKeyword",
+		RolePrefix:              "testRolePrefix",
+		ReadyCounter:            nil,
+		MessageCreateCounter:    monitorConfig.MessageCreateCounter(),
+		VoiceStateUpdateCounter: nil,
+	}
+
+	originalLogLevel := log.Level.String()
 
 	// message from a bot
-	sendBotMessage()
+	sendBotMessage(session, config)
 
-	// non keyphrase message
-	sendMessage("ixnay")
-
-	// keyphrase message, unrecognized command
-	sendMessage(BOTKEYWORD + "ixnay")
-
-	// keyphrase message, unrecognized command
-	sendMessage(BOTKEYWORD + "AUTOMATED TEST")
-
-	// keyphrase info
-	sendMessage(BOTKEYWORD + "info")
-
-	// log_level debug
-	sendMessage(BOTKEYWORD + "log_level debug")
-
-	// log_level info
-	sendMessage(BOTKEYWORD + "log_level info")
-
-	// log_level warn
-	sendMessage(BOTKEYWORD + "log_level warn")
-
-	// log_level error
-	sendMessage(BOTKEYWORD + "log_level error")
-
-	// log_level fatal
-	sendMessage(BOTKEYWORD + "log_level fatal")
-
-	// log_level panic
-	sendMessage(BOTKEYWORD + "log_level panic")
-
-	// log_level info
-	sendMessage(BOTKEYWORD + "log_level info")
-}
-
-func sendBotMessage() {
-	botMsg := &discordgo.MessageCreate{
-		Message: &discordgo.Message{
-			Author: &discordgo.User{
-				Username: "AUTOMATED TEST BOT USER",
-				Bot:      true,
-			},
-			GuildID:   devGuildID,
-			ChannelID: devTextChannelID,
-			Content:   "AUTOMATED TEST BOT USER",
-		},
+	tests := []string{
+		"ixnay", // no keyword
+		fmt.Sprintf("%s %s", config.BotKeyword, "ixnay"), // keyword, unrecognized command
+		fmt.Sprintf("%s %s", config.BotKeyword, "info"),  // keyword, incomplete command
+		fmt.Sprintf("%s %s", config.BotKeyword, "log_level debug"),
+		fmt.Sprintf("%s %s", config.BotKeyword, "log_level info"),
+		fmt.Sprintf("%s %s", config.BotKeyword, "log_level warn"),
+		fmt.Sprintf("%s %s", config.BotKeyword, "log_level error"),
+		fmt.Sprintf("%s %s", config.BotKeyword, "log_level fatal"),
+		fmt.Sprintf("%s %s", config.BotKeyword, "log_level panic"),
+		fmt.Sprintf("%s %s", config.BotKeyword, "log_level "+originalLogLevel),
 	}
 
-	MessageCreate(dgTestBotSession, botMsg)
+	for _, test := range tests {
+		sendMessage(session, config, test)
+	}
 }
 
-func sendMessage(message string) {
-	msg := &discordgo.MessageCreate{
-		Message: &discordgo.Message{
-			Author: &discordgo.User{
-				Username: "AUTOMATED TEST USER",
-				Bot:      false,
+func sendBotMessage(s *discordgo.Session, config *Config) {
+	config.MessageCreate(
+		s,
+		&discordgo.MessageCreate{
+			Message: &discordgo.Message{
+				Author: &discordgo.User{
+					Username: config.BotName,
+					Bot:      true,
+				},
+				GuildID:   "testGuild",
+				ChannelID: "testChannel",
+				Content:   "",
 			},
-			GuildID:   devGuildID,
-			ChannelID: devTextChannelID,
-			Content:   message,
 		},
-	}
+	)
+}
 
-	MessageCreate(dgTestBotSession, msg)
+func sendMessage(s *discordgo.Session, config *Config, message string) {
+	config.MessageCreate(
+		s,
+		&discordgo.MessageCreate{
+			Message: &discordgo.Message{
+				Author: &discordgo.User{
+					Username: config.BotName,
+					Bot:      false,
+				},
+				GuildID:   "testGuild",
+				ChannelID: "testChannel",
+				Content:   message,
+			},
+		},
+	)
 }

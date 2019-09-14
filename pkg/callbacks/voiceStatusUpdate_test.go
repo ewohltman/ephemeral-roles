@@ -1,61 +1,73 @@
 package callbacks
 
 import (
-	"math/rand"
 	"testing"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
+	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/mock"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-func TestVoiceStateUpdate(t *testing.T) {
-	devVoiceChannel1, err := dgTestBotSession.GuildChannelCreate(devGuildID, randString(5), discordgo.ChannelTypeGuildVoice)
+func TestConfig_VoiceStateUpdate(t *testing.T) {
+	session, err := mock.Session()
 	if err != nil {
-		t.Error(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
-	defer dgTestBotSession.ChannelDelete(devVoiceChannel1.ID)
 
-	devVoiceChannel2, err := dgTestBotSession.GuildChannelCreate(devGuildID, randString(5), discordgo.ChannelTypeGuildVoice)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
+	log := logging.New()
+	log.SetLevel(logrus.FatalLevel)
+
+	monitorConfig := &monitor.Config{
+		Log: log,
 	}
-	defer dgTestBotSession.ChannelDelete(devVoiceChannel2.ID)
 
-	// connect
-	sendUpdate(devVoiceChannel1.ID)
+	config := &Config{
+		Log:                     log,
+		BotName:                 "testBot",
+		BotKeyword:              "testKeyword",
+		RolePrefix:              "testRolePrefix",
+		ReadyCounter:            nil,
+		MessageCreateCounter:    nil,
+		VoiceStateUpdateCounter: monitorConfig.VoiceStateUpdateCounter(),
+	}
+
+	sendUpdate(session, config, "testChannel")
+
+	// disconnect
+	sendUpdate(session, config, "")
+
+	/*// connect
+	sendUpdate(testSession, "channel1")
 
 	//change
-	sendUpdate(devVoiceChannel2.ID)
+	sendUpdate(testSession, devVoiceChannel2.ID)
 
 	// disconnect
-	sendUpdate("")
+	sendUpdate(testSession, "")
 
 	// reconnect
-	sendUpdate(devVoiceChannel1.ID)
+	sendUpdate(testSession, devVoiceChannel1.ID)
 
 	// reconnect same channel
-	sendUpdate(devVoiceChannel1.ID)
+	sendUpdate(testSession, devVoiceChannel1.ID)
 
 	// disconnect
-	sendUpdate("")
+	sendUpdate(testSession, "")*/
 }
 
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[rand.Int63()%int64(len(letters))]
-	}
-	return string(b)
-}
-
-func sendUpdate(channelID string) {
-	update := &discordgo.VoiceStateUpdate{
-		VoiceState: &discordgo.VoiceState{
-			UserID:    dgTestBotSession.State.User.ID,
-			GuildID:   devGuildID,
-			ChannelID: channelID,
+func sendUpdate(s *discordgo.Session, config *Config, channelID string) {
+	config.VoiceStateUpdate(
+		s,
+		&discordgo.VoiceStateUpdate{
+			VoiceState: &discordgo.VoiceState{
+				UserID:    "testUser",
+				GuildID:   "testGuild",
+				ChannelID: channelID,
+			},
 		},
-	}
-	VoiceStateUpdate(dgTestBotSession, update)
+	)
 }
