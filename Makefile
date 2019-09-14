@@ -1,4 +1,4 @@
-.PHONY: lint test build buildBeanstalk
+.PHONY: lint test build buildBeanstalk buildDocker
 
 lint:
 	golangci-lint run --enable-all --deadline=5m ./...
@@ -11,7 +11,9 @@ build:
 
 buildBeanstalk:
 	go build -o bin/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
-	chmod +x bin/ephemeral-roles
+
+buildDocker: build
+	docker image build -t ephemeral-roles build/package
 
 push:
 	docker push ewohltman/ephemeral-roles:latest

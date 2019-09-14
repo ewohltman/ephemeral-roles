@@ -10,9 +10,9 @@ before_script:
 - make test
 - "$GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN"
 script:
-- make buildBeanstalk
+- make build
 before_deploy:
-- zip -r ephemeral-roles.zip .
+- zip -r ephemeral-roles.zip build/package
 deploy:
   skip_cleanup: true
   wait-until-deployed: true
