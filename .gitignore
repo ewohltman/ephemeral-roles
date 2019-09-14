@@ -2,5 +2,8 @@
 .idea/
 bin/
 
+# Test results
+coverage.out
+
 # Binary
 build/package/ephemeral-roles
