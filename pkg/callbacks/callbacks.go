@@ -3,9 +3,21 @@ package callbacks
 import (
 	"bytes"
 	"strconv"
+
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sirupsen/logrus"
 )
 
-// **** BEGIN: API response structs and associated methods ********************
+type Config struct {
+	Log                     *logrus.Logger
+	BotName                 string
+	BotKeyword              string
+	RolePrefix              string
+	ReadyCounter            prometheus.Counter
+	MessageCreateCounter    prometheus.Counter
+	VoiceStateUpdateCounter prometheus.Counter
+}
 
 // DiscordAPIResponse is a receiving struct for API JSON responses
 type DiscordAPIResponse struct {
@@ -13,25 +25,18 @@ type DiscordAPIResponse struct {
 	Message string `json:"message"`
 }
 
-// (dAR *DiscordAPIResponse) String satisfies the fmt.Stringer interface for field names in logs
-/*func (dAR *DiscordAPIResponse) String() string {
-	return fmt.Sprintf("Code: %d, Message: %s", dAR.Code, dAR.Message)
-}*/
-
-// discordError is a convenience struct for encapsulating API error responses
-// for logging
 type discordError struct {
 	HTTPResponseMessage string
 	APIResponse         *DiscordAPIResponse
 	CustomMessage       string
 }
 
-// (dErr *discordError) Error satisfies the error interface
+// Error satisfies the error interface for discordError
 func (dErr *discordError) Error() string {
 	return "error from Discord API: " + dErr.String()
 }
 
-// (dErr *discordError) String satisfies the fmt.Stringer interface
+// String satisfies the fmt.Stringer interface for discordError
 func (dErr *discordError) String() string {
 	buf := bytes.NewBuffer([]byte{})
 

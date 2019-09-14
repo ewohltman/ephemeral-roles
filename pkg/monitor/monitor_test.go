@@ -1,48 +1,32 @@
 package monitor
 
 import (
-	"os"
 	"testing"
+	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/ephemeral-roles/pkg/mock"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
-var (
-	token            string
-	botID            string
-	dgTestBotSession *discordgo.Session
-	log              = logging.Instance()
-)
-
-func TestMain(m *testing.M) {
-	var found bool
-	token, found = os.LookupEnv("BOT_TOKEN")
-	if !found || token == "" {
-		log.Fatalf("BOT_TOKEN not defined in environment variables")
-	}
-
-	botID, found = os.LookupEnv("BOT_ID")
-	if !found || botID == "" {
-		log.WithField("warn", "BOT_ID not defined in environment variables").
-			Warnf("Integration with discordbots.org disabled")
-	}
-
-	var err error
-	dgTestBotSession, err = discordgo.New("Bot " + token)
-	if err != nil {
-		log.WithError(err).Fatalf("Error creating Discord session")
-	}
-
-	err = dgTestBotSession.Open()
-	if err != nil {
-		log.WithError(err).Fatalf("Error opening Discord session")
-	}
-	defer dgTestBotSession.Close()
-
-	os.Exit(m.Run())
-}
-
 func TestStart(t *testing.T) {
-	Start(dgTestBotSession)
+	log := logging.New()
+	log.SetLevel(logrus.FatalLevel)
+
+	mockSession, err := mock.Session()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	Start(
+		&Config{
+			Log:                 log,
+			Session:             mockSession,
+			BotID:               "",
+			DiscordBotsOrgToken: "",
+			Interval:            1 * time.Second,
+		},
+	)
 }

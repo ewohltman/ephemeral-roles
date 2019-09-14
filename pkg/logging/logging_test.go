@@ -7,26 +7,27 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func TestInstance(t *testing.T) {
-	testLog := Instance()
+func testLogger() *logrus.Logger {
+	log := New()
+	log.SetLevel(logrus.FatalLevel)
 
-	if testLog == nil {
-		t.Errorf("Failed obtaining global logging instance")
-	}
+	return log
+}
+
+func TestNew(t *testing.T) {
+	testLogger()
 }
 
 func TestReinitialize(t *testing.T) {
-	originalLevel := os.Getenv("LOG_LEVEL")
-	t.Log("LOG_LEVEL (original): " + originalLevel)
+	testLog := testLogger()
 
-	testLog := Instance()
+	originalLevel := os.Getenv("LOG_LEVEL")
 
 	err := os.Setenv("LOG_LEVEL", "debug")
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("LOG_LEVEL: " + os.Getenv("LOG_LEVEL"))
-	Reinitialize()
+	UpdateLevel(testLog)
 
 	if testLog.Level != logrus.DebugLevel {
 		t.Errorf("Failed runtime logging reinitialization")
@@ -36,8 +37,7 @@ func TestReinitialize(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("LOG_LEVEL: " + os.Getenv("LOG_LEVEL"))
-	Reinitialize()
+	UpdateLevel(testLog)
 
 	if testLog.Level != logrus.InfoLevel {
 		t.Errorf("Failed runtime logging reinitialization")
@@ -47,6 +47,5 @@ func TestReinitialize(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("LOG_LEVEL: " + os.Getenv("LOG_LEVEL"))
-	Reinitialize()
+	UpdateLevel(testLog)
 }
