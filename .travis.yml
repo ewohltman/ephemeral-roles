@@ -12,12 +12,12 @@ before_script:
 - "$GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN"
 script:
 - make build
-# before_deploy:
-# - zip -r ephemeral-roles.zip .
+before_deploy:
+- zip -r ephemeral-roles.zip .
 deploy:
   skip_cleanup: true
   wait-until-deployed: true
-#   zip_file: "ephemeral-roles.zip"
+  zip_file: "ephemeral-roles.zip"
   provider: "elasticbeanstalk"
   access_key_id: "${BEANSTALK_KEY_ID}"
   secret_access_key: "${BEANSTALK_KEY_SECRET}"
