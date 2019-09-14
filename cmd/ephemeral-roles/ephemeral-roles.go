@@ -74,7 +74,7 @@ func checkOptional() (*optionalConfig, error) {
 func main() {
 	log := logging.New()
 
-	log.Debugf("Bot starting up")
+	log.Info("Ephemeral Roles starting up")
 
 	required, err := checkRequired()
 	if err != nil {
