@@ -21,20 +21,16 @@ type members struct {
 }
 
 type membersCache struct {
-	mutex      *sync.Mutex
+	mutex      sync.Mutex
 	numMembers int
 }
 
 // Monitor sets up an infinite loop checking member changes
 func (m *members) Monitor() {
-	m.cache = &membersCache{
-		mutex:      &sync.Mutex{},
-		numMembers: 0,
-	}
+	m.cache = &membersCache{}
 
 	for {
 		m.update()
-
 		time.Sleep(m.Interval)
 	}
 }

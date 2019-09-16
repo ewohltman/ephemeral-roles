@@ -22,22 +22,17 @@ type guilds struct {
 }
 
 type guildsCache struct {
-	mutex     *sync.Mutex
+	mutex     sync.Mutex
 	guildList []*discordgo.Guild
 	numGuilds int
 }
 
 // Monitor sets up an infinite loop checking guild changes
 func (g *guilds) Monitor() {
-	g.cache = &guildsCache{
-		mutex:     &sync.Mutex{},
-		guildList: nil,
-		numGuilds: 0,
-	}
+	g.cache = &guildsCache{}
 
 	for {
 		g.update()
-
 		time.Sleep(g.Interval)
 	}
 }
