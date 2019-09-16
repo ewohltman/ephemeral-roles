@@ -20,7 +20,6 @@ type vsuEvent struct {
 	Guild       *discordgo.Guild
 	GuildRoles  discordgo.Roles
 	MemberRoles discordgo.Roles
-	ChannelID   string
 }
 
 // VoiceStateUpdate is the callback function for the VoiceStateUpdate event from Discord
@@ -74,10 +73,8 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 
 	event.MemberRoles = memberRoles
 
-	event.ChannelID = vsu.ChannelID
-
 	// Check if user disconnect event
-	if event.ChannelID == "" {
+	if vsu.ChannelID == "" {
 		config.revokeEphemeralRoles(event)
 
 		config.Log.WithFields(logrus.Fields{
