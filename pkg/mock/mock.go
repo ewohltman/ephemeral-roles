@@ -25,15 +25,32 @@ func Session() (*discordgo.Session, error) {
 
 	testUser := &discordgo.User{
 		ID:       "testUser",
-		Username: "Test User",
+		Username: "testUser",
 	}
 
 	session.State.User = testUser
 
 	err := session.State.GuildAdd(
 		&discordgo.Guild{
-			ID:    "testGuild",
-			Roles: make([]*discordgo.Role, 0),
+			ID:   "testGuild",
+			Name: "testGuild",
+			Roles: []*discordgo.Role{
+				{
+					ID:   "testRole",
+					Name: "testRole",
+				},
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = session.State.ChannelAdd(
+		&discordgo.Channel{
+			ID:      "testChannel",
+			Name:    "testChannel",
+			GuildID: "testGuild",
 		},
 	)
 	if err != nil {
@@ -43,22 +60,11 @@ func Session() (*discordgo.Session, error) {
 	err = session.State.MemberAdd(
 		&discordgo.Member{
 			User:    testUser,
-			Nick:    "Test User",
+			Nick:    "testUser",
 			GuildID: "testGuild",
-			Roles:   make([]string, 0),
+			Roles:   []string{"testRole"},
 		},
 	)
-
-	err = session.State.ChannelAdd(
-		&discordgo.Channel{
-			ID:      "testChannel",
-			Name:    "Channel Name",
-			GuildID: "testGuild",
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
 
 	return session, nil
 }
@@ -80,6 +86,8 @@ func discordAPIResponse(r *http.Request) (*http.Response, error) {
 		respBody = usersResponse()
 	case strings.Contains(r.URL.Path, "guilds"):
 		respBody = guildsResponse(r)
+	case strings.Contains(r.URL.Path, "channels"):
+		respBody = channelsResponse()
 	}
 
 	return &http.Response{
@@ -94,25 +102,50 @@ func usersResponse() []byte {
 	return []byte(`
 {
     "id": "testUser",
-    "username": "Test User"
+    "username": "testUser"
 }
 `)
 }
 
 func guildsResponse(r *http.Request) []byte {
-	switch {
-	case strings.Contains(r.URL.Path, "roles"):
-		return guildRolesResponse()
-	default:
-		return []byte("")
+	switch r.Method {
+	case http.MethodGet:
+		switch {
+		case strings.Contains(r.URL.Path, "roles"):
+			return guildRolesResponse()
+		}
+	case http.MethodPost:
+		return addGuildRoleResponse()
 	}
+
+	return []byte("{}")
 }
 
 func guildRolesResponse() []byte {
 	return []byte(`
+[
+    {
+        "id": "testRole",
+        "name": "testRole"
+    }
+]
+`)
+}
+
+func addGuildRoleResponse() []byte {
+	return []byte(`
 {
     "id": "testRole",
-    "name": "Test Role"
+    "name": "testRole"
+}
+`)
+}
+
+func channelsResponse() []byte {
+	return []byte(`
+{
+    "id": "testChannel",
+    "name": "testChannel"
 }
 `)
 }

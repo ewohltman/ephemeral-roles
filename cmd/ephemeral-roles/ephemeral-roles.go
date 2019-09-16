@@ -105,7 +105,7 @@ func main() {
 			Session:             session,
 			BotID:               "",
 			DiscordBotsOrgToken: "",
-			Interval:            5 * time.Second,
+			Interval:            1 * time.Minute,
 		},
 	)
 

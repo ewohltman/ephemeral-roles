@@ -40,23 +40,11 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	// disconnect
 	sendUpdate(session, config, "")
 
-	/*// connect
-	sendUpdate(testSession, "channel1")
+	sendUpdate(session, config, "testChannel2")
 
-	//change
-	sendUpdate(testSession, devVoiceChannel2.ID)
+	sendUpdate(session, config, "testChannel")
 
-	// disconnect
-	sendUpdate(testSession, "")
-
-	// reconnect
-	sendUpdate(testSession, devVoiceChannel1.ID)
-
-	// reconnect same channel
-	sendUpdate(testSession, devVoiceChannel1.ID)
-
-	// disconnect
-	sendUpdate(testSession, "")*/
+	sendUpdate(session, config, "")
 }
 
 func sendUpdate(s *discordgo.Session, config *Config, channelID string) {
