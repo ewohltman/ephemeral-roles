@@ -22,6 +22,7 @@ type CallbackMetrics struct {
 	VoiceStateUpdateCounter prometheus.Counter
 }
 
+// Metrics returns back the Prometheus callback metrics
 func Metrics(config *Config) *CallbackMetrics {
 	return &CallbackMetrics{
 		ReadyCounter:            config.ReadyCounter(),
