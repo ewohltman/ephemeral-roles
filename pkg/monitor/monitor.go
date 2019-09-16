@@ -22,15 +22,19 @@ type CallbackMetrics struct {
 	VoiceStateUpdateCounter prometheus.Counter
 }
 
-func Start(config *Config) *CallbackMetrics {
-	go config.guilds().Monitor()
-	go config.members().Monitor()
-
+// Metrics returns back the Prometheus callback metrics.
+func Metrics(config *Config) *CallbackMetrics {
 	return &CallbackMetrics{
 		ReadyCounter:            config.ReadyCounter(),
 		MessageCreateCounter:    config.MessageCreateCounter(),
 		VoiceStateUpdateCounter: config.VoiceStateUpdateCounter(),
 	}
+}
+
+// Start begins the goroutines for monitoring guild and member counts.
+func Start(config *Config) {
+	go config.guilds().Monitor()
+	go config.members().Monitor()
 }
 
 func (config *Config) guilds() *guilds {

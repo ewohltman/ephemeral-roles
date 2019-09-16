@@ -92,15 +92,15 @@ func main() {
 		log.WithError(err).Fatalf("Error creating Discord session")
 	}
 
-	callbackMetrics := monitor.Start(
-		&monitor.Config{
-			Log:                 log,
-			Session:             session,
-			BotID:               "",
-			DiscordBotsOrgToken: "",
-			Interval:            1 * time.Minute,
-		},
-	)
+	monitorConfig := &monitor.Config{
+		Log:                 log,
+		Session:             session,
+		BotID:               "",
+		DiscordBotsOrgToken: "",
+		Interval:            1 * time.Minute,
+	}
+
+	callbackMetrics := monitor.Metrics(monitorConfig)
 
 	callbackConfig := &callbacks.Config{
 		Log:                     log,
@@ -123,6 +123,8 @@ func main() {
 		log.WithError(err).Fatalf("Error opening Discord session")
 	}
 	defer session.Close()
+
+	monitor.Start(monitorConfig)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
