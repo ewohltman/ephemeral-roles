@@ -92,13 +92,6 @@ func main() {
 		log.WithError(err).Fatalf("Error creating Discord session")
 	}
 
-	// Open the websocket and begin listening
-	err = session.Open()
-	if err != nil {
-		log.WithError(err).Fatalf("Error opening Discord session")
-	}
-	defer session.Close()
-
 	callbackMetrics := monitor.Start(
 		&monitor.Config{
 			Log:                 log,
@@ -123,6 +116,13 @@ func main() {
 	session.AddHandler(callbackConfig.Ready)            // Connection established with Discord
 	session.AddHandler(callbackConfig.MessageCreate)    // Chat messages with BOT_KEYWORD
 	session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
+
+	// Open the websocket and begin listening
+	err = session.Open()
+	if err != nil {
+		log.WithError(err).Fatalf("Error opening Discord session")
+	}
+	defer session.Close()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
