@@ -97,10 +97,6 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	// Check to see if the member already has the role
 	for _, memberRoleID := range event.GuildMember.Roles {
 		if event.GuildRoleMap[memberRoleID].Name == ephRoleName {
-			config.Log.WithError(err).WithFields(logrus.Fields{
-				"role":  ephRoleName,
-				"guild": guild.Name,
-			}).Debugf("Member already has role in VoiceStateUpdate")
 			return
 		}
 	}
@@ -109,10 +105,6 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	for _, guildRole := range event.GuildRoleMap {
 		if guildRole.Name == ephRoleName {
 			config.grantEphemeralRole(event, guildRole)
-			config.Log.WithError(err).WithFields(logrus.Fields{
-				"role":  ephRoleName,
-				"guild": guild.Name,
-			}).Debugf("Applied existing role in VoiceStateUpdate")
 			return
 		}
 	}
@@ -136,15 +128,10 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	config.Log.WithError(err).WithFields(logrus.Fields{
 		"role":  ephRoleName,
 		"guild": guild.Name,
-	}).Debugf("Created new role required in VoiceStateUpdate")
+	}).Debugf("New role created in VoiceStateUpdate")
 
 	// Add role to member
 	config.grantEphemeralRole(event, ephRole)
-
-	config.Log.WithError(err).WithFields(logrus.Fields{
-		"role":  ephRoleName,
-		"guild": guild.Name,
-	}).Debugf("Applied new role in VoiceStateUpdate")
 }
 
 func (config *Config) guildRoleCreateEdit(event *vsuEvent, ephRoleName string) (*discordgo.Role, error) {
@@ -183,11 +170,6 @@ func (config *Config) guildRoleCreateEdit(event *vsuEvent, ephRoleName string) (
 		return nil, errors.New("unable to edit ephemeral role: " + err.Error())
 	}
 
-	/*err = guildRolesReorder(s, guild.ID)
-	if err != nil {
-		return nil, errors.New("unable to reorder ephemeral role: " + err.Error())
-	}*/
-
 	return ephRole, nil
 }
 
@@ -202,12 +184,18 @@ func (config *Config) revokeEphemeralRoles(event *vsuEvent) {
 				config.Log.WithError(err).
 					WithFields(logrus.Fields{
 						"user":  event.GuildMember.User.Username,
-						"guild": event.Guild.Name,
 						"role":  role.Name,
+						"guild": event.Guild.Name,
 					}).Debugf("Unable to remove role on VoiceStateUpdate")
 
 				return
 			}
+
+			config.Log.WithError(err).WithFields(logrus.Fields{
+				"user":  event.GuildMember.User.Username,
+				"role":  role.Name,
+				"guild": event.Guild.Name,
+			}).Debugf("Revoked role in VoiceStateUpdate")
 		}
 	}
 }
@@ -227,62 +215,10 @@ func (config *Config) grantEphemeralRole(event *vsuEvent, ephRole *discordgo.Rol
 
 		return
 	}
+
+	config.Log.WithError(err).WithFields(logrus.Fields{
+		"user":  event.GuildMember.User.Username,
+		"role":  ephRole.Name,
+		"guild": event.Guild.Name,
+	}).Debugf("Applied role in VoiceStateUpdate")
 }
-
-/*func guildRolesReorder(s *discordgo.Session, guildID string) error {
-	guildRoles, dErr := guildRoles(s, guildID)
-	if dErr != nil {
-		return errors.New(dErr.Error())
-	}
-
-	roles := orderedRoles(guildRoles)
-
-	log.WithField("roles", roles).Debugf("Old role order")
-
-	sort.SliceStable(
-		roles,
-		func(i, j int) bool {
-			return roles[i].Position < roles[j].Position
-		},
-	)
-
-	// Alignment correction if Discord is slow to update
-	for index, role := range roles {
-		if role.Position != index {
-			role.Position = index
-		}
-	}
-
-	for index, role := range roles {
-		if role.Name == "@everyone" && role.Position != 0 { // @everyone should be the lowest
-			roles.swap(index, 0)
-		}
-
-		if role.Name == BOTNAME && role.Position != len(roles)-1 { // BOTNAME should be the highest
-			roles.swap(index, len(roles)-1)
-		}
-	}
-
-	// Bubble the ephemeral roles up
-	for index, role := range roles {
-		if strings.HasPrefix(role.Name, ROLEPREFIX) {
-			for j := index; j < len(roles)-2; j++ {
-				// Stop bubbling at the bottom of the top-most group
-				if !strings.HasPrefix(roles[j+1].Name, ROLEPREFIX) {
-					roles.swap(j, j+1)
-				}
-			}
-		}
-	}
-
-	log.WithField("roles", roles).Debugf("New role order")
-
-	_, err := s.GuildRoleReorder(guildID, roles)
-	if err != nil {
-		err = errors.New("unable to reorder guild roles from API: " + err.Error())
-
-		return err
-	}
-
-	return nil
-}*/
