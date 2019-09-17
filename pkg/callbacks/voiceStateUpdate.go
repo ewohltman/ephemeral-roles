@@ -97,6 +97,10 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	// Check to see if the member already has the role
 	for _, memberRoleID := range event.GuildMember.Roles {
 		if event.GuildRoleMap[memberRoleID].Name == ephRoleName {
+			config.Log.WithError(err).WithFields(logrus.Fields{
+				"role":  ephRoleName,
+				"guild": guild.Name,
+			}).Debugf("Member already has role in VoiceStateUpdate")
 			return
 		}
 	}
@@ -104,11 +108,19 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	// Check to see if the role already exists in the guild
 	for _, guildRole := range event.GuildRoleMap {
 		if guildRole.Name == ephRoleName {
-			// Ephemeral role exists, add member to it
 			config.grantEphemeralRole(event, guildRole)
+			config.Log.WithError(err).WithFields(logrus.Fields{
+				"role":  ephRoleName,
+				"guild": guild.Name,
+			}).Debugf("Applied existing role in VoiceStateUpdate")
 			return
 		}
 	}
+
+	config.Log.WithError(err).WithFields(logrus.Fields{
+		"role":  ephRoleName,
+		"guild": guild.Name,
+	}).Debugf("New role required in VoiceStateUpdate")
 
 	// Ephemeral role does not exist, create and edit it
 	ephRole, err := config.guildRoleCreateEdit(event, ephRoleName)
@@ -121,8 +133,18 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 		return
 	}
 
+	config.Log.WithError(err).WithFields(logrus.Fields{
+		"role":  ephRoleName,
+		"guild": guild.Name,
+	}).Debugf("Created new role required in VoiceStateUpdate")
+
 	// Add role to member
 	config.grantEphemeralRole(event, ephRole)
+
+	config.Log.WithError(err).WithFields(logrus.Fields{
+		"role":  ephRoleName,
+		"guild": guild.Name,
+	}).Debugf("Applied new role in VoiceStateUpdate")
 }
 
 func (config *Config) guildRoleCreateEdit(event *vsuEvent, ephRoleName string) (*discordgo.Role, error) {
