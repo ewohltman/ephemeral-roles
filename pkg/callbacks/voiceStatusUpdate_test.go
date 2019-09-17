@@ -37,7 +37,6 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 
 	sendUpdate(session, config, "testChannel")
 
-	// disconnect
 	sendUpdate(session, config, "")
 
 	sendUpdate(session, config, "testChannel2")
