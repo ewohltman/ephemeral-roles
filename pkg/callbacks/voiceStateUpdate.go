@@ -208,12 +208,6 @@ func (config *Config) revokeEphemeralRoles(event *vsuEvent) {
 
 				return
 			}
-
-			config.Log.WithFields(logrus.Fields{
-				"user":  event.GuildMember.User.Username,
-				"guild": event.Guild.Name,
-				"role":  role.Name,
-			}).Debugf("Removed role")
 		}
 	}
 }
@@ -233,12 +227,6 @@ func (config *Config) grantEphemeralRole(event *vsuEvent, ephRole *discordgo.Rol
 
 		return
 	}
-
-	config.Log.WithFields(logrus.Fields{
-		"user":  event.GuildMember.User.Username,
-		"role":  ephRole.Name,
-		"guild": event.Guild.Name,
-	}).Debugf("Added role")
 }
 
 /*func guildRolesReorder(s *discordgo.Session, guildID string) error {
