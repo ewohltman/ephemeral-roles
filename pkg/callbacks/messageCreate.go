@@ -19,14 +19,14 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 		return
 	}
 
-	// Check if the message starts with our keyword
-	if !strings.HasPrefix(m.Content, config.BotKeyword) {
-		return
-	}
-
 	// [BOT_KEYWORD] [command] [options] :: "!eph" "log_level" "debug"
 	contentTokens := strings.Split(strings.TrimSpace(m.Content), " ")
 	if len(contentTokens) < 2 {
+		return
+	}
+
+	// Check if the message starts with our keyword
+	if contentTokens[0] != config.BotKeyword {
 		return
 	}
 
