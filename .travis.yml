@@ -23,7 +23,7 @@ deploy:
   secret_access_key: "${BEANSTALK_KEY_SECRET}"
   region: "us-east-1"
   app: "ephemeral-roles"
-  env: "ephemeral-roles-docker"
+  env: "ephemeral-roles"
   bucket_name: "ephemeral-roles"
   on:
     repo: "ewohltman/ephemeral-roles"
