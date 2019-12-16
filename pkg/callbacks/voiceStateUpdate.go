@@ -61,9 +61,10 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	}
 
 	logWithFields = config.Log.WithFields(logrus.Fields{
-		"user":  event.GuildMember.User.Username,
-		"guild": event.Guild.Name,
-		"role":  ephRoleName,
+		"user":    event.GuildMember.User.Username,
+		"guild":   event.Guild.Name,
+		"guildID": event.Guild.ID,
+		"role":    ephRoleName,
 	})
 
 	// Add role to member
