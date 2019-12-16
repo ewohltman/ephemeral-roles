@@ -69,7 +69,7 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	// Add role to member
 	err = config.grantEphemeralRole(event, ephRoleName)
 	if err != nil {
-		err = fmt.Errorf("unable to determine channel: %w", err)
+		err = fmt.Errorf("unable to grant ephemeral role: %w", err)
 		logWithFields.WithError(err).Error(voiceStateUpdateError)
 	}
 
