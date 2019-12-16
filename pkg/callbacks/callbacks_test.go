@@ -11,9 +11,7 @@ func TestDiscordError_Error(t *testing.T) {
 	log := logging.New()
 	log.SetLevel(logrus.FatalLevel)
 
-	var err error
-
-	err = &discordError{
+	err := &discordError{
 		HTTPResponseMessage: "test HTTP error response message",
 		APIResponse: &DiscordAPIResponse{
 			Code:    500,

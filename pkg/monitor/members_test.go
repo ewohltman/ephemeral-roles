@@ -2,6 +2,4 @@ package monitor
 
 import "testing"
 
-func TestMembers_Monitor(t *testing.T) {
-	// TODO
-}
+func TestMembers_Monitor(t *testing.T) {}

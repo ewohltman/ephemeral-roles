@@ -9,6 +9,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const logoURL = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles" +
+	"/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"
+
 // MessageCreate is the callback function for the MessageCreate event from Discord
 func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Increment the total number of MessageCreate events
@@ -44,51 +47,15 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 		return
 	}
 
-	logFields := logrus.Fields{
+	config.Log.WithFields(logrus.Fields{
 		"author":        m.Author.Username,
 		"content":       m.Content,
 		"contentTokens": contentTokens,
 		"channel":       c.Name,
 		"guild":         g.Name,
-	}
+	}).Debugf("New message")
 
-	config.Log.WithFields(logFields).Debugf("New message")
-
-	switch strings.ToLower(contentTokens[1]) {
-	case "info":
-		_, err := s.ChannelMessageSendEmbed(m.ChannelID, infoMessage())
-		if err != nil {
-			config.Log.WithError(err).Debugf("Unable to send message")
-			return
-		}
-	case "log_level":
-		if len(contentTokens) >= 3 {
-			levelOpt := strings.ToLower(contentTokens[2])
-
-			logFields["log_level"] = levelOpt
-
-			switch levelOpt {
-			case "debug":
-				config.updateLogLevel(levelOpt)
-				config.Log.WithFields(logFields).Debugf("Logging level changed")
-			case "info":
-				config.updateLogLevel(levelOpt)
-				config.Log.WithFields(logFields).Infof("Logging level changed")
-			case "warn":
-				config.updateLogLevel(levelOpt)
-				config.Log.WithFields(logFields).Warnf("Logging level changed")
-			case "error":
-				config.updateLogLevel(levelOpt)
-				config.Log.WithFields(logFields).Errorf("Logging level changed")
-			case "fatal":
-				config.updateLogLevel(levelOpt)
-			case "panic":
-				config.updateLogLevel(levelOpt)
-			}
-		}
-	default:
-		// Silently fail for unrecognized command
-	}
+	config.parseMessage(s, m.ChannelID, contentTokens)
 }
 
 func (config *Config) updateLogLevel(levelOpt string) {
@@ -110,7 +77,7 @@ func infoMessage() *discordgo.MessageEmbed {
 			Text: "Made using the discordgo library",
 		},
 		Image: &discordgo.MessageEmbedImage{
-			URL: "https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg",
+			URL: logoURL,
 		},
 		Fields: []*discordgo.MessageEmbedField{
 			{
@@ -129,5 +96,42 @@ func infoMessage() *discordgo.MessageEmbed {
 				Inline: false,
 			},
 		},
+	}
+}
+
+func (config *Config) parseMessage(s *discordgo.Session, channelID string, contentTokens []string) {
+	switch strings.ToLower(contentTokens[1]) {
+	case "info":
+		_, err := s.ChannelMessageSendEmbed(channelID, infoMessage())
+		if err != nil {
+			config.Log.WithError(err).Debugf("Unable to send message")
+			return
+		}
+	case "log_level":
+		if len(contentTokens) >= 3 {
+			levelOpt := strings.ToLower(contentTokens[2])
+
+			logFields := logrus.Fields{"log_level": levelOpt}
+
+			switch levelOpt {
+			case "debug":
+				config.updateLogLevel(levelOpt)
+				config.Log.WithFields(logFields).Debugf("Logging level changed")
+			case "info":
+				config.updateLogLevel(levelOpt)
+				config.Log.WithFields(logFields).Infof("Logging level changed")
+			case "warn":
+				config.updateLogLevel(levelOpt)
+				config.Log.WithFields(logFields).Warnf("Logging level changed")
+			case "error":
+				config.updateLogLevel(levelOpt)
+				config.Log.WithFields(logFields).Errorf("Logging level changed")
+			case "fatal":
+				config.updateLogLevel(levelOpt)
+			case "panic":
+				config.updateLogLevel(levelOpt)
+			}
+		}
+	default: // Do nothing for unrecognized command
 	}
 }

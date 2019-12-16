@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -11,6 +12,7 @@ import (
 type Config struct {
 	Log                 *logrus.Logger
 	Session             *discordgo.Session
+	HTTPClient          *http.Client
 	BotID               string
 	DiscordBotsOrgToken string
 	Interval            time.Duration
@@ -34,6 +36,7 @@ func Metrics(config *Config) *CallbackMetrics {
 // Start begins the goroutines for monitoring guild and member counts.
 func Start(config *Config) {
 	go config.guilds().Monitor()
+
 	go config.members().Monitor()
 }
 
@@ -53,6 +56,7 @@ func (config *Config) guilds() *guilds {
 
 	return &guilds{
 		Log:                 config.Log,
+		HTTPClient:          config.HTTPClient,
 		Session:             config.Session,
 		BotID:               config.BotID,
 		DiscordBotsOrgToken: config.DiscordBotsOrgToken,

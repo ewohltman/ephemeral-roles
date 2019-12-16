@@ -4,6 +4,4 @@ import (
 	"testing"
 )
 
-func TestGuilds_Monitor(t *testing.T) {
-	// TODO
-}
+func TestGuilds_Monitor(t *testing.T) {}

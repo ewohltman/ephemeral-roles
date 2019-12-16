@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
@@ -54,15 +56,17 @@ func checkRequired() (*requiredConfig, error) {
 }
 
 func checkOptional() (*optionalConfig, error) {
+	const integrationDisabled = "integration with discordbots.org disabled"
+
 	// Check for BOT_ID and DISCORDBOTS_ORG_TOKEN, we need these for optional discordbots.org integration
 	botID, found := os.LookupEnv("BOT_ID")
 	if !found || botID == "" {
-		return nil, errors.New("integration with discordbots.org disabled: BOT_ID not defined in environment variables")
+		return nil, errors.New(integrationDisabled + ": BOT_ID not defined in environment variables")
 	}
 
 	discordBotsOrgToken, found := os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
 	if !found || discordBotsOrgToken == "" {
-		return nil, errors.New("integration with discordbots.org disabled: DISCORDBOTS_ORG_TOKEN not defined in environment variables")
+		return nil, errors.New(integrationDisabled + ": DISCORDBOTS_ORG_TOKEN not defined in environment variables")
 	}
 
 	return &optionalConfig{
@@ -78,32 +82,73 @@ func main() {
 
 	required, err := checkRequired()
 	if err != nil {
-		log.WithError(err).Fatal("Missing required environment variable")
+		log.WithError(err).Fatal("Missing required environment variables")
 	}
 
 	_, err = checkOptional()
 	if err != nil {
-		log.WithError(err).Warn("Missing required environment variable")
+		log.WithError(err).Warn("Missing optional environment variables")
 	}
 
-	// Create a new Discord session using the provided bot token
-	session, err := discordgo.New("Bot " + required.token)
+	session, err := startSession(log, required.token)
 	if err != nil {
-		log.WithError(err).Fatalf("Error creating Discord session")
+		log.WithError(err).Fatal("Error starting Discord session")
+	}
+
+	defer func() {
+		err := session.Close()
+		if err != nil {
+			log.WithError(err).Error("Error closing Discord session")
+		}
+	}()
+
+	httpServer, stop := startHTTPServer(log, required)
+
+	<-stop // Block until the OS signal
+
+	log.Warnf("Caught graceful shutdown signal")
+
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+
+	err = httpServer.Shutdown(ctx)
+	if err != nil {
+		log.WithError(err).Error("Error shutting down server")
+	}
+}
+
+func startSession(log *logrus.Logger, token string) (*discordgo.Session, error) {
+	session, err := discordgo.New("Bot " + token)
+	if err != nil {
+		return nil, err
 	}
 
 	monitorConfig := &monitor.Config{
 		Log:                 log,
 		Session:             session,
+		HTTPClient:          session.Client,
 		BotID:               "",
 		DiscordBotsOrgToken: "",
 		Interval:            1 * time.Minute,
 	}
 
+	setupCallbacks(monitorConfig)
+
+	err = session.Open()
+	if err != nil {
+		return nil, err
+	}
+
+	monitor.Start(monitorConfig)
+
+	return session, nil
+}
+
+func setupCallbacks(monitorConfig *monitor.Config) {
 	callbackMetrics := monitor.Metrics(monitorConfig)
 
 	callbackConfig := &callbacks.Config{
-		Log:                     log,
+		Log:                     monitorConfig.Log,
 		BotName:                 os.Getenv("BOT_NAME"),
 		BotKeyword:              os.Getenv("BOT_KEYWORD"),
 		RolePrefix:              os.Getenv("ROLE_PREFIX"),
@@ -112,46 +157,26 @@ func main() {
 		VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
 	}
 
-	// Add event handlers
-	session.AddHandler(callbackConfig.Ready)            // Connection established with Discord
-	session.AddHandler(callbackConfig.MessageCreate)    // Chat messages with BOT_KEYWORD
-	session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
+	monitorConfig.Session.AddHandler(callbackConfig.Ready)            // Connection established with Discord
+	monitorConfig.Session.AddHandler(callbackConfig.MessageCreate)    // Chat messages with BOT_KEYWORD
+	monitorConfig.Session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
+}
 
-	// Open the websocket and begin listening
-	err = session.Open()
-	if err != nil {
-		log.WithError(err).Fatalf("Error opening Discord session")
-	}
-	defer session.Close()
-
-	monitor.Start(monitorConfig)
-
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
-	signal.Notify(stop, os.Interrupt)
-
+func startHTTPServer(log *logrus.Logger, required *requiredConfig) (*http.Server, chan os.Signal) {
 	httpServer := server.New(log, required.port)
 
-	log.Debugf("Starting internal HTTP server instance")
 	go func() {
-		if serverError := httpServer.ListenAndServe(); serverError != nil {
-			if serverError.Error() != http.ErrServerClosed.Error() {
-				log.WithError(serverError).Error("Internal server error")
+		if err := httpServer.ListenAndServe(); err != nil {
+			if err.Error() != http.ErrServerClosed.Error() {
+				log.WithError(err).Error("HTTP server error")
 			}
 		}
 	}()
 
-	// Block until the OS signal
-	<-stop
+	stop := make(chan os.Signal, 1)
 
-	log.Warnf("Caught graceful shutdown signal")
+	signal.Notify(stop, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
+	signal.Notify(stop, os.Interrupt)
 
-	// Cleanly shutdown the HTTP server
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFunc()
-
-	err = httpServer.Shutdown(ctx)
-	if err != nil {
-		log.WithError(err).Error("Error shutting down server")
-	}
+	return httpServer, stop
 }
