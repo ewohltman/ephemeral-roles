@@ -27,6 +27,7 @@ func TestReinitialize(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
 	UpdateLevel(testLog)
 
 	if testLog.Level != logrus.DebugLevel {
@@ -37,6 +38,7 @@ func TestReinitialize(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
 	UpdateLevel(testLog)
 
 	if testLog.Level != logrus.InfoLevel {
@@ -47,5 +49,6 @@ func TestReinitialize(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
 	UpdateLevel(testLog)
 }

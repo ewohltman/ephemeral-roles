@@ -70,6 +70,9 @@ func Session() (*discordgo.Session, error) {
 			Roles:   []string{"testRole"},
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	return session, nil
 }

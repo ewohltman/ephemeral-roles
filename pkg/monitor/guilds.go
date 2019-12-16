@@ -1,19 +1,21 @@
 package monitor
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/ephemeral-roles/pkg/discordBotsOrg"
+	"github.com/ewohltman/ephemeral-roles/pkg/discordbotsorg"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type guilds struct {
 	Log                 *logrus.Logger
 	Session             *discordgo.Session
+	HTTPClient          *http.Client
 	BotID               string
 	DiscordBotsOrgToken string
 	PrometheusGauge     prometheus.Gauge
@@ -62,7 +64,8 @@ func (g *guilds) update() {
 
 	// discordbots.org integration
 	if g.BotID != "" && g.DiscordBotsOrgToken != "" {
-		err := discordBotsOrg.Update(
+		err := discordbotsorg.Update(
+			g.HTTPClient,
 			g.DiscordBotsOrgToken,
 			g.BotID,
 			newCount,
