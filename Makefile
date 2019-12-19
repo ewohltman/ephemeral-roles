@@ -1,4 +1,4 @@
-.PHONY: lint test build buildBeanstalk docker
+.PHONY: lint test build docker
 
 lint:
 	golangci-lint run --enable-all --deadline=5m ./...
@@ -7,7 +7,7 @@ test:
 	go test -v -race -coverprofile=coverage.out ./...
 
 build:
-	go build -tags netgo -a -v -o build/package/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
+	CGO_ENABLED=0 go build -o build/package/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
 
 docker: build
 	docker image build -t ewohltman/ephemeral-roles:latest .

@@ -75,48 +75,6 @@ func checkOptional() (*optionalConfig, error) {
 	}, nil
 }
 
-func main() {
-	log := logging.New()
-
-	log.Info("Ephemeral Roles starting up")
-
-	required, err := checkRequired()
-	if err != nil {
-		log.WithError(err).Fatal("Missing required environment variables")
-	}
-
-	_, err = checkOptional()
-	if err != nil {
-		log.WithError(err).Warn("Missing optional environment variables")
-	}
-
-	session, err := startSession(log, required.token)
-	if err != nil {
-		log.WithError(err).Fatal("Error starting Discord session")
-	}
-
-	defer func() {
-		err := session.Close()
-		if err != nil {
-			log.WithError(err).Error("Error closing Discord session")
-		}
-	}()
-
-	httpServer, stop := startHTTPServer(log, required)
-
-	<-stop // Block until the OS signal
-
-	log.Warnf("Caught graceful shutdown signal")
-
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelFunc()
-
-	err = httpServer.Shutdown(ctx)
-	if err != nil {
-		log.WithError(err).Error("Error shutting down server")
-	}
-}
-
 func startSession(log *logrus.Logger, token string) (*discordgo.Session, error) {
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
@@ -179,4 +137,46 @@ func startHTTPServer(log *logrus.Logger, required *requiredConfig) (*http.Server
 	signal.Notify(stop, os.Interrupt)
 
 	return httpServer, stop
+}
+
+func main() {
+	log := logging.New()
+
+	log.Info("Ephemeral Roles starting up")
+
+	required, err := checkRequired()
+	if err != nil {
+		log.WithError(err).Fatal("Missing required environment variables")
+	}
+
+	_, err = checkOptional()
+	if err != nil {
+		log.WithError(err).Warn("Missing optional environment variables")
+	}
+
+	session, err := startSession(log, required.token)
+	if err != nil {
+		log.WithError(err).Fatal("Error starting Discord session")
+	}
+
+	defer func() {
+		err := session.Close()
+		if err != nil {
+			log.WithError(err).Error("Error closing Discord session")
+		}
+	}()
+
+	httpServer, stop := startHTTPServer(log, required)
+
+	<-stop // Block until the OS signal
+
+	log.Warnf("Caught graceful shutdown signal")
+
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+
+	err = httpServer.Shutdown(ctx)
+	if err != nil {
+		log.WithError(err).Error("Error shutting down server")
+	}
 }

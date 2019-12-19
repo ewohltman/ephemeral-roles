@@ -3,7 +3,7 @@ module github.com/ewohltman/ephemeral-roles
 go 1.13
 
 require (
-	github.com/bwmarrin/discordgo v0.20.1
+	github.com/bwmarrin/discordgo v0.20.2-0.20191018163251-9a0071df7e33
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
@@ -15,6 +15,6 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0 // indirect
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
-	golang.org/x/sys v0.0.0-20191210023423-ac6580df4449 // indirect
+	golang.org/x/sys v0.0.0-20191218084908-4a24b4065292 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )

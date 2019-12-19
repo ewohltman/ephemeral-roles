@@ -1,11 +1,7 @@
 FROM alpine:latest
 
-RUN mkdir /app
-
-COPY build/package/ephemeral-roles /app
-
-RUN chmod +x /app/ephemeral-roles
+COPY build/package/ephemeral-roles .
 
 EXPOSE 8080
 
-CMD /app/ephemeral-roles
+ENTRYPOINT ["./ephemeral-roles"]
