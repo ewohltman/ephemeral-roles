@@ -45,8 +45,7 @@ func New() *logrus.Logger {
 		Hooks: make(logrus.LevelHooks),
 	}
 
-	// Check/apply `github.com/kz/discordrus` hook integration
-	discordrusIntegration(log)
+	UpdateLevel(log)
 
 	return log
 }
