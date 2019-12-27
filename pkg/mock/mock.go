@@ -16,12 +16,20 @@ func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return s(r)
 }
 
+// TestingInstance is an interface intended for testing.T and testing.B
+// instances.
+type TestingInstance interface {
+	Error(args ...interface{})
+}
+
+// Session provides a *discordgo.Session instance to be used in unit testing by
+// mocking out Discord API endpoints.
 func Session() (*discordgo.Session, error) {
 	session := &discordgo.Session{
 		State:        discordgo.NewState(),
 		StateEnabled: true,
 		Ratelimiter:  discordgo.NewRatelimiter(),
-		Client:       DiscordRestClient(),
+		Client:       mockRestClient(),
 	}
 
 	testUser := &discordgo.User{
@@ -77,7 +85,16 @@ func Session() (*discordgo.Session, error) {
 	return session, nil
 }
 
-func DiscordRestClient() *http.Client {
+// SessionClose closes a *discordgo.Session instance and if an error is encountered,
+// the provided testingInstance logs the error and marks the test as failed.
+func SessionClose(testingInstance TestingInstance, session *discordgo.Session) {
+	err := session.Close()
+	if err != nil {
+		testingInstance.Error(err)
+	}
+}
+
+func mockRestClient() *http.Client {
 	return &http.Client{
 		Transport:     roundTripFunc(discordAPIResponse),
 		CheckRedirect: nil,
@@ -87,30 +104,38 @@ func DiscordRestClient() *http.Client {
 }
 
 func discordAPIResponse(r *http.Request) (*http.Response, error) {
-	respBody := []byte("")
+	var respBody []byte
 
-	fmt.Println(r.Method + ": " + r.URL.String())
+	// If Content-Type is set but request body is empty, return 400 Bad Request
+	// https://github.com/bwmarrin/discordgo/issues/716
+	if contentType := r.Header.Get("Content-Type"); contentType != "" {
+		if r.Body == nil {
+			respBody = []byte(`{"message": "400: Bad Request", "code": 0}`)
 
+			return newResponse(http.StatusBadRequest, respBody), nil
+		}
+	}
+
+	// Build response body for requested endpoint
 	switch {
 	case strings.Contains(r.URL.Path, "users"):
 		respBody = usersResponse(r)
 	case strings.Contains(r.URL.Path, "channels"):
 		respBody = channelsResponse(r)
 	case strings.Contains(r.URL.Path, "guilds"):
-		switch r.Method {
-		case http.MethodPost:
-			fallthrough
-		case http.MethodPatch:
-			respBody = roleCreateResponse()
-		}
+		respBody = roleCreateResponse(r)
 	}
 
+	return newResponse(http.StatusOK, respBody), nil
+}
+
+func newResponse(status int, respBody []byte) *http.Response {
 	return &http.Response{
-		Status:     http.StatusText(http.StatusOK),
-		StatusCode: http.StatusOK,
+		Status:     http.StatusText(status),
+		StatusCode: status,
 		Header:     make(http.Header),
 		Body:       ioutil.NopCloser(bytes.NewReader(respBody)),
-	}, nil
+	}
 }
 
 func usersResponse(r *http.Request) []byte {
@@ -138,6 +163,15 @@ func channelsResponse(r *http.Request) []byte {
 	return []byte(resp)
 }
 
-func roleCreateResponse() []byte {
-	return []byte(`{"id":"newRole","name":"newRole"}`)
+func roleCreateResponse(r *http.Request) []byte {
+	var respBody []byte
+
+	switch r.Method {
+	case http.MethodPost:
+		fallthrough
+	case http.MethodPatch:
+		respBody = []byte(`{"id":"newRole","name":"newRole"}`)
+	}
+
+	return respBody
 }

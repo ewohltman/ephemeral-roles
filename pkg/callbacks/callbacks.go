@@ -50,32 +50,3 @@ func (dErr *discordError) String() string {
 
 	return buf.String()
 }
-
-// **** BEGIN: Role organization **********************************************
-/*
-// orderedRoles is a custom type for role organization
-type orderedRoles []*discordgo.Role
-
-// (oR orderedRoles) String satisfies the fmt.Stringer interface
-func (oR orderedRoles) String() string {
-	bufStr := ""
-
-	for i := 0; i < len(oR); i++ {
-		bufStr = fmt.Sprintf(
-			"%s\nindex: %d, position: %d, name: %s",
-			bufStr,
-			i,
-			oR[i].Position,
-			oR[i].Name,
-		)
-	}
-
-	return bufStr
-}
-
-func (oR orderedRoles) swap(i, j int) {
-	oR[i].Position, oR[j].Position = oR[j].Position, oR[i].Position
-
-	oR[i], oR[j] = oR[j], oR[i]
-}
-*/

@@ -19,6 +19,8 @@ func TestConfig_MessageCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	defer mock.SessionClose(t, session)
+
 	log := logging.New()
 	log.SetLevel(logrus.FatalLevel)
 

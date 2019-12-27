@@ -12,23 +12,25 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ewohltman/ephemeral-roles/pkg/environment"
+
 	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
 )
 
-// localeFormatter is a custom formatter for logrus
 type localeFormatter struct {
 	logrus.Formatter
 	*time.Location
 }
 
-// (*localeFormatter) Format satisfies the logrus.Formatter interface
+// Format satisfies the logrus.Formatter interface.
 func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
 	e.Time = e.Time.In(l.Location)
 
 	return l.Formatter.Format(e)
 }
 
+// New returns a new *logrus.Logger instance.
 func New() *logrus.Logger {
 	timestampLocale, err := timeLocalization()
 	if err != nil {
@@ -51,7 +53,7 @@ func New() *logrus.Logger {
 }
 
 // UpdateLevel allows for runtime-updates of the global logging instance's
-// level and resets the hooks with new values from the environment
+// level and resets the hooks with new values from the environment.
 func UpdateLevel(log *logrus.Logger) {
 	// Update our global logging instance log level
 	log.SetLevel(environmentLevel())
@@ -64,9 +66,9 @@ func UpdateLevel(log *logrus.Logger) {
 }
 
 // discordrusIntegration checks to see if we can apply an optional integration
-// support for a `github.com/kz/discordrus` hook
+// support for a `github.com/kz/discordrus` hook.
 func discordrusIntegration(log *logrus.Logger) {
-	if hookURLString, found := os.LookupEnv("DISCORDRUS_WEBHOOK_URL"); found {
+	if hookURLString, found := os.LookupEnv(environment.DiscordrusWebHookURL); found {
 		timeString := ""
 
 		timestampLocale, err := timeLocalization()
@@ -111,39 +113,29 @@ func discordrusIntegration(log *logrus.Logger) {
 	}
 }
 
-// timeLocalization returns the *time.Location defined in the environment by
-// LOG_TIMEZONE_LOCATION, else defaults to time.Local
-func timeLocalization() (timeLocalization *time.Location, err error) {
-	envLocation, found := os.LookupEnv("LOG_TIMEZONE_LOCATION")
-	if !found {
-		err = fmt.Errorf("LOG_TIMEZONE_LOCATION not defined in environment variables")
-
-		return
-	}
-
-	if envLocation == "" {
+// timeLocalization returns a *time.Location defined in environment variables,
+// or otherwise defaults to time.Local.
+func timeLocalization() (*time.Location, error) {
+	envLocation, found := os.LookupEnv(environment.LogTimezoneLocation)
+	if !found || envLocation == "" {
 		envLocation = time.Local.String()
 	}
 
-	parsedLocation, parseErr := time.LoadLocation(envLocation)
-	if parseErr != nil {
-		err = fmt.Errorf("unable to parse LOG_TIMEZONE_LOCATION: %s", parseErr)
-
-		return
+	timeLocalization, err := time.LoadLocation(envLocation)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load location %s: %s", environment.LogTimezoneLocation, err)
 	}
 
-	timeLocalization = parsedLocation
-
-	return
+	return timeLocalization, nil
 }
 
-// environmentLevel parses and returns our logging level from the environment
-func environmentLevel() (logLevel logrus.Level) {
-	logLevel = logrus.InfoLevel // Default to InfoLevel
+// environmentLevel parses and returns our logging level from the environment.
+func environmentLevel() logrus.Level {
+	logLevel := logrus.InfoLevel // Default to InfoLevel
 
-	envLevel, found := os.LookupEnv("LOG_LEVEL")
+	envLevel, found := os.LookupEnv(environment.LogLevel)
 	if !found || envLevel == "" {
-		return
+		return logLevel
 	}
 
 	switch strings.ToLower(strings.TrimSpace(envLevel)) {
@@ -161,5 +153,5 @@ func environmentLevel() (logLevel logrus.Level) {
 		logLevel = logrus.PanicLevel
 	}
 
-	return
+	return logLevel
 }

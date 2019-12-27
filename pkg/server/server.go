@@ -1,6 +1,8 @@
 package server
 
 import (
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/pprof"
 
@@ -28,7 +30,7 @@ func New(log *logrus.Logger, port string) *http.Server {
 	mux.HandleFunc(
 		"/",
 		func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
+			drainCloseRequest(log, r)
 		},
 	)
 
@@ -36,5 +38,17 @@ func New(log *logrus.Logger, port string) *http.Server {
 		Addr:     ":" + port,
 		Handler:  mux,
 		ErrorLog: stdLog.New(log.WriterLevel(logrus.ErrorLevel), "", 0),
+	}
+}
+
+func drainCloseRequest(log *logrus.Logger, r *http.Request) {
+	_, err := io.Copy(ioutil.Discard, r.Body)
+	if err != nil {
+		log.WithError(err).Warn("Internal HTTP server error draining request body")
+	}
+
+	err = r.Body.Close()
+	if err != nil {
+		log.WithError(err).Warn("Internal HTTP server error closing request body")
 	}
 }

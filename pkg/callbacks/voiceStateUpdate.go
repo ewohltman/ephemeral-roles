@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ewohltman/ephemeral-roles/pkg/environment"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
@@ -194,16 +196,17 @@ func (config *Config) guildRoleCreate(event *vsuEvent, ephRoleName string) (*dis
 		return nil, fmt.Errorf("unable to create ephemeral role: %w", err)
 	}
 
-	roleColor := defaultRoleColor
+	var roleColor int
 
 	// Check for role color override
-	if colorString, found := os.LookupEnv("ROLE_COLOR_HEX2DEC"); found {
-		roleColor, err = strconv.Atoi(colorString)
+	if value, found := os.LookupEnv(environment.RoleColor); found {
+		var err error
+
+		roleColor, err = strconv.Atoi(value)
 		if err != nil {
-			config.Log.
-				WithError(err).
-				WithField("ROLE_COLOR_HEX2DEC", colorString).
-				Warnf("Error parsing ROLE_COLOR_HEX2DEC from environment")
+			config.Log.WithError(err).
+				WithField(environment.RoleColor, value).
+				Warnf("Error parsing %s from environment", environment.RoleColor)
 
 			roleColor = defaultRoleColor
 		}
