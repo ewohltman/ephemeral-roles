@@ -18,6 +18,8 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	defer mock.SessionClose(t, session)
+
 	log := logging.New()
 	log.SetLevel(logrus.FatalLevel)
 

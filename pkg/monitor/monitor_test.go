@@ -15,15 +15,17 @@ func TestStart(t *testing.T) {
 	log := logging.New()
 	log.SetLevel(logrus.FatalLevel)
 
-	mockSession, err := mock.Session()
+	session, err := mock.Session()
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	defer mock.SessionClose(t, session)
+
 	Start(
 		&Config{
 			Log:                 log,
-			Session:             mockSession,
+			Session:             session,
 			BotID:               "",
 			DiscordBotsOrgToken: "",
 			Interval:            1 * time.Second,
