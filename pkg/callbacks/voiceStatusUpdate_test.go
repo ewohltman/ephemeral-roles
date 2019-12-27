@@ -38,13 +38,9 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	}
 
 	sendUpdate(session, config, "testChannel")
-
 	sendUpdate(session, config, "")
-
 	sendUpdate(session, config, "testChannel2")
-
 	sendUpdate(session, config, "testChannel")
-
 	sendUpdate(session, config, "")
 }
 
