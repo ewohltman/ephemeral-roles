@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/environment"
 
 	"github.com/sirupsen/logrus"
 
@@ -17,63 +18,6 @@ import (
 	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/pkg/server"
 )
-
-type requiredConfig struct {
-	token string
-	port  string
-}
-
-type optionalConfig struct {
-	botID               string
-	discordBotsOrgToken string
-}
-
-func checkRequired() (*requiredConfig, error) {
-	// Check for BOT_TOKEN, we need this to connect to Discord
-	token, found := os.LookupEnv("BOT_TOKEN")
-	if !found || token == "" {
-		return nil, errors.New("BOT_TOKEN not defined in environment variables")
-	}
-
-	// Check for PORT, we need this to for our HTTP server in our container
-	port, found := os.LookupEnv("PORT")
-	if !found || port == "" {
-		port = "8080"
-	}
-
-	// Check for strings from slice, these are not needed now, but are needed in the callbacks
-	for _, envVar := range []string{"BOT_NAME", "BOT_KEYWORD", "ROLE_PREFIX"} {
-		value, found := os.LookupEnv(envVar)
-		if !found || value == "" {
-			return nil, errors.New("%s not defined in environment variables" + envVar)
-		}
-	}
-
-	return &requiredConfig{
-		token: token,
-		port:  port,
-	}, nil
-}
-
-func checkOptional() (*optionalConfig, error) {
-	const integrationDisabled = "integration with discordbots.org disabled"
-
-	// Check for BOT_ID and DISCORDBOTS_ORG_TOKEN, we need these for optional discordbots.org integration
-	botID, found := os.LookupEnv("BOT_ID")
-	if !found || botID == "" {
-		return nil, errors.New(integrationDisabled + ": BOT_ID not defined in environment variables")
-	}
-
-	discordBotsOrgToken, found := os.LookupEnv("DISCORDBOTS_ORG_TOKEN")
-	if !found || discordBotsOrgToken == "" {
-		return nil, errors.New(integrationDisabled + ": DISCORDBOTS_ORG_TOKEN not defined in environment variables")
-	}
-
-	return &optionalConfig{
-		botID:               botID,
-		discordBotsOrgToken: discordBotsOrgToken,
-	}, nil
-}
 
 func startSession(log *logrus.Logger, token string) (*discordgo.Session, error) {
 	session, err := discordgo.New("Bot " + token)
@@ -120,8 +64,8 @@ func setupCallbacks(monitorConfig *monitor.Config) {
 	monitorConfig.Session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
 }
 
-func startHTTPServer(log *logrus.Logger, required *requiredConfig) (*http.Server, chan os.Signal) {
-	httpServer := server.New(log, required.port)
+func startHTTPServer(log *logrus.Logger, required *environment.RequiredVariables) (*http.Server, chan os.Signal) {
+	httpServer := server.New(log, required.Port)
 
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
@@ -144,17 +88,17 @@ func main() {
 
 	log.Info("Ephemeral Roles starting up")
 
-	required, err := checkRequired()
+	requiredVariables, err := environment.CheckRequiredVariables()
 	if err != nil {
 		log.WithError(err).Fatal("Missing required environment variables")
 	}
 
-	_, err = checkOptional()
+	_, err = environment.CheckOptionalVariables()
 	if err != nil {
 		log.WithError(err).Warn("Missing optional environment variables")
 	}
 
-	session, err := startSession(log, required.token)
+	session, err := startSession(log, requiredVariables.BotToken)
 	if err != nil {
 		log.WithError(err).Fatal("Error starting Discord session")
 	}
@@ -166,11 +110,9 @@ func main() {
 		}
 	}()
 
-	httpServer, stop := startHTTPServer(log, required)
+	httpServer, stop := startHTTPServer(log, requiredVariables)
 
 	<-stop // Block until the OS signal
-
-	log.Warnf("Caught graceful shutdown signal")
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFunc()
