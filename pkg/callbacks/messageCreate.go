@@ -11,15 +11,37 @@ import (
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
+// Content token parsing
 const (
-	contentTokenMinimum                = 1
-	contentTokensWithCommand           = 2
-	contentTokensWithCommandParameters = 3
-	infoMessageColor                   = 0xffa500
-	logoURLBase                        = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles"
-	logoURLPath                        = "/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"
-	logoURL                            = logoURLBase + logoURLPath
-	logLevelChange                     = "Logging level changed"
+	numTokensMinimum               = 1
+	numTokensWithCommand           = 2
+	numTokensWithCommandParameters = 3
+)
+
+// Supported commands
+const (
+	infoCommand     = "info"
+	logLevelCommand = "log_level"
+)
+
+// Supported command parameters
+const (
+	logLevelParamDebug = "debug"
+	logLevelParamInfo  = "info"
+	logLevelParamWarn  = "warn"
+	logLevelParamError = "error"
+	logLevelParamFatal = "fatal"
+	logLevelParamPanic = "panic"
+)
+
+const (
+	infoMessageColor = 0xffa500
+
+	logoURLBase = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles"
+	logoURLPath = "/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"
+	logoURL     = logoURLBase + logoURLPath
+
+	logLevelChange = "Logging level changed"
 )
 
 // MessageCreate is the callback function for the MessageCreate event from Discord
@@ -34,7 +56,7 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 
 	// [BOT_KEYWORD] [command] [options] :: "!eph" "log_level" "debug"
 	contentTokens := strings.Split(strings.TrimSpace(m.Content), " ")
-	if len(contentTokens) < contentTokenMinimum {
+	if len(contentTokens) < numTokensMinimum {
 		return
 	}
 
@@ -69,15 +91,15 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 }
 
 func (config *Config) parseMessage(s *discordgo.Session, channelID string, contentTokens []string) {
-	if len(contentTokens) < contentTokensWithCommand {
+	if len(contentTokens) < numTokensWithCommand {
 		config.handleInfo(s, channelID)
 		return
 	}
 
 	switch strings.ToLower(contentTokens[1]) {
-	case "info":
+	case infoCommand:
 		config.handleInfo(s, channelID)
-	case "log_level":
+	case logLevelCommand:
 		config.handleLogLevel(contentTokens)
 	default: // Do nothing for unrecognized command
 	}
@@ -91,27 +113,27 @@ func (config *Config) handleInfo(s *discordgo.Session, channelID string) {
 }
 
 func (config *Config) handleLogLevel(contentTokens []string) {
-	if len(contentTokens) >= contentTokensWithCommandParameters {
+	if len(contentTokens) >= numTokensWithCommandParameters {
 		levelOpt := strings.ToLower(contentTokens[2])
 
 		logFields := logrus.Fields{"log_level": levelOpt}
 
 		switch levelOpt {
-		case "debug":
+		case logLevelParamDebug:
 			config.updateLogLevel(levelOpt)
 			config.Log.WithFields(logFields).Debugf(logLevelChange)
-		case "info":
+		case logLevelParamInfo:
 			config.updateLogLevel(levelOpt)
 			config.Log.WithFields(logFields).Infof(logLevelChange)
-		case "warn":
+		case logLevelParamWarn:
 			config.updateLogLevel(levelOpt)
 			config.Log.WithFields(logFields).Warnf(logLevelChange)
-		case "error":
+		case logLevelParamError:
 			config.updateLogLevel(levelOpt)
 			config.Log.WithFields(logFields).Errorf(logLevelChange)
-		case "fatal":
+		case logLevelParamFatal:
 			config.updateLogLevel(levelOpt)
-		case "panic":
+		case logLevelParamPanic:
 			config.updateLogLevel(levelOpt)
 		}
 	}
@@ -120,9 +142,7 @@ func (config *Config) handleLogLevel(contentTokens []string) {
 func (config *Config) updateLogLevel(levelOpt string) {
 	err := os.Setenv("LOG_LEVEL", levelOpt)
 	if err != nil {
-		config.Log.
-			WithError(err).
-			Warnf("Unable to set %s environment variable", environment.LogLevel)
+		config.Log.WithError(err).Warnf("Unable to set %s environment variable", environment.LogLevel)
 		return
 	}
 

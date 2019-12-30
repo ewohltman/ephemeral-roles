@@ -43,16 +43,16 @@ func TestConfig_MessageCreate(t *testing.T) {
 	sendBotMessage(session, config)
 
 	tests := []string{
-		"ixnay", // no keyword
+		"ixnay",                              // no keyword
+		fmt.Sprintf("%s", config.BotKeyword), // only keyword
 		fmt.Sprintf("%s %s", config.BotKeyword, "ixnay"), // keyword, unrecognized command
-		fmt.Sprintf("%s %s", config.BotKeyword, "info"),  // keyword, incomplete command
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level debug"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level info"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level warn"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level error"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level fatal"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level panic"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level "+originalLogLevel),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamDebug),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamInfo),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamWarn),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamError),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamFatal),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamPanic),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, originalLogLevel),
 	}
 
 	for _, test := range tests {
