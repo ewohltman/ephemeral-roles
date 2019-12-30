@@ -43,8 +43,8 @@ func TestConfig_MessageCreate(t *testing.T) {
 	sendBotMessage(session, config)
 
 	tests := []string{
-		"ixnay",                              // no keyword
-		fmt.Sprintf("%s", config.BotKeyword), // only keyword
+		"ixnay",           // no keyword
+		config.BotKeyword, // only keyword
 		fmt.Sprintf("%s %s", config.BotKeyword, "ixnay"), // keyword, unrecognized command
 		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamDebug),
 		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamInfo),
