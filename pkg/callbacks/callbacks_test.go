@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -15,7 +16,7 @@ func TestDiscordError_Error(t *testing.T) {
 	err := &discordError{
 		HTTPResponseMessage: "test HTTP error response message",
 		APIResponse: &DiscordAPIResponse{
-			Code:    500,
+			Code:    http.StatusInternalServerError,
 			Message: "test Discord error response message",
 		},
 		CustomMessage: "test error message",
@@ -31,7 +32,7 @@ func TestDiscordError_String(t *testing.T) {
 	err := &discordError{
 		HTTPResponseMessage: "test HTTP error response message",
 		APIResponse: &DiscordAPIResponse{
-			Code:    500,
+			Code:    http.StatusInternalServerError,
 			Message: "test Discord error response message",
 		},
 		CustomMessage: "test error message",

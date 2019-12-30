@@ -12,9 +12,14 @@ import (
 )
 
 const (
-	logoURL = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles" +
-		"/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"
-	logLevelChange = "Logging level changed"
+	contentTokenMinimum                = 1
+	contentTokensWithCommand           = 2
+	contentTokensWithCommandParameters = 3
+	infoMessageColor                   = 0xffa500
+	logoURLBase                        = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles"
+	logoURLPath                        = "/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"
+	logoURL                            = logoURLBase + logoURLPath
+	logLevelChange                     = "Logging level changed"
 )
 
 // MessageCreate is the callback function for the MessageCreate event from Discord
@@ -29,7 +34,7 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 
 	// [BOT_KEYWORD] [command] [options] :: "!eph" "log_level" "debug"
 	contentTokens := strings.Split(strings.TrimSpace(m.Content), " ")
-	if len(contentTokens) < 1 {
+	if len(contentTokens) < contentTokenMinimum {
 		return
 	}
 
@@ -64,7 +69,7 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 }
 
 func (config *Config) parseMessage(s *discordgo.Session, channelID string, contentTokens []string) {
-	if len(contentTokens) < 2 {
+	if len(contentTokens) < contentTokensWithCommand {
 		config.handleInfo(s, channelID)
 		return
 	}
@@ -86,7 +91,7 @@ func (config *Config) handleInfo(s *discordgo.Session, channelID string) {
 }
 
 func (config *Config) handleLogLevel(contentTokens []string) {
-	if len(contentTokens) >= 3 {
+	if len(contentTokens) >= contentTokensWithCommandParameters {
 		levelOpt := strings.ToLower(contentTokens[2])
 
 		logFields := logrus.Fields{"log_level": levelOpt}
@@ -128,7 +133,7 @@ func infoMessage() *discordgo.MessageEmbed {
 	return &discordgo.MessageEmbed{
 		URL:   "https://github.com/ewohltman/ephemeral-roles",
 		Title: "Ephemeral Roles",
-		Color: 0xffa500,
+		Color: infoMessageColor,
 		Footer: &discordgo.MessageEmbedFooter{
 			Text: "Made using the discordgo library",
 		},
