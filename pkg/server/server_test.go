@@ -30,6 +30,7 @@ func TestNew(t *testing.T) {
 
 	go func() {
 		serverErr = testServer.ListenAndServe()
+
 		close(serverClosed)
 	}()
 
@@ -46,8 +47,8 @@ func TestNew(t *testing.T) {
 	}
 
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
+		closeErr := resp.Body.Close()
+		if closeErr != nil {
 			t.Errorf("Error closing test response body: %s", err)
 		}
 	}()
