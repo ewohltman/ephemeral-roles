@@ -5,15 +5,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/ephemeral-roles/pkg/discordbotsorg"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/discordbotsorg"
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 type guilds struct {
-	Log                 *logrus.Logger
+	Log                 logging.Interface
 	Session             *discordgo.Session
 	HTTPClient          *http.Client
 	BotID               string

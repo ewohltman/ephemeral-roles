@@ -2,24 +2,28 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/environment"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/bwmarrin/discordgo"
+
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
+	"github.com/ewohltman/ephemeral-roles/pkg/environment"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/pkg/server"
 )
 
-func startSession(log *logrus.Logger, token string) (*discordgo.Session, error) {
+const (
+	monitorInterval = 1 * time.Minute
+	contextTimeout  = 5 * time.Second
+)
+
+func startSession(log logging.Interface, token string) (*discordgo.Session, error) {
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
 		return nil, err
@@ -31,7 +35,7 @@ func startSession(log *logrus.Logger, token string) (*discordgo.Session, error) 
 		HTTPClient:          session.Client,
 		BotID:               "",
 		DiscordBotsOrgToken: "",
-		Interval:            1 * time.Minute,
+		Interval:            monitorInterval,
 	}
 
 	setupCallbacks(monitorConfig)
@@ -64,21 +68,20 @@ func setupCallbacks(monitorConfig *monitor.Config) {
 	monitorConfig.Session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
 }
 
-func startHTTPServer(log *logrus.Logger, required *environment.RequiredVariables) (*http.Server, chan os.Signal) {
-	httpServer := server.New(log, required.Port)
+func startHTTPServer(log logging.Interface, required *environment.RequiredVariables) (httpServer *http.Server, stop chan os.Signal) {
+	httpServer = server.New(log, required.Port)
+	stop = make(chan os.Signal, 1)
 
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
-			if err.Error() != http.ErrServerClosed.Error() {
+			if !errors.Is(err, http.ErrServerClosed) {
 				log.WithError(err).Error("HTTP server error")
+				stop <- syscall.SIGTERM
 			}
 		}
 	}()
 
-	stop := make(chan os.Signal, 1)
-
-	signal.Notify(stop, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
-	signal.Notify(stop, os.Interrupt)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGHUP)
 
 	return httpServer, stop
 }
@@ -104,21 +107,23 @@ func main() {
 	}
 
 	defer func() {
-		err := session.Close()
-		if err != nil {
-			log.WithError(err).Error("Error closing Discord session")
+		closeErr := session.Close()
+		if closeErr != nil {
+			log.WithError(closeErr).Error("Error closing Discord session")
 		}
 	}()
 
 	httpServer, stop := startHTTPServer(log, requiredVariables)
 
-	<-stop // Block until the OS signal
+	osSignal := <-stop // Block until the OS signal
 
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	log.Infof("Caught OS signal: %v", osSignal)
+
+	ctx, cancelFunc := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancelFunc()
 
 	err = httpServer.Shutdown(ctx)
 	if err != nil {
-		log.WithError(err).Error("Error shutting down server")
+		log.WithError(err).Error("Error shutting down HTTP server gracefully")
 	}
 }

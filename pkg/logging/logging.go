@@ -12,11 +12,87 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/environment"
-
 	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/environment"
 )
+
+// Logging level strings.
+const (
+	DebugLevel   = "debug"
+	InfoLevel    = "info"
+	WarningLevel = "warning"
+	ErrorLevel   = "error"
+	FatalLevel   = "fatal"
+	PanicLevel   = "panic"
+)
+
+// Logging level color constants.
+const (
+	DebugColor   = 10170623
+	InfoColor    = 3581519
+	WarningColor = 14327864
+	ErrorColor   = 13631488
+	PanicColor   = 13631488
+	FatalColor   = 13631488
+)
+
+// Interface wraps the logrus.FieldLogger interface and includes custom
+// methods.
+type Interface interface {
+	logrus.FieldLogger
+	WrappedLogger() *logrus.Logger
+	UpdateLevel()
+}
+
+// Logger is a struct to wrap a *logrus.Logger instance and provide custom
+// methods..
+type Logger struct {
+	*logrus.Logger
+}
+
+// New returns a new *logrus.Logger instance.
+func New() *Logger {
+	timestampLocale, err := timeLocalization()
+	if err != nil {
+		timestampLocale = time.Local
+	}
+
+	log := &Logger{
+		Logger: &logrus.Logger{
+			Formatter: &localeFormatter{
+				&logrus.TextFormatter{},
+				timestampLocale,
+			},
+			Out:   os.Stdout,
+			Level: logrus.InfoLevel,
+			Hooks: make(logrus.LevelHooks),
+		},
+	}
+
+	log.UpdateLevel()
+
+	return log
+}
+
+// WrappedLogger returns the wrapped *logrus.Logger instance.
+func (log *Logger) WrappedLogger() *logrus.Logger {
+	return log.Logger
+}
+
+// UpdateLevel allows for runtime updates of the logging level and resets the
+// hooks with new values from the environment.
+func (log *Logger) UpdateLevel() {
+	// Update our global logging instance log level
+	log.SetLevel(environmentLevel())
+
+	// Reset logging hooks
+	log.Hooks = make(logrus.LevelHooks)
+
+	// Check/apply `github.com/kz/discordrus` hook integration
+	discordrusIntegration(log)
+}
 
 type localeFormatter struct {
 	logrus.Formatter
@@ -30,44 +106,52 @@ func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
 	return l.Formatter.Format(e)
 }
 
-// New returns a new *logrus.Logger instance.
-func New() *logrus.Logger {
-	timestampLocale, err := timeLocalization()
+// timeLocalization returns a *time.Location defined in environment variables,
+// or otherwise defaults to time.Local.
+func timeLocalization() (*time.Location, error) {
+	envLocation, found := os.LookupEnv(environment.LogTimezoneLocation)
+	if !found || envLocation == "" {
+		envLocation = time.Local.String()
+	}
+
+	timeLocalization, err := time.LoadLocation(envLocation)
 	if err != nil {
-		timestampLocale = time.Local
+		return nil, fmt.Errorf("unable to load location %s: %s", environment.LogTimezoneLocation, err)
 	}
 
-	log := &logrus.Logger{
-		Formatter: &localeFormatter{
-			&logrus.TextFormatter{},
-			timestampLocale,
-		},
-		Out:   os.Stdout,
-		Level: logrus.InfoLevel,
-		Hooks: make(logrus.LevelHooks),
-	}
-
-	UpdateLevel(log)
-
-	return log
+	return timeLocalization, nil
 }
 
-// UpdateLevel allows for runtime-updates of the global logging instance's
-// level and resets the hooks with new values from the environment.
-func UpdateLevel(log *logrus.Logger) {
-	// Update our global logging instance log level
-	log.SetLevel(environmentLevel())
+// environmentLevel parses and returns our logging level from the environment.
+func environmentLevel() logrus.Level {
+	logLevel := logrus.InfoLevel // Default to InfoLevel
 
-	// Reset logging hooks
-	log.Hooks = make(logrus.LevelHooks)
+	envLevel, found := os.LookupEnv(environment.LogLevel)
+	if !found || envLevel == "" {
+		return logLevel
+	}
 
-	// Check/apply `github.com/kz/discordrus` hook integration
-	discordrusIntegration(log)
+	switch strings.ToLower(strings.TrimSpace(envLevel)) {
+	case DebugLevel:
+		logLevel = logrus.DebugLevel
+	case InfoLevel:
+		logLevel = logrus.InfoLevel
+	case WarningLevel:
+		logLevel = logrus.WarnLevel
+	case ErrorLevel:
+		logLevel = logrus.ErrorLevel
+	case FatalLevel:
+		logLevel = logrus.FatalLevel
+	case PanicLevel:
+		logLevel = logrus.PanicLevel
+	}
+
+	return logLevel
 }
 
 // discordrusIntegration checks to see if we can apply an optional integration
 // support for a `github.com/kz/discordrus` hook.
-func discordrusIntegration(log *logrus.Logger) {
+func discordrusIntegration(log *Logger) {
 	if hookURLString, found := os.LookupEnv(environment.DiscordrusWebHookURL); found {
 		timeString := ""
 
@@ -97,12 +181,12 @@ func discordrusIntegration(log *logrus.Logger) {
 					DisableInlineFields: false, // If set to true, fields will not appear in columns ("inline")
 					EnableCustomColors:  true,  // If set to true, the below CustomLevelColors will apply
 					CustomLevelColors: &discordrus.LevelColors{
-						Debug: 10170623,
-						Info:  3581519,
-						Warn:  14327864,
-						Error: 13631488,
-						Panic: 13631488,
-						Fatal: 13631488,
+						Debug: DebugColor,
+						Info:  InfoColor,
+						Warn:  WarningColor,
+						Error: ErrorColor,
+						Panic: PanicColor,
+						Fatal: FatalColor,
 					},
 					DisableTimestamp: false,           // Setting this to true will disable timestamps from appearing in the footer
 					TimestampFormat:  timeStampFormat, // The timestamp takes this format; if unset, it will take a default format
@@ -111,47 +195,4 @@ func discordrusIntegration(log *logrus.Logger) {
 			),
 		)
 	}
-}
-
-// timeLocalization returns a *time.Location defined in environment variables,
-// or otherwise defaults to time.Local.
-func timeLocalization() (*time.Location, error) {
-	envLocation, found := os.LookupEnv(environment.LogTimezoneLocation)
-	if !found || envLocation == "" {
-		envLocation = time.Local.String()
-	}
-
-	timeLocalization, err := time.LoadLocation(envLocation)
-	if err != nil {
-		return nil, fmt.Errorf("unable to load location %s: %s", environment.LogTimezoneLocation, err)
-	}
-
-	return timeLocalization, nil
-}
-
-// environmentLevel parses and returns our logging level from the environment.
-func environmentLevel() logrus.Level {
-	logLevel := logrus.InfoLevel // Default to InfoLevel
-
-	envLevel, found := os.LookupEnv(environment.LogLevel)
-	if !found || envLevel == "" {
-		return logLevel
-	}
-
-	switch strings.ToLower(strings.TrimSpace(envLevel)) {
-	case "debug":
-		logLevel = logrus.DebugLevel
-	case "info":
-		logLevel = logrus.InfoLevel
-	case "warn":
-		logLevel = logrus.WarnLevel
-	case "error":
-		logLevel = logrus.ErrorLevel
-	case "fatal":
-		logLevel = logrus.FatalLevel
-	case "panic":
-		logLevel = logrus.PanicLevel
-	}
-
-	return logLevel
 }

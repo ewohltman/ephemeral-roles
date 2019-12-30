@@ -3,25 +3,21 @@ package callbacks
 import (
 	"testing"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
-	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
-	"github.com/sirupsen/logrus"
+	"github.com/bwmarrin/discordgo"
 
 	"github.com/ewohltman/ephemeral-roles/pkg/mock"
-
-	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 )
 
 func TestConfig_VoiceStateUpdate(t *testing.T) {
-	session, err := mock.Session()
+	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer mock.SessionClose(t, session)
 
-	log := logging.New()
-	log.SetLevel(logrus.FatalLevel)
+	log := mock.NewLogger()
 
 	monitorConfig := &monitor.Config{
 		Log: log,

@@ -5,17 +5,14 @@ import (
 	"time"
 
 	"github.com/ewohltman/ephemeral-roles/pkg/mock"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
-func TestStart(t *testing.T) {
-	log := logging.New()
-	log.SetLevel(logrus.FatalLevel)
+const monitorTestInterval = 1 * time.Second
 
-	session, err := mock.Session()
+func TestStart(t *testing.T) {
+	log := mock.NewLogger()
+
+	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +25,7 @@ func TestStart(t *testing.T) {
 			Session:             session,
 			BotID:               "",
 			DiscordBotsOrgToken: "",
-			Interval:            1 * time.Second,
+			Interval:            monitorTestInterval,
 		},
 	)
 }

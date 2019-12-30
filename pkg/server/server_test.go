@@ -8,15 +8,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
-	"github.com/sirupsen/logrus"
+	"github.com/ewohltman/ephemeral-roles/pkg/mock"
 )
 
 const testPort = "8080"
 
 func TestNew(t *testing.T) {
-	log := logging.New()
-	log.SetLevel(logrus.FatalLevel)
+	log := mock.NewLogger()
 
 	testServer := New(log, testPort)
 	if testServer == nil {
@@ -29,6 +27,7 @@ func TestNew(t *testing.T) {
 
 	go func() {
 		serverErr = testServer.ListenAndServe()
+
 		close(serverClosed)
 	}()
 
@@ -45,8 +44,8 @@ func TestNew(t *testing.T) {
 	}
 
 	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
+		closeErr := resp.Body.Close()
+		if closeErr != nil {
 			t.Errorf("Error closing test response body: %s", err)
 		}
 	}()

@@ -4,14 +4,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 type members struct {
-	Log                 *logrus.Logger
+	Log                 logging.Interface
 	Session             *discordgo.Session
 	BotID               string
 	DiscordBotsOrgToken string

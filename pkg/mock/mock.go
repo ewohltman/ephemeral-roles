@@ -8,13 +8,8 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
 )
-
-type roundTripFunc func(r *http.Request) (*http.Response, error)
-
-func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
-	return s(r)
-}
 
 // TestingInstance is an interface intended for testing.T and testing.B
 // instances.
@@ -22,9 +17,44 @@ type TestingInstance interface {
 	Error(args ...interface{})
 }
 
-// Session provides a *discordgo.Session instance to be used in unit testing by
-// mocking out Discord API endpoints.
-func Session() (*discordgo.Session, error) {
+// Logger is a mock logger to suppress printing any actual log messages
+type Logger struct {
+	*logrus.Logger
+}
+
+// WrappedLogger returns the wrapped *logrus.Logger instance.
+func (log *Logger) WrappedLogger() *logrus.Logger {
+	return log.Logger
+}
+
+// UpdateLevel is a mock stub of the logging.Logger UpdateLevel method.
+func (log *Logger) UpdateLevel() {
+	// Nop
+}
+
+// NewLogger provides mock *Logger instance.
+func NewLogger() *Logger {
+	log := &Logger{
+		&logrus.Logger{
+			Formatter: &logrus.TextFormatter{},
+			Out:       ioutil.Discard,
+			Level:     logrus.InfoLevel,
+			Hooks:     make(logrus.LevelHooks),
+		},
+	}
+
+	return log
+}
+
+type roundTripFunc func(r *http.Request) (*http.Response, error)
+
+func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return s(r)
+}
+
+// NewSession provides a *discordgo.Session instance to be used in unit testing
+// by mocking out Discord API endpoints.
+func NewSession() (*discordgo.Session, error) {
 	session := &discordgo.Session{
 		State:        discordgo.NewState(),
 		StateEnabled: true,
@@ -106,16 +136,6 @@ func mockRestClient() *http.Client {
 func discordAPIResponse(r *http.Request) (*http.Response, error) {
 	var respBody []byte
 
-	// If Content-Type is set but request body is empty, return 400 Bad Request
-	// https://github.com/bwmarrin/discordgo/issues/716
-	if contentType := r.Header.Get("Content-Type"); contentType != "" {
-		if r.Body == nil {
-			respBody = []byte(`{"message": "400: Bad Request", "code": 0}`)
-
-			return newResponse(http.StatusBadRequest, respBody), nil
-		}
-	}
-
 	// Build response body for requested endpoint
 	switch {
 	case strings.Contains(r.URL.Path, "users"):
@@ -167,9 +187,7 @@ func roleCreateResponse(r *http.Request) []byte {
 	var respBody []byte
 
 	switch r.Method {
-	case http.MethodPost:
-		fallthrough
-	case http.MethodPatch:
+	case http.MethodPost, http.MethodPatch:
 		respBody = []byte(`{"id":"newRole","name":"newRole"}`)
 	}
 

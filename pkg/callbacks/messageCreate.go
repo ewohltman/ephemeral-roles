@@ -5,12 +5,43 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/environment"
 )
 
-const logoURL = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles" +
-	"/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"
+// Content token parsing
+const (
+	numTokensMinimum               = 1
+	numTokensWithCommand           = 2
+	numTokensWithCommandParameters = 3
+)
+
+// Supported commands
+const (
+	infoCommand     = "info"
+	logLevelCommand = "log_level"
+)
+
+// Supported command parameters
+const (
+	logLevelParamDebug   = "debug"
+	logLevelParamInfo    = "info"
+	logLevelParamWarning = "warning"
+	logLevelParamError   = "error"
+	logLevelParamFatal   = "fatal"
+	logLevelParamPanic   = "panic"
+)
+
+const (
+	infoMessageColor = 0xffa500
+
+	logoURLBase = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles"
+	logoURLPath = "/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"
+	logoURL     = logoURLBase + logoURLPath
+
+	logLevelChange = "Logging level changed"
+)
 
 // MessageCreate is the callback function for the MessageCreate event from Discord
 func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -24,7 +55,7 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 
 	// [BOT_KEYWORD] [command] [options] :: "!eph" "log_level" "debug"
 	contentTokens := strings.Split(strings.TrimSpace(m.Content), " ")
-	if len(contentTokens) < 2 {
+	if len(contentTokens) < numTokensMinimum {
 		return
 	}
 
@@ -58,21 +89,70 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 	config.parseMessage(s, m.ChannelID, contentTokens)
 }
 
-func (config *Config) updateLogLevel(levelOpt string) {
-	err := os.Setenv("LOG_LEVEL", levelOpt)
-	if err != nil {
-		config.Log.WithError(err).Warn("Unable to set LOG_LEVEL environment variable")
+func (config *Config) parseMessage(s *discordgo.Session, channelID string, contentTokens []string) {
+	if len(contentTokens) < numTokensWithCommand {
+		config.handleInfo(s, channelID)
 		return
 	}
 
-	logging.UpdateLevel(config.Log)
+	switch strings.ToLower(contentTokens[1]) {
+	case infoCommand:
+		config.handleInfo(s, channelID)
+	case logLevelCommand:
+		config.handleLogLevel(contentTokens)
+	default: // Do nothing for unrecognized command
+	}
+}
+
+func (config *Config) handleInfo(s *discordgo.Session, channelID string) {
+	_, err := s.ChannelMessageSendEmbed(channelID, infoMessage())
+	if err != nil {
+		config.Log.WithError(err).Debugf("Unable to send info message")
+	}
+}
+
+func (config *Config) handleLogLevel(contentTokens []string) {
+	if len(contentTokens) >= numTokensWithCommandParameters {
+		levelOpt := strings.ToLower(contentTokens[2])
+
+		logFields := logrus.Fields{logLevelCommand: levelOpt}
+
+		switch levelOpt {
+		case logLevelParamDebug:
+			config.updateLogLevel(levelOpt)
+			config.Log.WithFields(logFields).Debugf(logLevelChange)
+		case logLevelParamInfo:
+			config.updateLogLevel(levelOpt)
+			config.Log.WithFields(logFields).Infof(logLevelChange)
+		case logLevelParamWarning:
+			config.updateLogLevel(levelOpt)
+			config.Log.WithFields(logFields).Warnf(logLevelChange)
+		case logLevelParamError:
+			config.updateLogLevel(levelOpt)
+			config.Log.WithFields(logFields).Errorf(logLevelChange)
+		case logLevelParamFatal:
+			config.updateLogLevel(levelOpt)
+		case logLevelParamPanic:
+			config.updateLogLevel(levelOpt)
+		}
+	}
+}
+
+func (config *Config) updateLogLevel(levelOpt string) {
+	err := os.Setenv(environment.LogLevel, levelOpt)
+	if err != nil {
+		config.Log.WithError(err).Warnf("Unable to set environment variable %s", environment.LogLevel)
+		return
+	}
+
+	config.Log.UpdateLevel()
 }
 
 func infoMessage() *discordgo.MessageEmbed {
 	return &discordgo.MessageEmbed{
 		URL:   "https://github.com/ewohltman/ephemeral-roles",
 		Title: "Ephemeral Roles",
-		Color: 0xffa500,
+		Color: infoMessageColor,
 		Footer: &discordgo.MessageEmbedFooter{
 			Text: "Made using the discordgo library",
 		},
@@ -82,56 +162,19 @@ func infoMessage() *discordgo.MessageEmbed {
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "About",
-				Value:  "Ephemeral Roles is a discord bot designed to assign roles based upon voice channel member presence",
+				Value:  "Ephemeral Roles is a Discord bot designed to assign roles based upon voice channel member presence.",
 				Inline: false,
 			},
 			{
 				Name:   "Author",
-				Value:  "Ephemeral Roles is created by ewohltman",
+				Value:  "Ephemeral Roles was created by ewohltman: https://github.com/ewohltman",
 				Inline: false,
 			},
 			{
 				Name:   "Library",
-				Value:  "Ephemeral Roles uses the discordgo library by bwmarrin",
+				Value:  "Ephemeral Roles uses the `discordgo` library by bwmarrin: https://github.com/bwmarrin/discordgo",
 				Inline: false,
 			},
 		},
-	}
-}
-
-func (config *Config) parseMessage(s *discordgo.Session, channelID string, contentTokens []string) {
-	switch strings.ToLower(contentTokens[1]) {
-	case "info":
-		_, err := s.ChannelMessageSendEmbed(channelID, infoMessage())
-		if err != nil {
-			config.Log.WithError(err).Debugf("Unable to send message")
-			return
-		}
-	case "log_level":
-		if len(contentTokens) >= 3 {
-			levelOpt := strings.ToLower(contentTokens[2])
-
-			logFields := logrus.Fields{"log_level": levelOpt}
-
-			switch levelOpt {
-			case "debug":
-				config.updateLogLevel(levelOpt)
-				config.Log.WithFields(logFields).Debugf("Logging level changed")
-			case "info":
-				config.updateLogLevel(levelOpt)
-				config.Log.WithFields(logFields).Infof("Logging level changed")
-			case "warn":
-				config.updateLogLevel(levelOpt)
-				config.Log.WithFields(logFields).Warnf("Logging level changed")
-			case "error":
-				config.updateLogLevel(levelOpt)
-				config.Log.WithFields(logFields).Errorf("Logging level changed")
-			case "fatal":
-				config.updateLogLevel(levelOpt)
-			case "panic":
-				config.updateLogLevel(levelOpt)
-			}
-		}
-	default: // Do nothing for unrecognized command
 	}
 }

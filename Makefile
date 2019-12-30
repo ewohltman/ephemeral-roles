@@ -1,7 +1,7 @@
 .PHONY: lint test build docker
 
 lint:
-	golangci-lint run --enable-all --deadline=5m ./...
+	golangci-lint run
 
 test:
 	go test -v -race -coverprofile=coverage.out ./...

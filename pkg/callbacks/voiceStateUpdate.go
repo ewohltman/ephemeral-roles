@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/environment"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/environment"
 )
 
 const (
@@ -200,8 +200,6 @@ func (config *Config) guildRoleCreate(event *vsuEvent, ephRoleName string) (*dis
 
 	// Check for role color override
 	if value, found := os.LookupEnv(environment.RoleColor); found {
-		var err error
-
 		roleColor, err = strconv.Atoi(value)
 		if err != nil {
 			config.Log.WithError(err).

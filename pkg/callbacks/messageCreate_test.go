@@ -4,25 +4,21 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
-	"github.com/sirupsen/logrus"
+	"github.com/bwmarrin/discordgo"
 
 	"github.com/ewohltman/ephemeral-roles/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 func TestConfig_MessageCreate(t *testing.T) {
-	session, err := mock.Session()
+	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	defer mock.SessionClose(t, session)
 
-	log := logging.New()
-	log.SetLevel(logrus.FatalLevel)
+	log := mock.NewLogger()
 
 	monitorConfig := &monitor.Config{
 		Log: log,
@@ -44,16 +40,16 @@ func TestConfig_MessageCreate(t *testing.T) {
 	sendBotMessage(session, config)
 
 	tests := []string{
-		"ixnay", // no keyword
+		"ixnay",           // no keyword
+		config.BotKeyword, // only keyword
 		fmt.Sprintf("%s %s", config.BotKeyword, "ixnay"), // keyword, unrecognized command
-		fmt.Sprintf("%s %s", config.BotKeyword, "info"),  // keyword, incomplete command
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level debug"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level info"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level warn"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level error"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level fatal"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level panic"),
-		fmt.Sprintf("%s %s", config.BotKeyword, "log_level "+originalLogLevel),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamDebug),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamInfo),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamWarning),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamError),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamFatal),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamPanic),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, originalLogLevel),
 	}
 
 	for _, test := range tests {
