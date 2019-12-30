@@ -21,7 +21,7 @@ func TestDiscordError_Error(t *testing.T) {
 		CustomMessage: "test error message",
 	}
 
-	log.WithField("error", err.Error()).Info("test discord error")
+	t.Log("test discord error: " + err.Error())
 }
 
 func TestDiscordError_String(t *testing.T) {
@@ -37,5 +37,5 @@ func TestDiscordError_String(t *testing.T) {
 		CustomMessage: "test error message",
 	}
 
-	log.WithField("error", err.String()).Info("test discord error")
+	t.Log("test discord error: " + err.String())
 }
