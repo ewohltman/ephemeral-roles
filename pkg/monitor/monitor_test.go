@@ -10,6 +10,8 @@ import (
 	"github.com/ewohltman/ephemeral-roles/pkg/mock"
 )
 
+const monitorTestInterval = 1 * time.Second
+
 func TestStart(t *testing.T) {
 	log := logging.New()
 	log.SetLevel(logrus.FatalLevel)
@@ -27,7 +29,7 @@ func TestStart(t *testing.T) {
 			Session:             session,
 			BotID:               "",
 			DiscordBotsOrgToken: "",
-			Interval:            1 * time.Second,
+			Interval:            monitorTestInterval,
 		},
 	)
 }
