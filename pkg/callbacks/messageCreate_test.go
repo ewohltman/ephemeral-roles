@@ -2,10 +2,10 @@ package callbacks
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/sirupsen/logrus"
 
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/pkg/mock"
@@ -21,7 +21,7 @@ func TestConfig_MessageCreate(t *testing.T) {
 	defer mock.SessionClose(t, session)
 
 	log := logging.New()
-	log.SetLevel(logrus.FatalLevel)
+	log.SetOutput(ioutil.Discard)
 
 	monitorConfig := &monitor.Config{
 		Log: log,

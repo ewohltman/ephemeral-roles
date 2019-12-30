@@ -1,17 +1,16 @@
 package callbacks
 
 import (
+	"io/ioutil"
 	"net/http"
 	"testing"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 func TestDiscordError_Error(t *testing.T) {
 	log := logging.New()
-	log.SetLevel(logrus.FatalLevel)
+	log.SetOutput(ioutil.Discard)
 
 	err := &discordError{
 		HTTPResponseMessage: "test HTTP error response message",
@@ -27,7 +26,7 @@ func TestDiscordError_Error(t *testing.T) {
 
 func TestDiscordError_String(t *testing.T) {
 	log := logging.New()
-	log.SetLevel(logrus.FatalLevel)
+	log.SetOutput(ioutil.Discard)
 
 	err := &discordError{
 		HTTPResponseMessage: "test HTTP error response message",

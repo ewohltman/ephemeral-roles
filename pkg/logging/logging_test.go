@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 
 func testLogger() *logrus.Logger {
 	log := New()
-	log.SetLevel(logrus.FatalLevel)
+	log.SetOutput(ioutil.Discard)
 
 	return log
 }

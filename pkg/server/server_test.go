@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
@@ -17,7 +15,7 @@ const testPort = "8080"
 
 func TestNew(t *testing.T) {
 	log := logging.New()
-	log.SetLevel(logrus.FatalLevel)
+	log.SetOutput(ioutil.Discard)
 
 	testServer := New(log, testPort)
 	if testServer == nil {
