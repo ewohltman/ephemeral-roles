@@ -118,7 +118,7 @@ func main() {
 
 	osSignal := <-stop // Block until the OS signal
 
-	log.Infof("Caught OS signal: %v\n", osSignal)
+	log.Infof("Caught OS signal: %v", osSignal)
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancelFunc()
