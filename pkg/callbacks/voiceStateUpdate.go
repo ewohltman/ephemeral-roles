@@ -3,6 +3,7 @@ package callbacks
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -32,7 +33,13 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 
 	event, err := config.parseEvent(s, vsu)
 	if err != nil {
+		if errors.Is(err, &userNotFound{}) {
+			config.Log.WithError(err).Debug(voiceStateUpdateError)
+			return
+		}
+
 		config.Log.WithError(err).Error(voiceStateUpdateError)
+
 		return
 	}
 
@@ -49,7 +56,14 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	// Get the channel
 	channel, err := s.Channel(vsu.ChannelID)
 	if err != nil {
-		err = fmt.Errorf("unable to determine channel: %w", err)
+		var restErr *discordgo.RESTError
+
+		if errors.As(err, &restErr) {
+			if restErr.Response.StatusCode == http.StatusForbidden {
+				logWithFields.WithError(err).Debug(voiceStateUpdateError)
+				return
+			}
+		}
 
 		logWithFields.WithError(err).Error(voiceStateUpdateError)
 
@@ -97,7 +111,7 @@ func (config *Config) parseEvent(s *discordgo.Session, vsu *discordgo.VoiceState
 	}
 
 	if guildMember == nil {
-		return nil, errors.New("user not found in guild members")
+		return nil, &userNotFound{}
 	}
 
 	guildRoleMap := make(map[string]*discordgo.Role)
