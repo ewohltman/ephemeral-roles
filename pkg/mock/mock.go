@@ -167,9 +167,7 @@ func roleCreateResponse(r *http.Request) []byte {
 	var respBody []byte
 
 	switch r.Method {
-	case http.MethodPost:
-		fallthrough
-	case http.MethodPatch:
+	case http.MethodPost, http.MethodPatch:
 		respBody = []byte(`{"id":"newRole","name":"newRole"}`)
 	}
 
