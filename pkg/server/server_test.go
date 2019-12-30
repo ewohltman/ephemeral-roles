@@ -8,14 +8,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/pkg/mock"
 )
 
 const testPort = "8080"
 
 func TestNew(t *testing.T) {
-	log := logging.New()
-	log.SetOutput(ioutil.Discard)
+	log := mock.NewLogger()
 
 	testServer := New(log, testPort)
 	if testServer == nil {

@@ -1,21 +1,18 @@
 package monitor
 
 import (
-	"io/ioutil"
 	"testing"
 	"time"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/pkg/mock"
 )
 
 const monitorTestInterval = 1 * time.Second
 
 func TestStart(t *testing.T) {
-	log := logging.New()
-	log.SetOutput(ioutil.Discard)
+	log := mock.NewLogger()
 
-	session, err := mock.Session()
+	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}

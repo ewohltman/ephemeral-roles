@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/ewohltman/ephemeral-roles/pkg/environment"
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 // Content token parsing
@@ -26,12 +25,12 @@ const (
 
 // Supported command parameters
 const (
-	logLevelParamDebug = "debug"
-	logLevelParamInfo  = "info"
-	logLevelParamWarn  = "warn"
-	logLevelParamError = "error"
-	logLevelParamFatal = "fatal"
-	logLevelParamPanic = "panic"
+	logLevelParamDebug   = "debug"
+	logLevelParamInfo    = "info"
+	logLevelParamWarning = "warning"
+	logLevelParamError   = "error"
+	logLevelParamFatal   = "fatal"
+	logLevelParamPanic   = "panic"
 )
 
 const (
@@ -116,7 +115,7 @@ func (config *Config) handleLogLevel(contentTokens []string) {
 	if len(contentTokens) >= numTokensWithCommandParameters {
 		levelOpt := strings.ToLower(contentTokens[2])
 
-		logFields := logrus.Fields{"log_level": levelOpt}
+		logFields := logrus.Fields{logLevelCommand: levelOpt}
 
 		switch levelOpt {
 		case logLevelParamDebug:
@@ -125,7 +124,7 @@ func (config *Config) handleLogLevel(contentTokens []string) {
 		case logLevelParamInfo:
 			config.updateLogLevel(levelOpt)
 			config.Log.WithFields(logFields).Infof(logLevelChange)
-		case logLevelParamWarn:
+		case logLevelParamWarning:
 			config.updateLogLevel(levelOpt)
 			config.Log.WithFields(logFields).Warnf(logLevelChange)
 		case logLevelParamError:
@@ -140,13 +139,13 @@ func (config *Config) handleLogLevel(contentTokens []string) {
 }
 
 func (config *Config) updateLogLevel(levelOpt string) {
-	err := os.Setenv("LOG_LEVEL", levelOpt)
+	err := os.Setenv(environment.LogLevel, levelOpt)
 	if err != nil {
-		config.Log.WithError(err).Warnf("Unable to set %s environment variable", environment.LogLevel)
+		config.Log.WithError(err).Warnf("Unable to set environment variable %s", environment.LogLevel)
 		return
 	}
 
-	logging.UpdateLevel(config.Log)
+	config.Log.UpdateLevel()
 }
 
 func infoMessage() *discordgo.MessageEmbed {

@@ -6,11 +6,12 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 type Config struct {
-	Log                 *logrus.Logger
+	Log                 logging.Interface
 	Session             *discordgo.Session
 	HTTPClient          *http.Client
 	BotID               string

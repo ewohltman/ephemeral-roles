@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/sirupsen/logrus"
 
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/pkg/environment"
@@ -24,7 +23,7 @@ const (
 	contextTimeout  = 5 * time.Second
 )
 
-func startSession(log *logrus.Logger, token string) (*discordgo.Session, error) {
+func startSession(log logging.Interface, token string) (*discordgo.Session, error) {
 	session, err := discordgo.New("Bot " + token)
 	if err != nil {
 		return nil, err
@@ -69,7 +68,7 @@ func setupCallbacks(monitorConfig *monitor.Config) {
 	monitorConfig.Session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
 }
 
-func startHTTPServer(log *logrus.Logger, required *environment.RequiredVariables) (httpServer *http.Server, stop chan os.Signal) {
+func startHTTPServer(log logging.Interface, required *environment.RequiredVariables) (httpServer *http.Server, stop chan os.Signal) {
 	httpServer = server.New(log, required.Port)
 	stop = make(chan os.Signal, 1)
 
