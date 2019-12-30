@@ -21,7 +21,7 @@ const (
 	DiscordrusWebHookURL = "DISCORDRUS_WEBHOOK_URL"
 	LogTimezoneLocation  = "LOG_TIMEZONE_LOCATION"
 	DiscordBotsOrgBotID  = "BOT_ID"
-	DiscordBotsOrgToken  = "DISCORDBOTS_ORG_TOKEN" //nolint:gosec
+	DiscordBotsOrgToken  = "DISCORDBOTS_ORG_TOKEN" //nolint:gosec // Not a hard-coded credential
 )
 
 const (

@@ -81,7 +81,7 @@ func startHTTPServer(log logging.Interface, required *environment.RequiredVariab
 		}
 	}()
 
-	signal.Notify(stop, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(stop, syscall.SIGTERM)
 
 	return httpServer, stop
 }
@@ -115,9 +115,7 @@ func main() {
 
 	httpServer, stop := startHTTPServer(log, requiredVariables)
 
-	osSignal := <-stop // Block until the OS signal
-
-	log.Infof("Caught OS signal: %v", osSignal)
+	<-stop // Block until the OS signal
 
 	ctx, cancelFunc := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancelFunc()
