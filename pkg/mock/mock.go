@@ -2,6 +2,7 @@ package mock
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
+
+const unsupportedMockRequest = "unsupported mock request"
 
 // TestingInstance is an interface intended for testing.T and testing.B
 // instances.
@@ -134,19 +137,59 @@ func mockRestClient() *http.Client {
 }
 
 func discordAPIResponse(r *http.Request) (*http.Response, error) {
-	var respBody []byte
-
-	// Build response body for requested endpoint
 	switch {
-	case strings.Contains(r.URL.Path, "users"):
-		respBody = usersResponse(r)
+	case strings.Contains(r.URL.Path, "roles"):
+		return roleCreateResponse(r), nil
 	case strings.Contains(r.URL.Path, "channels"):
-		respBody = channelsResponse(r)
-	case strings.Contains(r.URL.Path, "guilds"):
-		respBody = roleCreateResponse(r)
+		return channelsResponse(r), nil
+	case strings.Contains(r.URL.Path, "users"):
+		return usersResponse(r), nil
 	}
 
-	return newResponse(http.StatusOK, respBody), nil
+	return nil, errors.New(unsupportedMockRequest)
+}
+
+func roleCreateResponse(r *http.Request) *http.Response {
+	switch r.Method {
+	case http.MethodPost, http.MethodPatch:
+		respBody := []byte(`{"id":"newRole","name":"newRole"}`)
+		return newResponse(http.StatusOK, respBody)
+	}
+
+	return newResponse(http.StatusMethodNotAllowed, []byte{})
+}
+
+func channelsResponse(r *http.Request) *http.Response {
+	pathTokens := strings.Split(r.URL.Path, "/")
+	channel := pathTokens[len(pathTokens)-1]
+
+	if channel == "privateChannel" {
+		return newResponse(http.StatusForbidden, []byte{})
+	}
+
+	respBody := []byte(
+		fmt.Sprintf(`{"id":"%s","name":"%s"}`,
+			channel,
+			channel,
+		),
+	)
+
+	return newResponse(http.StatusOK, respBody)
+}
+
+func usersResponse(r *http.Request) *http.Response {
+	pathTokens := strings.Split(r.URL.Path, "/")
+	user := pathTokens[len(pathTokens)-1]
+
+	respBody := []byte(
+		fmt.Sprintf(
+			`{"id":"%s","username":"%s"}`,
+			user,
+			user,
+		),
+	)
+
+	return newResponse(http.StatusOK, respBody)
 }
 
 func newResponse(status int, respBody []byte) *http.Response {
@@ -156,40 +199,4 @@ func newResponse(status int, respBody []byte) *http.Response {
 		Header:     make(http.Header),
 		Body:       ioutil.NopCloser(bytes.NewReader(respBody)),
 	}
-}
-
-func usersResponse(r *http.Request) []byte {
-	pathTokens := strings.Split(r.URL.Path, "/")
-	user := pathTokens[len(pathTokens)-1]
-
-	resp := fmt.Sprintf(
-		`{"id":"%s","username":"%s"}`,
-		user,
-		user,
-	)
-
-	return []byte(resp)
-}
-
-func channelsResponse(r *http.Request) []byte {
-	pathTokens := strings.Split(r.URL.Path, "/")
-	channel := pathTokens[len(pathTokens)-1]
-
-	resp := fmt.Sprintf(`{"id":"%s","name":"%s"}`,
-		channel,
-		channel,
-	)
-
-	return []byte(resp)
-}
-
-func roleCreateResponse(r *http.Request) []byte {
-	var respBody []byte
-
-	switch r.Method {
-	case http.MethodPost, http.MethodPatch:
-		respBody = []byte(`{"id":"newRole","name":"newRole"}`)
-	}
-
-	return respBody
 }

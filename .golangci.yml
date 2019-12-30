@@ -27,7 +27,7 @@ linters-settings:
       - style
     disabled-checks:
       - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - whyNoLint
+      # - whyNoLint
   funlen:
     lines: 100
     statements: 50
@@ -52,7 +52,7 @@ linters:
     - gofmt
     - goimports
     - golint
-    - gomnd
+    # - gomnd
     - gosec
     - gosimple
     - govet
@@ -83,4 +83,4 @@ run:
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
-  golangci-lint-version: 1.22.2 # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.21.x # use the fixed version to not introduce new linters unexpectedly

@@ -33,19 +33,21 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 		VoiceStateUpdateCounter: monitorConfig.VoiceStateUpdateCounter(),
 	}
 
-	sendUpdate(session, config, "testChannel")
-	sendUpdate(session, config, "")
-	sendUpdate(session, config, "testChannel2")
-	sendUpdate(session, config, "testChannel")
-	sendUpdate(session, config, "")
+	sendUpdate(session, config, "unknownUser", "testChannel")
+	sendUpdate(session, config, "testUser", "privateChannel")
+	sendUpdate(session, config, "testUser", "testChannel")
+	sendUpdate(session, config, "testUser", "")
+	sendUpdate(session, config, "testUser", "testChannel2")
+	sendUpdate(session, config, "testUser", "testChannel")
+	sendUpdate(session, config, "testUser", "")
 }
 
-func sendUpdate(s *discordgo.Session, config *Config, channelID string) {
+func sendUpdate(s *discordgo.Session, config *Config, userID, channelID string) {
 	config.VoiceStateUpdate(
 		s,
 		&discordgo.VoiceStateUpdate{
 			VoiceState: &discordgo.VoiceState{
-				UserID:    "testUser",
+				UserID:    userID,
 				GuildID:   "testGuild",
 				ChannelID: channelID,
 			},
