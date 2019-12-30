@@ -85,6 +85,15 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	// Add role to member
 	err = config.grantEphemeralRole(event, ephRoleName)
 	if err != nil {
+		var restErr *discordgo.RESTError
+
+		if errors.As(err, &restErr) {
+			if restErr.Response.StatusCode == http.StatusForbidden {
+				logWithFields.WithError(err).Debug(voiceStateUpdateError)
+				return
+			}
+		}
+
 		err = fmt.Errorf("unable to grant ephemeral role: %w", err)
 
 		logWithFields.WithError(err).Error(voiceStateUpdateError)
