@@ -18,6 +18,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	DebugColor = 10170623
+	InfoColor  = 3581519
+	WarnColor  = 14327864
+	ErrorColor = 13631488
+	PanicColor = 13631488
+	FatalColor = 13631488
+)
+
 type localeFormatter struct {
 	logrus.Formatter
 	*time.Location
@@ -97,12 +106,12 @@ func discordrusIntegration(log *logrus.Logger) {
 					DisableInlineFields: false, // If set to true, fields will not appear in columns ("inline")
 					EnableCustomColors:  true,  // If set to true, the below CustomLevelColors will apply
 					CustomLevelColors: &discordrus.LevelColors{
-						Debug: 10170623,
-						Info:  3581519,
-						Warn:  14327864,
-						Error: 13631488,
-						Panic: 13631488,
-						Fatal: 13631488,
+						Debug: DebugColor,
+						Info:  InfoColor,
+						Warn:  WarnColor,
+						Error: ErrorColor,
+						Panic: PanicColor,
+						Fatal: FatalColor,
 					},
 					DisableTimestamp: false,           // Setting this to true will disable timestamps from appearing in the footer
 					TimestampFormat:  timeStampFormat, // The timestamp takes this format; if unset, it will take a default format
