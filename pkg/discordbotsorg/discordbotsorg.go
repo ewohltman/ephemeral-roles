@@ -20,8 +20,8 @@ type serverUpdate struct {
 }
 
 // Update POSTs a server_count update to discordbots.org
-func Update(client *http.Client, token string, botID string, serverCount int) error {
-	req, err := buildRequest(botID, serverCount, token)
+func Update(client *http.Client, token, botID string, serverCount int) error {
+	req, err := buildRequest(botID, token, serverCount)
 	if err != nil {
 		return fmt.Errorf(
 			discordbotsError+": error building request for ("+discordBotsURL+"): %w",
@@ -57,7 +57,7 @@ func Update(client *http.Client, token string, botID string, serverCount int) er
 	return nil
 }
 
-func buildRequest(botID string, serverCount int, token string) (*http.Request, error) {
+func buildRequest(botID, token string, serverCount int) (*http.Request, error) {
 	rawString := discordBotsURL + "/api/bots/" + botID + "/stats"
 
 	updateURL, err := url.Parse(rawString)
