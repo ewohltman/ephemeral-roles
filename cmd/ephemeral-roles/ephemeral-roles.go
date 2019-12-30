@@ -125,6 +125,6 @@ func main() {
 
 	err = httpServer.Shutdown(ctx)
 	if err != nil {
-		log.WithError(err).Error("Error shutting down server")
+		log.WithError(err).Error("Error shutting down HTTP server gracefully")
 	}
 }
