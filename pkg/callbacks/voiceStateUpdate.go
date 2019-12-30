@@ -200,8 +200,6 @@ func (config *Config) guildRoleCreate(event *vsuEvent, ephRoleName string) (*dis
 
 	// Check for role color override
 	if value, found := os.LookupEnv(environment.RoleColor); found {
-		var err error
-
 		roleColor, err = strconv.Atoi(value)
 		if err != nil {
 			config.Log.WithError(err).
