@@ -4,10 +4,11 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/sirupsen/logrus"
+
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
-	"github.com/sirupsen/logrus"
 )
 
 func TestConfig_Ready(t *testing.T) {

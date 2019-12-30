@@ -8,12 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/environment"
-
+	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
+	"github.com/ewohltman/ephemeral-roles/pkg/environment"
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/pkg/server"

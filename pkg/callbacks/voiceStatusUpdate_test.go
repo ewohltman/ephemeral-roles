@@ -3,13 +3,12 @@ package callbacks
 import (
 	"testing"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
-	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
+	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/pkg/mock"
-
-	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
 )
 
 func TestConfig_VoiceStateUpdate(t *testing.T) {

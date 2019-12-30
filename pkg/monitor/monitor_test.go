@@ -4,11 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/mock"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/pkg/mock"
 )
 
 func TestStart(t *testing.T) {

@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/ephemeral-roles/pkg/discordbotsorg"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type guilds struct {

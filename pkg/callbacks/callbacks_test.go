@@ -3,8 +3,9 @@ package callbacks
 import (
 	"testing"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/pkg/logging"
 )
 
 func TestDiscordError_Error(t *testing.T) {
