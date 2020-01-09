@@ -1,6 +1,6 @@
 # ephemeral-roles
 
-| <a href="https://discordapp.com/api/oauth2/authorize?client_id=392419127626694676&permissions=268435456&scope=bot"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100"></a><br/>[![Travis CI](https://travis-ci.com/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.com/ewohltman/ephemeral-roles.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles) [![Coverage Status](https://coveralls.io/repos/github/ewohltman/ephemeral-roles/badge.svg?branch=master)](https://coveralls.io/github/ewohltman/ephemeral-roles?branch=master) [![GoDoc](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg?status.svg)](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg) | [![Discord Bots](https://discordbots.org/api/widget/392419127626694676.svg)](https://discordbots.org/bot/ephemeral-roles) |
+| <a href="https://discordapp.com/api/oauth2/authorize?client_id=392419127626694676&permissions=268435456&scope=bot"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg" width="100"></a><br/> [![Travis CI](https://travis-ci.com/ewohltman/ephemeral-roles.svg?branch=master)](https://travis-ci.com/ewohltman/ephemeral-roles.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles) [![Coverage Status](https://coveralls.io/repos/github/ewohltman/ephemeral-roles/badge.svg?branch=master)](https://coveralls.io/github/ewohltman/ephemeral-roles?branch=master) [![GoDoc](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg?status.svg)](https://godoc.org/github.com/ewohltman/ephemeral-roles/pkg) ![Discord](https://img.shields.io/discord/393496906992713746?label=dev%20chat&logo=discord) | [![Discord Bots](https://discordbots.org/api/widget/392419127626694676.svg)](https://discordbots.org/bot/ephemeral-roles) |
 | :------: | :------: |
 
 ### A Discord bot for managing ephemeral roles based upon voice channel member presence
@@ -43,10 +43,9 @@ it's clear to see who are available for chatting and the channels they are in.
 This is because `ephemeral-roles` leverages the Discord feature that the member
 list in servers will group together members by role right out of the box.
 
-When a member changes voice channels, even across Discord servers,
-`Ephemeral Roles` will account for the change and automatically revoke/reissue
-*ephemeral roles* as appropriate.  Finally, upon a member disconnecting from
-all voice channels `Ephemeral Roles` will revoke all *ephemeral roles*.
+When a member changes or disconnects from voice channels, even across Discord
+servers, `Ephemeral Roles` will account for the change and automatically
+revoke/reissue *ephemeral roles* as appropriate.
 
 ----
 
@@ -64,52 +63,10 @@ Prometheus metrics are exposed via a `/metrics` HTTP end-point.
 
 ## Contributing to the project
 
-Contributions are very welcome, however please follow the below guidelines.
+Contributions are very welcome, however please follow the guidelines below:
 
 * Open an issue describing the bug or enhancement
 * Fork the `develop` branch and make your changes
   * Try to match current naming conventions as closely as possible
   * Try to keep changes small and incremental with appropriate new unit tests
 * Create a Pull Request with your changes against the `develop` branch
-
-----
-
-## Rolling your own locally
- 
-In order to run this locally, you will need to define the following environment
-variables.
-
-**Required:**
-```
-BOT_TOKEN= # Discord Bot Token
-BOT_NAME= # Discord Bot Name
-BOT_KEYWORD=![keyword] # Keyword to monitor incoming messages for
-ROLE_PREFIX={[keyword]} # Prefix to put before ephemeral roles to stand out
-```
-
-**Optional:**
-```
-ROLE_COLOR_HEX2DEC=16753920 # RGB color in hex to dec. Default: orange
-PORT=8080 # Port to bind for local HTTP server. Default: 8080
-LOG_LEVEL=info # Levels: debug, info, warn, error, fatal, panic. Default: info
-LOG_TIMEZONE_LOCATION=UTC # "America/New_York". Default: runtime time.Local
-```
-
-**Optional integration with [discordrus](https://github.com/kz/discordrus):**
-```
-DISCORDRUS_WEBHOOK_URL= # Webhook URL for discordrus bot logging to Discord integration
-```
-
-**Optional integration with [discordbots.org](https://discordbots.org/):**
-```
-DISCORDBOTS_ORG_TOKEN= # Token from discordbots.org for POSTing updates
-BOT_ID= # Discord Bot Client ID
-```
-
-----
-
-## Dependencies
-
-| [dep](https://github.com/golang/dep) Graph |
-| :------: |
-| ![Dependency graph](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/dependency_graph.png) |
