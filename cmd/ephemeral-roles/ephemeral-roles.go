@@ -29,6 +29,11 @@ func startSession(log logging.Interface, token string) (*discordgo.Session, erro
 		return nil, err
 	}
 
+	session.State.TrackMembers = true
+	session.State.TrackRoles = true
+	session.State.TrackChannels = true
+	session.State.TrackVoice = true
+
 	monitorConfig := &monitor.Config{
 		Log:                 log,
 		Session:             session,
