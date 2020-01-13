@@ -9,9 +9,10 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/kz/discordrus v1.2.0
 	github.com/prometheus/client_golang v1.3.0
+	github.com/prometheus/common v0.8.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0 // indirect
-	golang.org/x/crypto v0.0.0-20191219195013-becbf705a915 // indirect
-	golang.org/x/sys v0.0.0-20191224085550-c709ea063b76 // indirect
+	golang.org/x/crypto v0.0.0-20200109152110-61a87790db17 // indirect
+	golang.org/x/sys v0.0.0-20200107162124-548cf772de50 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
