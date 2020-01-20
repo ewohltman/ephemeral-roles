@@ -1,4 +1,4 @@
-name: Build Push to Master
+name: Push to Master
 on:
   push:
     branches:
@@ -20,7 +20,7 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
-      - name: Run test
+      - name: Run tests
         run: make test
 
       - name: Build binary and Docker image
