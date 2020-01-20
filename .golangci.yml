@@ -1,23 +1,12 @@
 linters-settings:
-  govet:
-    check-shadowing: true
-  golint:
-    min-confidence: 0
-  gocyclo:
-    min-complexity: 15
-  maligned:
-    suggest-new: true
   dupl:
     threshold: 100
+  funlen:
+    lines: 100
+    statements: 50
   goconst:
     min-len: 2
     min-occurrences: 2
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  goimports:
-    local-prefixes: github.com/ewohltman/ephemeral-roles
   gocritic:
     enabled-tags:
       - diagnostic
@@ -27,10 +16,21 @@ linters-settings:
       - style
     disabled-checks:
       - dupImport # https://github.com/go-critic/go-critic/issues/845
-      # - whyNoLint
-  funlen:
-    lines: 100
-    statements: 50
+      - whyNoLint
+  gocyclo:
+    min-complexity: 15
+  goimports:
+    local-prefixes: github.com/ewohltman/ephemeral-roles
+  golint:
+    min-confidence: 0
+  govet:
+    check-shadowing: true
+  lll:
+    line-length: 140
+  maligned:
+    suggest-new: true
+  misspell:
+    locale: US
 
 linters:
   disable-all: true
@@ -53,6 +53,7 @@ linters:
     - goimports
     - golint
     - gomnd
+    - goprintffuncname
     - gosec
     - gosimple
     - govet
@@ -63,6 +64,7 @@ linters:
     - misspell
     - nakedret
     - prealloc
+    - rowserrcheck
     - scopelint
     - staticcheck
     - structcheck
@@ -84,4 +86,4 @@ run:
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
-  golangci-lint-version: 1.22.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.23.x # use the fixed version to not introduce new linters unexpectedly
