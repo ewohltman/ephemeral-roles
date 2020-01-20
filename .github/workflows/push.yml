@@ -1,4 +1,4 @@
-name: Go Push Build
+name: Build Push to Master
 on: [push]
 branches: [master]
 jobs:
