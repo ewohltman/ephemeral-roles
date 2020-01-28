@@ -1,3 +1,5 @@
+// Package discordbotsorg provides an implementation for integrating with
+// discordbots.org
 package discordbotsorg
 
 import (

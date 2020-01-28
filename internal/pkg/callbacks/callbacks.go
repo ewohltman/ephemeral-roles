@@ -1,3 +1,4 @@
+// Package callbacks provides callback implementations for Discord API events.
 package callbacks
 
 import (
@@ -8,6 +9,7 @@ import (
 
 const userNotFoundError = "user not found in guild members"
 
+// Config contains fields for the callback methods.
 type Config struct {
 	Log                     logging.Interface
 	BotName                 string

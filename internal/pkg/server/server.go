@@ -1,3 +1,5 @@
+// Package server provides an HTTP server implementation with handlers to
+// expose Prometheus metrics.
 package server
 
 import (

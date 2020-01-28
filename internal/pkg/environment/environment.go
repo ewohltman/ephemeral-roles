@@ -1,3 +1,5 @@
+// Package environment provides implementations for parsing expected
+// environment variables.
 package environment
 
 import (
