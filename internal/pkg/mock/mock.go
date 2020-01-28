@@ -1,3 +1,5 @@
+// Package mock provides implementations for mocking objects and endpoints for
+// unit testing.
 package mock
 
 import (
@@ -20,7 +22,7 @@ type TestingInstance interface {
 	Error(args ...interface{})
 }
 
-// Logger is a mock logger to suppress printing any actual log messages
+// Logger is a mock logger to suppress printing any actual log messages.
 type Logger struct {
 	*logrus.Logger
 }

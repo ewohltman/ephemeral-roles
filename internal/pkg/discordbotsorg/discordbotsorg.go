@@ -1,3 +1,5 @@
+// Package discordbotsorg provides an implementation for integrating with
+// discordbots.org
 package discordbotsorg
 
 import (
@@ -20,7 +22,7 @@ type serverUpdate struct {
 }
 
 // Update POSTs a server_count update to discordbots.org
-func Update(client *http.Client, token, botID string, serverCount int) error {
+func Update(client *http.Client, token, botID string, serverCount int) (err error) {
 	req, err := buildRequest(botID, token, serverCount)
 	if err != nil {
 		return fmt.Errorf(
@@ -36,7 +38,17 @@ func Update(client *http.Client, token, botID string, serverCount int) error {
 			err,
 		)
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		closeErr := resp.Body.Close()
+		if closeErr != nil {
+			if err != nil {
+				err = fmt.Errorf("%s: %w", closeErr, err)
+			} else {
+				err = closeErr
+			}
+		}
+	}()
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

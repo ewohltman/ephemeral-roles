@@ -7,21 +7,13 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/environment"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
 )
 
 const updateError = "Failed update logging level"
 
 func TestNew(t *testing.T) {
 	testLogger()
-}
-
-func TestLogger_WrappedLogger(t *testing.T) {
-	log := testLogger().WrappedLogger()
-
-	if log == nil {
-		t.Fatal("Unexpected nil wrapped *logrus.Logger")
-	}
 }
 
 func TestLogger_UpdateLevel(t *testing.T) {
@@ -52,6 +44,14 @@ func TestLogger_UpdateLevel(t *testing.T) {
 	err := os.Setenv(environment.LogLevel, originalLevel)
 	if err != nil {
 		t.Fatalf("Unable to reset environment variable %s", environment.LogLevel)
+	}
+}
+
+func TestLogger_WrappedLogger(t *testing.T) {
+	log := testLogger().WrappedLogger()
+
+	if log == nil {
+		t.Fatal("Unexpected nil wrapped *logrus.Logger")
 	}
 }
 

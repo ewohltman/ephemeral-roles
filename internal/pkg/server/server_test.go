@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/mock"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
 const testPort = "8080"
