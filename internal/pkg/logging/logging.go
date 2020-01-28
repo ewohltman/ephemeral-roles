@@ -15,7 +15,7 @@ import (
 	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/environment"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
 )
 
 // Logging level strings.

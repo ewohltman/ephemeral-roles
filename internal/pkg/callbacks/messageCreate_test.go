@@ -6,8 +6,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/mock"
-	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 )
 
 func TestConfig_MessageCreate(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 // New returns a new pre-configured server instance.

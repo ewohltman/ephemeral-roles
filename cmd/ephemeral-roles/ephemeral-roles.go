@@ -11,11 +11,11 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/callbacks"
-	"github.com/ewohltman/ephemeral-roles/pkg/environment"
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
-	"github.com/ewohltman/ephemeral-roles/pkg/monitor"
-	"github.com/ewohltman/ephemeral-roles/pkg/server"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/server"
 )
 
 const (

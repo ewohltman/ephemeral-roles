@@ -8,8 +8,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/discordbotsorg"
-	"github.com/ewohltman/ephemeral-roles/pkg/logging"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/discordbotsorg"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 type guilds struct {

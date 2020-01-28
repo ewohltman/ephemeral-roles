@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ewohltman/ephemeral-roles/pkg/mock"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
 const monitorTestInterval = 1 * time.Second
