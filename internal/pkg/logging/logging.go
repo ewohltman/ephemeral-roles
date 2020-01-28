@@ -51,20 +51,12 @@ type Logger struct {
 
 // New returns a new *logrus.Logger instance.
 func New() *Logger {
-	timestampLocale, err := timeLocalization()
-	if err != nil {
-		timestampLocale = time.Local
-	}
-
 	log := &Logger{
 		Logger: &logrus.Logger{
-			Formatter: &localeFormatter{
-				&logrus.TextFormatter{},
-				timestampLocale,
-			},
-			Out:   os.Stdout,
-			Level: logrus.InfoLevel,
-			Hooks: make(logrus.LevelHooks),
+			Formatter: newLocaleFormatter(),
+			Out:       os.Stdout,
+			Level:     logrus.InfoLevel,
+			Hooks:     make(logrus.LevelHooks),
 		},
 	}
 
@@ -83,7 +75,7 @@ func (log *Logger) UpdateLevel() {
 	log.Hooks = make(logrus.LevelHooks)
 
 	// Check/apply `github.com/kz/discordrus` hook integration
-	discordrusIntegration(log)
+	log.discordrusIntegration()
 }
 
 // WrappedLogger returns the wrapped *logrus.Logger instance.
@@ -91,9 +83,60 @@ func (log *Logger) WrappedLogger() *logrus.Logger {
 	return log.Logger
 }
 
+func (log *Logger) discordrusIntegration() {
+	if hookURLString, found := os.LookupEnv(environment.DiscordrusWebHookURL); found {
+		timeString := ""
+
+		timestampLocale, err := timestampLocalization()
+		if err != nil {
+			log.WithError(err).Debugf("Unable to determine timestamp locale, defaulting to local runtime")
+
+			timeString = time.Now().String()
+		} else {
+			timeString = time.Now().In(timestampLocale).String()
+		}
+
+		timeZoneToken := strings.Split(timeString, " ")[3]
+
+		log.AddHook(
+			discordrus.NewHook(
+				hookURLString,
+				log.Level,
+				&discordrus.Opts{
+					Username:           "",
+					Author:             "",
+					EnableCustomColors: true,
+					CustomLevelColors: &discordrus.LevelColors{
+						Debug: DebugColor,
+						Info:  InfoColor,
+						Warn:  WarningColor,
+						Error: ErrorColor,
+						Panic: PanicColor,
+						Fatal: FatalColor,
+					},
+					TimestampFormat: "Jan 2 15:04:05.00000 " + timeZoneToken,
+					TimestampLocale: timestampLocale,
+				},
+			),
+		)
+	}
+}
+
 type localeFormatter struct {
 	logrus.Formatter
 	*time.Location
+}
+
+func newLocaleFormatter() *localeFormatter {
+	timestampLocale, err := timestampLocalization()
+	if err != nil {
+		timestampLocale = time.Local
+	}
+
+	return &localeFormatter{
+		&logrus.TextFormatter{},
+		timestampLocale,
+	}
 }
 
 // Format satisfies the logrus.Formatter interface.
@@ -103,7 +146,7 @@ func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
 	return l.Formatter.Format(e)
 }
 
-func timeLocalization() (*time.Location, error) {
+func timestampLocalization() (*time.Location, error) {
 	envLocation, found := os.LookupEnv(environment.LogTimezoneLocation)
 	if !found || envLocation == "" {
 		return time.Local, nil
@@ -141,43 +184,4 @@ func environmentLevel() logrus.Level {
 	}
 
 	return logLevel
-}
-
-func discordrusIntegration(log *Logger) {
-	if hookURLString, found := os.LookupEnv(environment.DiscordrusWebHookURL); found {
-		timeString := ""
-
-		timestampLocale, err := timeLocalization()
-		if err != nil {
-			log.WithError(err).Debugf("Unable to determine timestamp locale, defaulting to local runtime")
-
-			timeString = time.Now().String()
-		} else {
-			timeString = time.Now().In(timestampLocale).String()
-		}
-
-		timeZoneToken := strings.Split(timeString, " ")[3]
-
-		log.AddHook(
-			discordrus.NewHook(
-				hookURLString,
-				log.Level,
-				&discordrus.Opts{
-					Username:           "",
-					Author:             "",
-					EnableCustomColors: true,
-					CustomLevelColors: &discordrus.LevelColors{
-						Debug: DebugColor,
-						Info:  InfoColor,
-						Warn:  WarningColor,
-						Error: ErrorColor,
-						Panic: PanicColor,
-						Fatal: FatalColor,
-					},
-					TimestampFormat: "Jan 2 15:04:05.00000 " + timeZoneToken,
-					TimestampLocale: timestampLocale,
-				},
-			),
-		)
-	}
 }
