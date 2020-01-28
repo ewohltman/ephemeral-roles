@@ -1,9 +1,6 @@
-// Package logging should be used by other packages to get a pointer to the
-// global logrus logging instance via the Instance function call
-//
-// Logging configuration is determined via environment variables upon startup.
-// These variables may be manipulated during runtime and then reflected in the
-// global logging instance via the UpdateLevel function call
+// Package logging provides a logrus logging implementation. Configuration
+// is determined via environment variables upon startup and logging level may
+// be changed at runtime.
 package logging
 
 import (
@@ -42,12 +39,12 @@ const (
 // methods.
 type Interface interface {
 	logrus.FieldLogger
-	WrappedLogger() *logrus.Logger
 	UpdateLevel()
+	WrappedLogger() *logrus.Logger
 }
 
-// Logger is a struct to wrap a *logrus.Logger instance and provide custom
-// methods..
+// Logger is a struct to wrap a *logrus.Logger instance and provides custom
+// methods.
 type Logger struct {
 	*logrus.Logger
 }
@@ -76,11 +73,6 @@ func New() *Logger {
 	return log
 }
 
-// WrappedLogger returns the wrapped *logrus.Logger instance.
-func (log *Logger) WrappedLogger() *logrus.Logger {
-	return log.Logger
-}
-
 // UpdateLevel allows for runtime updates of the logging level and resets the
 // hooks with new values from the environment.
 func (log *Logger) UpdateLevel() {
@@ -92,6 +84,11 @@ func (log *Logger) UpdateLevel() {
 
 	// Check/apply `github.com/kz/discordrus` hook integration
 	discordrusIntegration(log)
+}
+
+// WrappedLogger returns the wrapped *logrus.Logger instance.
+func (log *Logger) WrappedLogger() *logrus.Logger {
+	return log.Logger
 }
 
 type localeFormatter struct {
@@ -106,12 +103,10 @@ func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
 	return l.Formatter.Format(e)
 }
 
-// timeLocalization returns a *time.Location defined in environment variables,
-// or otherwise defaults to time.Local.
 func timeLocalization() (*time.Location, error) {
 	envLocation, found := os.LookupEnv(environment.LogTimezoneLocation)
 	if !found || envLocation == "" {
-		envLocation = time.Local.String()
+		return time.Local, nil
 	}
 
 	timeLocalization, err := time.LoadLocation(envLocation)
@@ -122,7 +117,6 @@ func timeLocalization() (*time.Location, error) {
 	return timeLocalization, nil
 }
 
-// environmentLevel parses and returns our logging level from the environment.
 func environmentLevel() logrus.Level {
 	logLevel := logrus.InfoLevel // Default to InfoLevel
 
@@ -149,8 +143,6 @@ func environmentLevel() logrus.Level {
 	return logLevel
 }
 
-// discordrusIntegration checks to see if we can apply an optional integration
-// support for a `github.com/kz/discordrus` hook.
 func discordrusIntegration(log *Logger) {
 	if hookURLString, found := os.LookupEnv(environment.DiscordrusWebHookURL); found {
 		timeString := ""
@@ -161,25 +153,19 @@ func discordrusIntegration(log *Logger) {
 
 			timeString = time.Now().String()
 		} else {
-			log.WithField("locale", timestampLocale.String()).Debugf("Found custom logging timestamp locale")
-
 			timeString = time.Now().In(timestampLocale).String()
 		}
 
-		// timeZoneTokens => [2017-12-23] [11:45:53.0703314] [-0000] [UTC]
 		timeZoneToken := strings.Split(timeString, " ")[3]
-
-		timeStampFormat := "Jan 2 15:04:05.00000 " + timeZoneToken
 
 		log.AddHook(
 			discordrus.NewHook(
 				hookURLString,
 				log.Level,
 				&discordrus.Opts{
-					Username:            "",
-					Author:              "",    // Setting this to a non-empty string adds the author text to the message header
-					DisableInlineFields: false, // If set to true, fields will not appear in columns ("inline")
-					EnableCustomColors:  true,  // If set to true, the below CustomLevelColors will apply
+					Username:           "",
+					Author:             "",
+					EnableCustomColors: true,
 					CustomLevelColors: &discordrus.LevelColors{
 						Debug: DebugColor,
 						Info:  InfoColor,
@@ -188,9 +174,8 @@ func discordrusIntegration(log *Logger) {
 						Panic: PanicColor,
 						Fatal: FatalColor,
 					},
-					DisableTimestamp: false,           // Setting this to true will disable timestamps from appearing in the footer
-					TimestampFormat:  timeStampFormat, // The timestamp takes this format; if unset, it will take a default format
-					TimestampLocale:  timestampLocale, // The timestamp takes it's timezone from the provided locale
+					TimestampFormat: "Jan 2 15:04:05.00000 " + timeZoneToken,
+					TimestampLocale: timestampLocale,
 				},
 			),
 		)
