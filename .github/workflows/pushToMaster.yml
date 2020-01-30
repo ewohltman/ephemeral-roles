@@ -57,7 +57,7 @@ jobs:
           mkdir ~/.kube
           echo "${KUBE_CONFIG}" > ~/.kube/config
 
-          curl -sSL ${KUBECTL_URL} -o $(KUBECTL_BIN}
+          curl -L ${KUBECTL_URL} -o $(KUBECTL_BIN}
           chmod +x $(KUBECTL_BIN}
 
           make deploy
