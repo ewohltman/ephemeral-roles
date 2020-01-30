@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ephemeral-roles
+  namespace: ephemeral-roles
+  labels:
+    app: ephemeral-roles
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ephemeral-roles
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: ephemeral-roles
+        version: {COMMIT}
+    spec:
+      containers:
+        - name: ephemeral-roles
+          image: ewohltman/ephemeral-roles:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080

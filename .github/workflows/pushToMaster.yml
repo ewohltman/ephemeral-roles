@@ -1,4 +1,4 @@
-name: Push to Master
+name: Push Branch Master
 on:
   push:
     branches:
@@ -20,8 +20,43 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
+      - name: Run linters
+        run: |
+          PATH="${PATH}:$(go env GOPATH)/bin"
+          INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"
+
+          curl -sSfL "${INSTALL_SCRIPT_URL}" | sh -s -- -b $(go env GOPATH)/bin v1.23.1
+
+          make lint
+
       - name: Run tests
         run: make test
 
-      - name: Build binary and Docker image
-        run: make docker
+      - name: Build binary
+        run: make build
+
+      - name: Build Docker image
+        run: make image
+
+      - name: Push Docker image
+        env:
+          DOCKER_USER: ${{ secrets.DockerUser }}
+          DOCKER_PASS: ${{ secrets.DockerPass }}
+        run: make push
+
+      - name: Deploy to Kubernetes
+        env:
+          KUBE_CONFIG: ${{ secrets.KubeConfig }}
+        run: |
+          PATH="${PATH}:$(go env GOPATH)/bin"
+          KUBECTL_BIN="$(go env GOPATH)/bin/kubectl"
+
+          KUBECTL_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"
+          KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+
+          mkdir ~/.kube
+          echo "${KUBE_CONFIG}" > ~/.kube/config
+
+          curl -sL "${KUBECTL_URL}" -o "${KUBECTL_BIN}" && chmod +x "${KUBECTL_BIN}"
+
+          make deploy

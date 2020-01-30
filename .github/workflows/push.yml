@@ -1,5 +1,8 @@
-name: Pull Request
-on: [pull_request]
+name: Push Branch
+on:
+  push:
+    branches-ignore:
+      - master
 jobs:
   build:
     name: Build
@@ -31,3 +34,6 @@ jobs:
 
       - name: Build binary
         run: make build
+
+      - name: Build Docker image
+        run: make image
