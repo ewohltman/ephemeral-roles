@@ -22,10 +22,10 @@ jobs:
 
       - name: Run linters
         run: |
-          PATH=${PATH}:$(go env GOPATH)/bin
+          PATH="${PATH}:$(go env GOPATH)/bin"
           INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"
 
-          curl -sSfL ${INSTALL_SCRIPT_URL} | sh -s -- -b $(go env GOPATH)/bin v1.23.1
+          curl -sSfL "${INSTALL_SCRIPT_URL}" | sh -s -- -b $(go env GOPATH)/bin v1.23.1
 
           make lint
 
@@ -48,14 +48,15 @@ jobs:
         env:
           KUBE_CONFIG: ${{ secrets.KubeConfig }}
         run: |
-          PATH=${PATH}:$(go env GOPATH)/bin
-          KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
-          KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+          PATH="${PATH}:$(go env GOPATH)/bin"
           KUBECTL_BIN="$(go env GOPATH)/bin/kubectl"
+
+          KUBECTL_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"
+          KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
 
           mkdir ~/.kube
           echo "${KUBE_CONFIG}" > ~/.kube/config
 
-          curl -sL ${KUBECTL_URL} -o $(KUBECTL_BIN} && chmod +x $(KUBECTL_BIN}
+          curl -sL "${KUBECTL_URL}" -o "$(KUBECTL_BIN}" && chmod +x "$(KUBECTL_BIN}"
 
           make deploy
