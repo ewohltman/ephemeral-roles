@@ -20,14 +20,11 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
-      - name: Get golangci-lint
+      - name: Run linters
         run: |
-          export PATH=${PATH}:$(go env GOPATH)/bin
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
           sh -s -- -b $(go env GOPATH)/bin v1.23.1
-
-      - name: Run linters
-        run: make lint
+          make lint
 
       - name: Run tests
         run: make test
