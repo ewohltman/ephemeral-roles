@@ -1,4 +1,4 @@
-name: Branch Push
+name: Push Branch
 on:
   push:
     branches-ignore:
@@ -54,12 +54,10 @@ jobs:
           KUBECTL_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"
           KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
 
-          echo "KUBECTL_URL: ${KUBECTL_URL}"
-
           mkdir ~/.kube
           echo "${KUBE_CONFIG}" > ~/.kube/config
 
-          curl -sSL "${KUBECTL_URL}" -o "$(KUBECTL_BIN}"
-          chmod +x "$(KUBECTL_BIN}"
+          curl -sSL ${KUBECTL_URL} -o $(KUBECTL_BIN}
+          chmod +x $(KUBECTL_BIN}
 
           make deploy
