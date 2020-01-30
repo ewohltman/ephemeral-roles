@@ -9,11 +9,11 @@ test:
 build:
 	CGO_ENABLED=0 go build -o build/package/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
 
-docker: build
+image:
 	docker image build -t ewohltman/ephemeral-roles:latest .
 
 push:
-	docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+	docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}"
 	docker push ewohltman/ephemeral-roles:latest
 	docker logout
 
