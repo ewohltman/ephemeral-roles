@@ -48,7 +48,7 @@ jobs:
         run: |
           export PATH=${PATH}:$(go env GOPATH)/bin
           mkdir ~/.kube
-          echo ${KUBE_CONFIG} > ~/.kube/config
+          echo "${KUBE_CONFIG}" > ~/.kube/config
           KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
           KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
           curl -L ${KUBECTL_URL} -o $(go env GOPATH)/bin/kubectl
