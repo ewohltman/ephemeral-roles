@@ -1,4 +1,4 @@
-name: Push to Master
+name: Branch Push
 on:
   push:
     branches-ignore:
@@ -20,11 +20,17 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
+      - name: Run linters
+        run: make lint
+
       - name: Run tests
         run: make test
 
-      - name: Build binary and Docker image
-        run: make docker
+      - name: Build binary
+        run: make build
+
+      - name: Build Docker image
+        run: make image
 
       - name: Push Docker image
         env:
@@ -32,7 +38,7 @@ jobs:
           DOCKER_PASS: ${{ secrets.DockerPass }}
         run: make push
 
-      - name: Deploy to Linode Kubernetes
+      - name: Deploy to Kubernetes
         env:
           KUBE_CONFIG: ${{ secrets.KubeConfig }}
         run: |
