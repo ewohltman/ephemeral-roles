@@ -5,6 +5,7 @@ metadata:
   namespace: ephemeral-roles
   labels:
     app: ephemeral-roles
+    version: {COMMIT}
 spec:
   replicas: 1
   selector:
@@ -16,6 +17,7 @@ spec:
         linkerd.io/inject: enabled
       labels:
         app: ephemeral-roles
+        version: {COMMIT}
     spec:
       containers:
         - name: ephemeral-roles

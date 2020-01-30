@@ -1,5 +1,7 @@
 .PHONY: lint test build docker push deploy
 
+COMMIT=$(shell git rev-parse --short HEAD)
+
 lint:
 	golangci-lint run ./...
 
@@ -20,4 +22,4 @@ push:
 deploy:
 	kubectl apply -f deployments/kubernetes/service.yml
 	kubectl apply -f deployments/kubernetes/ingress.yml
-	kubectl apply -f deployments/kubernetes/deployment.yml
+	sed "s/{COMMIT}/${COMMIT}/g" deployments/kubernetes/deployment.yml
