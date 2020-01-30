@@ -1,0 +1,41 @@
+name: Push to Master
+on:
+  push:
+    branches-ignore:
+      - master
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+
+      - name: Check out code
+        uses: actions/checkout@v1
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: make test
+
+      - name: Build binary and Docker image
+        run: make docker
+
+      - name: Push Docker image
+        env:
+          DOCKER_USER: ${{ secrets.DockerUser }}
+          DOCKER_PASS: ${{ secrets.DockerPass }}
+        run: make push
+
+      - name: Deploy to Linode Kubernetes
+        env:
+          KUBE_CONFIG: ${{ secrets.KubeConfig }}
+        run: |
+          mkdir ~/.kube
+          echo ${KUBE_CONFIG} > ~/.kube/config
+          make deploy
