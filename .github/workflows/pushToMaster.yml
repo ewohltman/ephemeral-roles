@@ -25,3 +25,17 @@ jobs:
 
       - name: Build binary and Docker image
         run: make docker
+
+      - name: Push Docker image
+        env:
+          DOCKER_USER: ${{ secrets.DockerUser }}
+          DOCKER_PASS: ${{ secrets.DockerPass }}
+        run: make push
+
+      - name: Deploy to Linode Kubernetes
+        env:
+          KUBE_CONFIG: ${{ secrets.KubeConfig }}
+        run: |
+          mkdir ~/.kube
+          echo ${KUBE_CONFIG} > ~/.kube/config
+          make deploy
