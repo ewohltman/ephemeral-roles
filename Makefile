@@ -22,4 +22,4 @@ push:
 deploy:
 	kubectl apply -f deployments/kubernetes/service.yml
 	kubectl apply -f deployments/kubernetes/ingress.yml
-	sed "s/{COMMIT}/${COMMIT}/g" deployments/kubernetes/deployment.yml
+	sed "s/{COMMIT}/${COMMIT}/g" deployments/kubernetes/deployment.yml | kubectl apply -f -
