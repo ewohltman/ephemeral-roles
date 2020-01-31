@@ -23,8 +23,12 @@ const (
 	contextTimeout  = 5 * time.Second
 )
 
-func startSession(log logging.Interface, token string) (*discordgo.Session, error) {
-	session, err := discordgo.New("Bot " + token)
+func startSession(
+	log logging.Interface,
+	required *environment.RequiredVariables,
+	optional *environment.OptionalVariables,
+) (*discordgo.Session, error) {
+	session, err := discordgo.New("Bot " + required.BotToken)
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +37,8 @@ func startSession(log logging.Interface, token string) (*discordgo.Session, erro
 		Log:                 log,
 		Session:             session,
 		HTTPClient:          session.Client,
-		BotID:               "",
-		DiscordBotsOrgToken: "",
+		DiscordBotsOrgBotID: optional.DiscordBotsOrgBotID,
+		DiscordBotsOrgToken: optional.DiscordBotsOrgToken,
 		Interval:            monitorInterval,
 	}
 
@@ -96,12 +100,12 @@ func main() {
 		log.WithError(err).Fatal("Missing required environment variables")
 	}
 
-	_, err = environment.CheckOptionalVariables()
+	optionalVariables, err := environment.CheckOptionalVariables()
 	if err != nil {
 		log.WithError(err).Warn("Missing optional environment variables")
 	}
 
-	session, err := startSession(log, requiredVariables.BotToken)
+	session, err := startSession(log, requiredVariables, optionalVariables)
 	if err != nil {
 		log.WithError(err).Fatal("Error starting Discord session")
 	}

@@ -22,7 +22,7 @@ const (
 	LogLevel             = "LOG_LEVEL"
 	DiscordrusWebHookURL = "DISCORDRUS_WEBHOOK_URL"
 	LogTimezoneLocation  = "LOG_TIMEZONE_LOCATION"
-	DiscordBotsOrgBotID  = "BOT_ID"
+	DiscordBotsOrgBotID  = "DISCORDBOTS_ORG_BOT_ID"
 	DiscordBotsOrgToken  = "DISCORDBOTS_ORG_TOKEN" //nolint:gosec // Not a hard-coded credential
 )
 
@@ -40,8 +40,8 @@ type RequiredVariables struct {
 
 // OptionalVariables are the optional environment variables.
 type OptionalVariables struct {
-	discordBotsOrgBotID string
-	discordBotsOrgToken string
+	DiscordBotsOrgBotID string
+	DiscordBotsOrgToken string
 }
 
 // CheckRequiredVariables checks for required environment variables and returns
@@ -92,8 +92,8 @@ func CheckOptionalVariables() (*OptionalVariables, error) {
 	}
 
 	return &OptionalVariables{
-		discordBotsOrgBotID: discordBotsOrgBotID,
-		discordBotsOrgToken: discordBotsOrgToken,
+		DiscordBotsOrgBotID: discordBotsOrgBotID,
+		DiscordBotsOrgToken: discordBotsOrgToken,
 	}, nil
 }
 

@@ -16,7 +16,7 @@ type guilds struct {
 	Log                 logging.Interface
 	Session             *discordgo.Session
 	HTTPClient          *http.Client
-	BotID               string
+	DiscordBotsOrgBotID string
 	DiscordBotsOrgToken string
 	PrometheusGauge     prometheus.Gauge
 	Interval            time.Duration
@@ -63,15 +63,15 @@ func (g *guilds) update() {
 	g.PrometheusGauge.Set(float64(newCount))
 
 	// discordbots.org integration
-	if g.BotID != "" && g.DiscordBotsOrgToken != "" {
+	if g.DiscordBotsOrgBotID != "" && g.DiscordBotsOrgToken != "" {
 		err := discordbotsorg.Update(
 			g.HTTPClient,
 			g.DiscordBotsOrgToken,
-			g.BotID,
+			g.DiscordBotsOrgBotID,
 			newCount,
 		)
 		if err != nil {
-			g.Log.WithError(err).Warnf("unable to update guild count")
+			g.Log.WithError(err).Warnf("unable to update discordbots.org guild count")
 			return
 		}
 	}
