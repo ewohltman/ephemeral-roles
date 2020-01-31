@@ -41,7 +41,7 @@ jobs:
       - name: Push Docker image
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          DOCKER_PASS: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
         run: make push
 
       - name: Deploy to Kubernetes
