@@ -1,6 +1,9 @@
 .PHONY: lint test build docker push deploy
 
-COMMIT=$(shell git rev-parse --short HEAD)
+MAKEFILE_PATH=$(shell readlink -f "${0}")
+MAKEFILE_DIR=$(shell dirname "${MAKEFILE_PATH}")
+
+
 
 lint:
 	golangci-lint run ./...
@@ -20,6 +23,4 @@ push:
 	docker logout
 
 deploy:
-	kubectl apply -f deployments/kubernetes/service.yml
-	kubectl apply -f deployments/kubernetes/ingress.yml
-	sed 's/{COMMIT}/${COMMIT}/g' deployments/kubernetes/deployment.yml | kubectl apply -f -
+	${MAKEFILE_DIR}/scripts/deploy.sh
