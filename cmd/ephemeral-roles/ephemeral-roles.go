@@ -54,7 +54,7 @@ func startSession(
 	return session, nil
 }
 
-func setupCallbacks(monitorConfig *monitor.Config, required *environment.RequiredVariables) {
+func setupCallbacks(monitorConfig *monitor.Config) {
 	callbackMetrics := monitor.Metrics(monitorConfig)
 
 	callbackConfig := &callbacks.Config{
@@ -100,7 +100,7 @@ func main() {
 		log.WithError(err).Fatal("Missing required environment variables")
 	}
 
-	optionalVariables, err = environment.CheckOptionalVariables()
+	optionalVariables, err := environment.CheckOptionalVariables()
 	if err != nil {
 		log.WithError(err).Warn("Missing optional environment variables")
 	}
