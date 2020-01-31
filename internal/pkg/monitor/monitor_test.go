@@ -23,7 +23,7 @@ func TestStart(t *testing.T) {
 		&Config{
 			Log:                 log,
 			Session:             session,
-			BotID:               "",
+			DiscordBotsOrgBotID: "",
 			DiscordBotsOrgToken: "",
 			Interval:            monitorTestInterval,
 		},

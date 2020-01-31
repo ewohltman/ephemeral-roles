@@ -17,7 +17,7 @@ type Config struct {
 	Log                 logging.Interface
 	Session             *discordgo.Session
 	HTTPClient          *http.Client
-	BotID               string
+	DiscordBotsOrgBotID string
 	DiscordBotsOrgToken string
 	Interval            time.Duration
 }
@@ -122,7 +122,7 @@ func (config *Config) guilds() *guilds {
 		Log:                 config.Log,
 		HTTPClient:          config.HTTPClient,
 		Session:             config.Session,
-		BotID:               config.BotID,
+		DiscordBotsOrgBotID: config.DiscordBotsOrgBotID,
 		DiscordBotsOrgToken: config.DiscordBotsOrgToken,
 		PrometheusGauge:     prometheusGuildsGauge,
 		Interval:            config.Interval,
@@ -146,7 +146,7 @@ func (config *Config) members() *members {
 	return &members{
 		Log:                 config.Log,
 		Session:             config.Session,
-		BotID:               config.BotID,
+		DiscordBotsOrgBotID: config.DiscordBotsOrgBotID,
 		DiscordBotsOrgToken: config.DiscordBotsOrgToken,
 		PrometheusGauge:     prometheusMembersGauge,
 		Interval:            config.Interval,

@@ -13,7 +13,7 @@ import (
 type members struct {
 	Log                 logging.Interface
 	Session             *discordgo.Session
-	BotID               string
+	DiscordBotsOrgBotID string
 	DiscordBotsOrgToken string
 	PrometheusGauge     prometheus.Gauge
 	Interval            time.Duration
