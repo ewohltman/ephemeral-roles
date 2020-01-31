@@ -40,17 +40,17 @@ jobs:
 
       - name: Push Docker image
         env:
-          DOCKER_USER: ${{ secrets.DOCKER_USER }}
-          DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
+          DOCKER_USER: "${{ secrets.DOCKER_USER }}"
+          DOCKER_PASS: "${{ secrets.DOCKER_PASS }}"
         run: make push
 
       - name: Deploy to Kubernetes
         env:
-          KUBERNETES_CONFIG: ${{ secrets.KUBERNETES_CONFIG }}
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          DISCORDRUS_WEBHOOK_URL: ${{ secrets.DISCORDRUS_WEBHOOK_URL }}
-          DISCORDBOTS_ORG_BOT_ID: ${{ secrets.DISCORDBOTS_ORG_BOT_ID }}
-          DISCORDBOTS_ORG_TOKEN:  ${{ secrets.DISCORDBOTS_ORG_TOKEN }}
+          KUBERNETES_CONFIG: "${{ secrets.KUBERNETES_CONFIG }}"
+          BOT_TOKEN: "${{ secrets.BOT_TOKEN }}"
+          DISCORDRUS_WEBHOOK_URL: "${{ secrets.DISCORDRUS_WEBHOOK_URL }}"
+          DISCORDBOTS_ORG_BOT_ID: "${{ secrets.DISCORDBOTS_ORG_BOT_ID }}"
+          DISCORDBOTS_ORG_TOKEN:  "${{ secrets.DISCORDBOTS_ORG_TOKEN }}"
         run: |
           PATH="${PATH}:$(go env GOPATH)/bin"
           KUBECTL_BIN="$(go env GOPATH)/bin/kubectl"
