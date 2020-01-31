@@ -40,13 +40,17 @@ jobs:
 
       - name: Push Docker image
         env:
-          DOCKER_USER: ${{ secrets.DockerUser }}
-          DOCKER_PASS: ${{ secrets.DockerPass }}
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.DOCKER_USER }}
         run: make push
 
       - name: Deploy to Kubernetes
         env:
-          KUBE_CONFIG: ${{ secrets.KubeConfig }}
+          KUBERNETES_CONFIG: ${{ secrets.KUBERNETES_CONFIG }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          DISCORDRUS_WEBHOOK_URL: ${{ secrets.DISCORDRUS_WEBHOOK_URL }}
+          DISCORDBOTS_ORG_BOT_ID: ${{ secrets.DISCORDBOTS_ORG_BOT_ID }}
+          DISCORDBOTS_ORG_TOKEN:  ${{ secrets.DISCORDBOTS_ORG_TOKEN }}
         run: |
           PATH="${PATH}:$(go env GOPATH)/bin"
           KUBECTL_BIN="$(go env GOPATH)/bin/kubectl"
@@ -55,7 +59,7 @@ jobs:
           KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
 
           mkdir ~/.kube
-          echo "${KUBE_CONFIG}" > ~/.kube/config
+          echo "${KUBERNETES_CONFIG}" > ~/.kube/config
 
           curl -sL "${KUBECTL_URL}" -o "${KUBECTL_BIN}" && chmod +x "${KUBECTL_BIN}"
 
