@@ -12,8 +12,6 @@ spec:
       app: ephemeral-roles
   template:
     metadata:
-      annotations:
-        linkerd.io/inject: enabled
       labels:
         app: ephemeral-roles
         version: "{COMMIT}"
