@@ -39,7 +39,7 @@ func New(log logging.Interface, port string) *http.Server {
 	)
 
 	return &http.Server{
-		Addr:     ":" + port,
+		Addr:     "0.0.0.0:" + port,
 		Handler:  mux,
 		ErrorLog: stdLog.New(log.WrappedLogger().WriterLevel(logrus.ErrorLevel), "", 0),
 	}

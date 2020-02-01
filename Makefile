@@ -3,7 +3,7 @@
 MAKEFILE_PATH=$(shell readlink -f "${0}")
 MAKEFILE_DIR=$(shell dirname "${MAKEFILE_PATH}")
 
-
+parentImage=alpine:latest
 
 lint:
 	golangci-lint run ./...
@@ -15,6 +15,7 @@ build:
 	CGO_ENABLED=0 go build -o build/package/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
 
 image:
+	docker pull "${parentImage}"
 	docker image build -t ewohltman/ephemeral-roles:latest .
 
 push:
