@@ -1,4 +1,4 @@
-name: Pull Request
+name: pull_request
 on: [pull_request]
 jobs:
   build:
