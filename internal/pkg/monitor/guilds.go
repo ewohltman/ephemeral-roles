@@ -51,7 +51,7 @@ func (g *guilds) update() {
 	switch {
 	case newCount == originalCount:
 		return
-	case newCount > originalCount:
+	case newCount > originalCount && originalCount != 0:
 		newGuild := g.Session.State.Guilds[newCount-1]
 		g.Log.WithField("guild", newGuild.Name).Info(botName + " joined new guild")
 	case newCount < originalCount:
