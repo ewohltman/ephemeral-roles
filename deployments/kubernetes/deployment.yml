@@ -20,6 +20,13 @@ spec:
         - name: ephemeral-roles
           image: ewohltman/ephemeral-roles:latest
           imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "1"
+              memory: "1Gi"
           env:
             - name: BOT_TOKEN
               value: "{BOT_TOKEN}"
@@ -42,4 +49,5 @@ spec:
             - name: LOG_LEVEL
               value: "info"
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
