@@ -32,11 +32,11 @@ jobs:
       - name: Run tests
         run: make test
 
-      - name: Coveralls
+      - name: Run test coverage
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: coverage.out
+          path-to-lcov: ./coverage.out
 
       - name: Build binary
         run: make build
