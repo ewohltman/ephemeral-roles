@@ -33,10 +33,14 @@ jobs:
         run: make test
 
       - name: Run test coverage
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ./coverage.out
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PATH="${PATH}:$(go env GOPATH)/bin"
+
+          GO111MODULE=off go get -u github.com/mattn/goveralls
+
+          goveralls -coverprofile=coverage.out -service=github
 
       - name: Build binary
         run: make build
