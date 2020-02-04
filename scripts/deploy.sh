@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -e
+set -o pipefail # Only exit with zero if all commands of the pipeline exit successfully
+
 [[ -z ${BOT_TOKEN} ]] && echo "BOT_TOKEN not defined" && exit 1
 [[ -z ${DISCORDRUS_WEBHOOK_URL} ]] && echo "DISCORDRUS_WEBHOOK_URL not defined" && exit 1
 [[ -z ${DISCORDBOTS_ORG_BOT_ID} ]] && echo "DISCORDBOTS_ORG_BOT_ID not defined" && exit 1
@@ -34,6 +37,7 @@ deploy() {
   kubectl apply -f "${INGRESS_YML}"
   kubectl apply -f "${SERVICE_YML}"
   kubectl apply -f "${VARIABLIZED_DEPLOYMENT_YML}"
+  kubectl -n ephemeral-roles rollout status deployment/ephemeral-roles
 }
 
 cleanup() {
