@@ -13,6 +13,7 @@ SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")
 
 REPO_YMLS="${SCRIPT_DIR}/../deployments/kubernetes"
 
+NAMESPACE_YML="${REPO_YMLS}/namespace.yml"
 INGRESS_YML="${REPO_YMLS}/ingress.yml"
 SERVICE_YML="${REPO_YMLS}/service.yml"
 
@@ -34,6 +35,7 @@ applyValues() {
 }
 
 deploy() {
+  kubeclt apply -f "${NAMESPACE_YML}"
   kubectl apply -f "${INGRESS_YML}"
   kubectl apply -f "${SERVICE_YML}"
   kubectl apply -f "${VARIABLIZED_DEPLOYMENT_YML}"
