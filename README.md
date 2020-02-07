@@ -55,7 +55,7 @@ A **[Prometheus](https://prometheus.io/)** and **[Grafana](https://grafana.com/)
 
 Prometheus metrics are exposed via a `/metrics` HTTP end-point.
 
-| [ephemeral-roles.net](http://grafana.ephemeral-roles.net/d/OqANQqtiz/ephemeral-roles-metrics?orgId=1&refresh=5s) |
+| [grafana.ephemeral-roles.net](http://grafana.ephemeral-roles.net/d/OqANQqtiz/ephemeral-roles-metrics?orgId=1&refresh=5s) |
 | :------: |
 | <a href="http://botmon.ephemeral-roles.com"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/bot-metrics.png"></a> |
 
