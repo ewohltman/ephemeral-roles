@@ -35,7 +35,7 @@ applyValues() {
 }
 
 deploy() {
-  kubeclt apply -f "${NAMESPACE_YML}"
+  kubectl apply -f "${NAMESPACE_YML}"
   kubectl apply -f "${INGRESS_YML}"
   kubectl apply -f "${SERVICE_YML}"
   kubectl apply -f "${VARIABLIZED_DEPLOYMENT_YML}"
