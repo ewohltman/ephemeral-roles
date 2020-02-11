@@ -22,15 +22,7 @@ possible) to the server's list of roles
 
 ----
 
-| Usage/Examples \(Orange roles below are automatically managed by `Ephemeral Roles`\) |
-| :------: |
-| ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/action.gif) |
-| ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/static.png) |
-| ![Ephemeral Roles example role list](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/roles.png) |
-
-----
-
-## How does it work?
+## What does `Ephemeral Roles` do?
 
 After the `Ephemeral Roles` bot is invited to your Discord server, it
 immediately starts to watch for changes to your voice channels.  When a member
@@ -49,24 +41,41 @@ revoke/reissue *ephemeral roles* as appropriate.
 
 ----
 
+## Example Usage
+
+| Orange roles below are automatically managed by `Ephemeral Roles` |
+| :------: |
+| ![Ephemeral Roles action example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/action.gif) |
+| ![Ephemeral Roles static example](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/static.png) |
+| ![Ephemeral Roles example role list](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/roles.png) |
+
+----
+
 ## Monitoring
 
 A **[Prometheus](https://prometheus.io/)** and **[Grafana](https://grafana.com/)** instance have been set up to monitor `Ephemeral Roles` metrics.
 
-Prometheus metrics are exposed via a `/metrics` HTTP end-point.
-
-| [ephemeral-roles.net](http://grafana.ephemeral-roles.net/d/OqANQqtiz/ephemeral-roles-metrics?orgId=1&refresh=5s) |
+| [grafana.ephemeral-roles.net](http://grafana.ephemeral-roles.net/d/OqANQqtiz/ephemeral-roles-metrics?orgId=1&refresh=5s) |
 | :------: |
-| <a href="http://botmon.ephemeral-roles.com"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/bot-metrics.png"></a> |
+| <a href="http://grafana.ephemeral-roles.net/d/OqANQqtiz/ephemeral-roles-metrics?orgId=1&refresh=5s"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/bot-metrics.png"></a> |
 
 ----
 
 ## Contributing to the project
 
-Contributions are very welcome, however please follow the guidelines below:
+Contributions are very welcome! Please follow the guidelines below:
 
 * Open an issue describing the bug or enhancement
 * Fork the `develop` branch and make your changes
   * Try to match current naming conventions as closely as possible
   * Try to keep changes small and incremental with appropriate new unit tests
 * Create a Pull Request with your changes against the `develop` branch
+
+This project is equipped with a full
+[CI](https://en.wikipedia.org/wiki/Continuous_integration)
+/
+[CD](https://en.wikipedia.org/wiki/Continuous_deployment) pipeline:
+ 
+* Linting and unit tests will be automatically run with the PR, providing
+feedback if any additional changes need to be made
+* Merge to `master` will automatically deploy the changes live
