@@ -10,10 +10,6 @@ func (config *Config) Ready(s *discordgo.Session, event *discordgo.Ready) {
 	// Increment the total number of Ready events
 	config.ReadyCounter.Inc()
 
-	config.Log.WithFields(logrus.Fields{
-		"server_count": len(event.Guilds),
-	}).Infof(config.BotName + " Ready")
-
 	idleSince := 0
 
 	usd := discordgo.UpdateStatusData{
