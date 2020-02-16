@@ -2,9 +2,12 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ephmeral-roles
+  name: ephemeral-roles
+  namespace: ephemeral-roles
+  labels:
+    app: ephemeral-roles
 spec:
-  replicas: {SHARDS}
+  replicas: {SHARD_COUNT}
   selector:
     matchLabels:
       app: ephemeral-roles
@@ -22,10 +25,10 @@ spec:
           imagePullPolicy: Always
           resources:
             limits:
-              cpu: "1"
+              cpu: "500m"
               memory: "1Gi"
             requests:
-              cpu: "1"
+              cpu: "500m"
               memory: "1Gi"
           env:
             - name: LOG_LEVEL
