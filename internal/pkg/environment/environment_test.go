@@ -33,7 +33,7 @@ func TestLookup(t *testing.T) {
 
 	actual, err := Lookup()
 	if err != nil {
-		t.Errorf("Error looking up environment actual: %s", err)
+		t.Fatalf("Error looking up environment variables: %s", err)
 	}
 
 	if !reflect.DeepEqual(actual, expected) {

@@ -9,5 +9,7 @@
   "RoleColor": 16753920,
   "DiscordrusWebHookURL": "",
   "DiscordBotsOrgBotID": "",
-  "DiscordBotsOrgToken": ""
+  "DiscordBotsOrgToken": "",
+  "ShardID": 0,
+  "ShardCount": 1
 }

@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ephmeral-roles
+spec:
+  replicas: {SHARDS}
+  selector:
+    matchLabels:
+      app: ephemeral-roles
+  serviceName: ephemeral-roles
+  template:
+    metadata:
+      labels:
+        app: ephemeral-roles
+        version: "{COMMIT}"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ephemeral-roles
+          image: ewohltman/ephemeral-roles:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+          env:
+            - name: LOG_LEVEL
+              value: "info"
+            - name: LOG_TIMEZONE_LOCATION
+              value: "America/New_York"
+            - name: BOT_TOKEN
+              value: "{BOT_TOKEN}"
+            - name: DISCORDRUS_WEBHOOK_URL
+              value: "{DISCORDRUS_WEBHOOK_URL}"
+            - name: DISCORDBOTS_ORG_BOT_ID
+              value: "{DISCORDBOTS_ORG_BOT_ID}"
+            - name: DISCORDBOTS_ORG_TOKEN
+              value: "{DISCORDBOTS_ORG_TOKEN}"
+            - name: SHARDS
+              value: "{SHARDS}"
+            - name: INSTANCE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - name: http
+              containerPort: 8080

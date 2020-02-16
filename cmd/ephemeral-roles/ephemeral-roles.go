@@ -30,6 +30,9 @@ func startSession(log logging.Interface, variables *environment.Variables) (*dis
 		return nil, err
 	}
 
+	session.ShardID = variables.ShardID
+	session.ShardCount = variables.ShardCount
+
 	monitorConfig := &monitor.Config{
 		Log:                 log,
 		Session:             session,
@@ -96,7 +99,7 @@ func main() {
 
 	log := logging.New(variables)
 
-	log.Info("Ephemeral Roles starting up")
+	log.Infof("%s starting up", variables.BotName)
 
 	session, err := startSession(log, variables)
 	if err != nil {
