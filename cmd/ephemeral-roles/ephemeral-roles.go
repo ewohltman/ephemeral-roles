@@ -30,6 +30,9 @@ func startSession(log logging.Interface, variables *environment.Variables) (*dis
 		return nil, err
 	}
 
+	session.ShardID = variables.ShardID
+	session.ShardCount = variables.ShardCount
+
 	monitorConfig := &monitor.Config{
 		Log:                 log,
 		Session:             session,

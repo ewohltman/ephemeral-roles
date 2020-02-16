@@ -11,15 +11,16 @@ set -o pipefail # Only exit with zero if all commands of the pipeline exit succe
 SCRIPT_PATH=$(readlink -f "${0}")
 SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")
 
+COMMIT=$(git rev-parse --short HEAD)
+SHARD_COUNT="3"
+
 REPO_YMLS="${SCRIPT_DIR}/../deployments/kubernetes"
 
 NAMESPACE_YML="${REPO_YMLS}/namespace.yml"
 SERVICE_YML="${REPO_YMLS}/service.yml"
 
-DEPLOYMENT_YML="${REPO_YMLS}/deployment.yml"
-VARIABLIZED_DEPLOYMENT_YML="/tmp/deployment.yml"
-
-COMMIT=$(git rev-parse --short HEAD)
+DEPLOYMENT_YML="${REPO_YMLS}/statefulset.yml"
+VARIABLIZED_DEPLOYMENT_YML="/tmp/statefulset.yml"
 
 setup() {
   cp "${DEPLOYMENT_YML}" "${VARIABLIZED_DEPLOYMENT_YML}"
@@ -31,6 +32,7 @@ applyValues() {
   sed -i "s|{DISCORDRUS_WEBHOOK_URL}|${DISCORDRUS_WEBHOOK_URL}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
   sed -i "s|{DISCORDBOTS_ORG_BOT_ID}|${DISCORDBOTS_ORG_BOT_ID}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
   sed -i "s|{DISCORDBOTS_ORG_TOKEN}|${DISCORDBOTS_ORG_TOKEN}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
+  sed -i "s|{SHARD_COUNT}|${SHARD_COUNT}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
 }
 
 deploy() {

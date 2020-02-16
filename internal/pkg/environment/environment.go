@@ -5,7 +5,9 @@ package environment
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Required environment variables.
@@ -25,6 +27,8 @@ const (
 	DiscordrusWebHookURL = "DISCORDRUS_WEBHOOK_URL"
 	DiscordBotsOrgBotID  = "DISCORDBOTS_ORG_BOT_ID"
 	DiscordBotsOrgToken  = "DISCORDBOTS_ORG_TOKEN" //nolint:gosec // Not a hard-coded credential
+	InstanceName         = "INSTANCE_NAME"
+	ShardCount           = "SHARD_COUNT"
 )
 
 const (
@@ -35,6 +39,8 @@ const (
 	defaultBotKeyword          = "!eph"
 	defaultRolePrefix          = "{eph}"
 	defaultRoleColor           = "16753920"
+	defaultInstanceName        = "ephemeral-roles-0"
+	defaultShardCount          = "1"
 
 	undefinedVariable = "%s not defined in environment variables"
 )
@@ -55,6 +61,8 @@ type Variables struct {
 	DiscordrusWebHookURL string
 	DiscordBotsOrgBotID  string
 	DiscordBotsOrgToken  string
+	ShardID              int
+	ShardCount           int
 }
 
 // Lookup looks up expected environment variables and returns a struct
@@ -72,16 +80,19 @@ func Lookup() (*Variables, error) {
 		requiredVariableValues[requiredVariable] = value
 	}
 
-	roleColorHex2Dex := lookupOptional(RoleColor, defaultRoleColor)
-
-	roleColor, err := strconv.Atoi(roleColorHex2Dex)
+	roleColor, err := lookupOptionalInt(RoleColor, defaultRoleColor)
 	if err != nil {
-		return nil, fmt.Errorf(
-			"error converting %s (%s) to int: %s",
-			RoleColor,
-			roleColorHex2Dex,
-			err,
-		)
+		return nil, err
+	}
+
+	shardID, err := parseShardID()
+	if err != nil {
+		return nil, err
+	}
+
+	shardCount, err := lookupOptionalInt(ShardCount, defaultShardCount)
+	if err != nil {
+		return nil, err
 	}
 
 	return &Variables{
@@ -96,6 +107,8 @@ func Lookup() (*Variables, error) {
 		DiscordrusWebHookURL: lookupOptional(DiscordrusWebHookURL, ""),
 		DiscordBotsOrgBotID:  lookupOptional(DiscordBotsOrgBotID, ""),
 		DiscordBotsOrgToken:  lookupOptional(DiscordBotsOrgToken, ""),
+		ShardID:              shardID,
+		ShardCount:           shardCount,
 	}, nil
 }
 
@@ -108,6 +121,22 @@ func lookupRequired(name string) (string, error) {
 	return value, nil
 }
 
+func lookupOptionalInt(name, defaultValue string) (int, error) {
+	value := lookupOptional(name, defaultValue)
+
+	intValue, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, fmt.Errorf(
+			"error converting %s (%s) to int: %s",
+			RoleColor,
+			value,
+			err,
+		)
+	}
+
+	return intValue, nil
+}
+
 func lookupOptional(name, defaultValue string) string {
 	value, found := os.LookupEnv(name)
 	if !found || value == "" {
@@ -115,4 +144,23 @@ func lookupOptional(name, defaultValue string) string {
 	}
 
 	return value
+}
+
+func parseShardID() (int, error) {
+	instanceName := lookupOptional(InstanceName, defaultInstanceName)
+
+	shardIDRegEx := regexp.MustCompile(`-[0-9].*$`)
+
+	shardIDString := shardIDRegEx.FindString(instanceName)
+	shardIDString = strings.TrimPrefix(shardIDString, "-")
+
+	shardID, err := strconv.Atoi(shardIDString)
+	if err != nil {
+		return 0, fmt.Errorf(
+			"error parsing shard ID: %s",
+			err,
+		)
+	}
+
+	return shardID, nil
 }
