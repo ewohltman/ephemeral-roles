@@ -15,6 +15,7 @@ type Config struct {
 	BotName                 string
 	BotKeyword              string
 	RolePrefix              string
+	RoleColor               int
 	ReadyCounter            prometheus.Counter
 	MessageCreateCounter    prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter

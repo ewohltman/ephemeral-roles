@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	stdLog "log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -58,6 +59,7 @@ func setupCallbacks(monitorConfig *monitor.Config, variables *environment.Variab
 		BotName:                 variables.BotName,
 		BotKeyword:              variables.BotKeyword,
 		RolePrefix:              variables.RolePrefix,
+		RoleColor:               variables.RoleColor,
 		ReadyCounter:            callbackMetrics.ReadyCounter,
 		MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
 		VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
@@ -87,14 +89,14 @@ func startHTTPServer(log logging.Interface, required *environment.Variables) (ht
 }
 
 func main() {
-	log := logging.New()
-
-	log.Info("Ephemeral Roles starting up")
-
 	variables, err := environment.Lookup()
 	if err != nil {
-		log.WithError(err).Fatal("Error looking up environment variables")
+		stdLog.Fatalf("Error looking up environment variables: %s", err)
 	}
+
+	log := logging.New(variables)
+
+	log.Info("Ephemeral Roles starting up")
 
 	session, err := startSession(log, variables)
 	if err != nil {

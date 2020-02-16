@@ -78,7 +78,3 @@ func unSetTestEnvironmentVariables(t *testing.T, envVars []string) {
 		}
 	}
 }
-
-func checkDefault() {
-
-}

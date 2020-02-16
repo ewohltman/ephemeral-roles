@@ -2,7 +2,6 @@ package logging
 
 import (
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -19,8 +18,6 @@ func TestNew(t *testing.T) {
 func TestLogger_UpdateLevel(t *testing.T) {
 	log := testLogger()
 
-	originalLevel := os.Getenv(environment.LogLevel)
-
 	testLevels := []logrus.Level{
 		logrus.DebugLevel,
 		logrus.InfoLevel,
@@ -31,19 +28,11 @@ func TestLogger_UpdateLevel(t *testing.T) {
 	}
 
 	for _, testLevel := range testLevels {
-		err := changeLogLevel(log, testLevel.String())
-		if err != nil {
-			t.Error(err)
-		}
+		log.UpdateLevel(testLevel.String())
 
 		if log.Level != testLevel {
 			t.Error(updateError)
 		}
-	}
-
-	err := os.Setenv(environment.LogLevel, originalLevel)
-	if err != nil {
-		t.Fatalf("Unable to reset environment variable %s", environment.LogLevel)
 	}
 }
 
@@ -56,19 +45,14 @@ func TestLogger_WrappedLogger(t *testing.T) {
 }
 
 func testLogger() *Logger {
-	log := New()
+	variables := &environment.Variables{
+		LogLevel:             "info",
+		LogTimezoneLocation:  "America/New_York",
+		DiscordrusWebHookURL: "",
+	}
+
+	log := New(variables)
 	log.SetOutput(ioutil.Discard)
 
 	return log
-}
-
-func changeLogLevel(log *Logger, logLevel string) error {
-	err := os.Setenv(environment.LogLevel, logLevel)
-	if err != nil {
-		return err
-	}
-
-	log.UpdateLevel()
-
-	return nil
 }

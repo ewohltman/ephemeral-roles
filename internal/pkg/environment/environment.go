@@ -5,6 +5,7 @@ package environment
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 // Required environment variables.
@@ -21,7 +22,6 @@ const (
 	BotKeyword           = "BOT_KEYWORD"
 	RolePrefix           = "ROLE_PREFIX"
 	RoleColor            = "ROLE_COLOR_HEX2DEC"
-	Shards               = "SHARDS"
 	DiscordrusWebHookURL = "DISCORDRUS_WEBHOOK_URL"
 	DiscordBotsOrgBotID  = "DISCORDBOTS_ORG_BOT_ID"
 	DiscordBotsOrgToken  = "DISCORDBOTS_ORG_TOKEN" //nolint:gosec // Not a hard-coded credential
@@ -36,8 +36,7 @@ const (
 	defaultRolePrefix          = "{eph}"
 	defaultRoleColor           = "16753920"
 
-	undefinedVariable   = "%s not defined in environment variables"
-	integrationDisabled = "integration with discordbots.org disabled"
+	undefinedVariable = "%s not defined in environment variables"
 )
 
 // Variables are variables from the environment.
@@ -52,7 +51,7 @@ type Variables struct {
 	BotName              string
 	BotKeyword           string
 	RolePrefix           string
-	RoleColor            string
+	RoleColor            int
 	DiscordrusWebHookURL string
 	DiscordBotsOrgBotID  string
 	DiscordBotsOrgToken  string
@@ -73,6 +72,18 @@ func Lookup() (*Variables, error) {
 		requiredVariableValues[requiredVariable] = value
 	}
 
+	roleColorHex2Dex := lookupOptional(RoleColor, defaultRoleColor)
+
+	roleColor, err := strconv.Atoi(roleColorHex2Dex)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error converting %s (%s) to int: %s",
+			RoleColor,
+			roleColorHex2Dex,
+			err,
+		)
+	}
+
 	return &Variables{
 		BotToken:             requiredVariableValues[BotToken],
 		LogLevel:             lookupOptional(LogLevel, defaultLogLevel),
@@ -81,7 +92,7 @@ func Lookup() (*Variables, error) {
 		BotName:              lookupOptional(BotName, defaultBotName),
 		BotKeyword:           lookupOptional(BotKeyword, defaultBotKeyword),
 		RolePrefix:           lookupOptional(RolePrefix, defaultRolePrefix),
-		RoleColor:            lookupOptional(RoleColor, defaultRoleColor),
+		RoleColor:            roleColor,
 		DiscordrusWebHookURL: lookupOptional(DiscordrusWebHookURL, ""),
 		DiscordBotsOrgBotID:  lookupOptional(DiscordBotsOrgBotID, ""),
 		DiscordBotsOrgToken:  lookupOptional(DiscordBotsOrgToken, ""),

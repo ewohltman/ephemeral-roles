@@ -6,7 +6,7 @@
   "BotName": "Ephemeral Roles",
   "BotKeyword": "!eph",
   "RolePrefix": "{eph}",
-  "RoleColor": "16753920",
+  "RoleColor": 16753920,
   "DiscordrusWebHookURL": "",
   "DiscordBotsOrgBotID": "",
   "DiscordBotsOrgToken": ""

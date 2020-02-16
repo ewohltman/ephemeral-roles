@@ -1,13 +1,10 @@
 package callbacks
 
 import (
-	"os"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
 )
 
 // Content token parsing
@@ -113,39 +110,33 @@ func (config *Config) handleInfo(s *discordgo.Session, channelID string) {
 
 func (config *Config) handleLogLevel(contentTokens []string) {
 	if len(contentTokens) >= numTokensWithCommandParameters {
-		levelOpt := strings.ToLower(contentTokens[2])
+		level := strings.ToLower(contentTokens[2])
 
-		logFields := logrus.Fields{logLevelCommand: levelOpt}
+		logFields := logrus.Fields{logLevelCommand: level}
 
-		switch levelOpt {
+		switch level {
 		case logLevelParamDebug:
-			config.updateLogLevel(levelOpt)
+			config.updateLogLevel(level)
 			config.Log.WithFields(logFields).Debugf(logLevelChange)
 		case logLevelParamInfo:
-			config.updateLogLevel(levelOpt)
+			config.updateLogLevel(level)
 			config.Log.WithFields(logFields).Infof(logLevelChange)
 		case logLevelParamWarning:
-			config.updateLogLevel(levelOpt)
+			config.updateLogLevel(level)
 			config.Log.WithFields(logFields).Warnf(logLevelChange)
 		case logLevelParamError:
-			config.updateLogLevel(levelOpt)
+			config.updateLogLevel(level)
 			config.Log.WithFields(logFields).Errorf(logLevelChange)
 		case logLevelParamFatal:
-			config.updateLogLevel(levelOpt)
+			config.updateLogLevel(level)
 		case logLevelParamPanic:
-			config.updateLogLevel(levelOpt)
+			config.updateLogLevel(level)
 		}
 	}
 }
 
-func (config *Config) updateLogLevel(levelOpt string) {
-	err := os.Setenv(environment.LogLevel, levelOpt)
-	if err != nil {
-		config.Log.WithError(err).Warnf("Unable to set environment variable %s", environment.LogLevel)
-		return
-	}
-
-	config.Log.UpdateLevel()
+func (config *Config) updateLogLevel(level string) {
+	config.Log.UpdateLevel(level)
 }
 
 func infoMessage() *discordgo.MessageEmbed {
