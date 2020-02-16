@@ -4,20 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
 )
 
-const (
-	defaultRoleColor      = 16753920 // Default to orange hex #FFA500 in decimal
-	voiceStateUpdateError = "Unable to process VoiceStateUpdate"
-)
+const voiceStateUpdateError = "Unable to process VoiceStateUpdate"
 
 type vsuEvent struct {
 	Session      *discordgo.Session
@@ -219,26 +212,12 @@ func (config *Config) guildRoleCreate(event *vsuEvent, ephRoleName string) (*dis
 		return nil, fmt.Errorf("unable to create ephemeral role: %w", err)
 	}
 
-	var roleColor int
-
-	// Check for role color override
-	if value, found := os.LookupEnv(environment.RoleColor); found {
-		roleColor, err = strconv.Atoi(value)
-		if err != nil {
-			config.Log.WithError(err).
-				WithField(environment.RoleColor, value).
-				Warnf("Error parsing %s from environment", environment.RoleColor)
-
-			roleColor = defaultRoleColor
-		}
-	}
-
 	// Edit the new role
 	ephRole, err = event.Session.GuildRoleEdit(
 		event.Guild.ID,
 		ephRole.ID,
 		ephRoleName,
-		roleColor,
+		config.RoleColor,
 		true,
 		ephRole.Permissions,
 		ephRole.Mentionable,
@@ -268,7 +247,7 @@ func (config *Config) revokeEphemeralRoles(event *vsuEvent) {
 				return
 			}
 
-			config.Log.WithError(err).WithFields(logrus.Fields{
+			config.Log.WithFields(logrus.Fields{
 				"user":  event.GuildMember.User.Username,
 				"role":  role.Name,
 				"guild": event.Guild.Name,

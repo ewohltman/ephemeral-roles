@@ -1,50 +1,69 @@
 package environment
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 )
 
-func TestCheckRequiredVariables(t *testing.T) {
-	envVars := []string{
-		Port,
+const testVariablesFile = "testdata/variables.json"
+
+func TestLookup(t *testing.T) {
+	const testVal = "testVal"
+
+	_, err := Lookup()
+	if err == nil {
+		t.Errorf("Expected error, but got nil")
+	}
+
+	expected, err := expectedResults()
+	if err != nil {
+		t.Fatalf("Unable to obtain expected test results: %s", err)
+	}
+
+	preset := []string{
 		BotToken,
-		BotName,
-		BotKeyword,
-		RolePrefix,
-		RoleColor,
-	}
-
-	setTestEnvironmentVariables(t, envVars)
-	defer unSetTestEnvironmentVariables(t, envVars)
-
-	_, err := CheckRequiredVariables()
-	if err != nil {
-		t.Errorf("Error checking required environment variables: %s", err)
-	}
-}
-
-func TestCheckOptionalVariables(t *testing.T) {
-	envVars := []string{
 		LogLevel,
-		DiscordrusWebHookURL,
-		LogTimezoneLocation,
-		DiscordBotsOrgBotID,
-		DiscordBotsOrgToken,
 	}
 
-	setTestEnvironmentVariables(t, envVars)
-	defer unSetTestEnvironmentVariables(t, envVars)
+	setTestEnvironmentVariables(t, preset, testVal)
+	defer unSetTestEnvironmentVariables(t, preset)
 
-	_, err := CheckOptionalVariables()
+	actual, err := Lookup()
 	if err != nil {
-		t.Errorf("Error checking optional environment variables: %s", err)
+		t.Errorf("Error looking up environment actual: %s", err)
+	}
+
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf(
+			"Unexpected results:\nGot: %+v\nExpected: %+v",
+			actual,
+			expected,
+		)
 	}
 }
 
-func setTestEnvironmentVariables(t *testing.T, envVars []string) {
+func expectedResults() (*Variables, error) {
+	jsonBytes, err := ioutil.ReadFile(testVariablesFile)
+	if err != nil {
+		return nil, err
+	}
+
+	variables := &Variables{}
+
+	err = json.Unmarshal(jsonBytes, variables)
+	if err != nil {
+		return nil, err
+	}
+
+	return variables, nil
+}
+
+func setTestEnvironmentVariables(t *testing.T, envVars []string, testVal string) {
 	for _, envVar := range envVars {
-		err := os.Setenv(envVar, "testVal")
+		err := os.Setenv(envVar, testVal)
 		if err != nil {
 			t.Errorf("Error setting test environment variable: %s", err)
 		}

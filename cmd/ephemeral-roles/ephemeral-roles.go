@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	stdLog "log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,12 +24,8 @@ const (
 	contextTimeout  = 5 * time.Second
 )
 
-func startSession(
-	log logging.Interface,
-	required *environment.RequiredVariables,
-	optional *environment.OptionalVariables,
-) (*discordgo.Session, error) {
-	session, err := discordgo.New("Bot " + required.BotToken)
+func startSession(log logging.Interface, variables *environment.Variables) (*discordgo.Session, error) {
+	session, err := discordgo.New("Bot " + variables.BotToken)
 	if err != nil {
 		return nil, err
 	}
@@ -37,12 +34,12 @@ func startSession(
 		Log:                 log,
 		Session:             session,
 		HTTPClient:          session.Client,
-		DiscordBotsOrgBotID: optional.DiscordBotsOrgBotID,
-		DiscordBotsOrgToken: optional.DiscordBotsOrgToken,
+		DiscordBotsOrgBotID: variables.DiscordBotsOrgBotID,
+		DiscordBotsOrgToken: variables.DiscordBotsOrgToken,
 		Interval:            monitorInterval,
 	}
 
-	setupCallbacks(monitorConfig)
+	setupCallbacks(monitorConfig, variables)
 
 	err = session.Open()
 	if err != nil {
@@ -54,14 +51,15 @@ func startSession(
 	return session, nil
 }
 
-func setupCallbacks(monitorConfig *monitor.Config) {
+func setupCallbacks(monitorConfig *monitor.Config, variables *environment.Variables) {
 	callbackMetrics := monitor.Metrics(monitorConfig)
 
 	callbackConfig := &callbacks.Config{
 		Log:                     monitorConfig.Log,
-		BotName:                 os.Getenv("BOT_NAME"),
-		BotKeyword:              os.Getenv("BOT_KEYWORD"),
-		RolePrefix:              os.Getenv("ROLE_PREFIX"),
+		BotName:                 variables.BotName,
+		BotKeyword:              variables.BotKeyword,
+		RolePrefix:              variables.RolePrefix,
+		RoleColor:               variables.RoleColor,
 		ReadyCounter:            callbackMetrics.ReadyCounter,
 		MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
 		VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
@@ -72,7 +70,7 @@ func setupCallbacks(monitorConfig *monitor.Config) {
 	monitorConfig.Session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
 }
 
-func startHTTPServer(log logging.Interface, required *environment.RequiredVariables) (httpServer *http.Server, stop chan os.Signal) {
+func startHTTPServer(log logging.Interface, required *environment.Variables) (httpServer *http.Server, stop chan os.Signal) {
 	httpServer = server.New(log, required.Port)
 	stop = make(chan os.Signal, 1)
 
@@ -91,21 +89,16 @@ func startHTTPServer(log logging.Interface, required *environment.RequiredVariab
 }
 
 func main() {
-	log := logging.New()
+	variables, err := environment.Lookup()
+	if err != nil {
+		stdLog.Fatalf("Error looking up environment variables: %s", err)
+	}
+
+	log := logging.New(variables)
 
 	log.Info("Ephemeral Roles starting up")
 
-	requiredVariables, err := environment.CheckRequiredVariables()
-	if err != nil {
-		log.WithError(err).Fatal("Missing required environment variables")
-	}
-
-	optionalVariables, err := environment.CheckOptionalVariables()
-	if err != nil {
-		log.WithError(err).Warn("Missing optional environment variables")
-	}
-
-	session, err := startSession(log, requiredVariables, optionalVariables)
+	session, err := startSession(log, variables)
 	if err != nil {
 		log.WithError(err).Fatal("Error starting Discord session")
 	}
@@ -117,7 +110,7 @@ func main() {
 		}
 	}()
 
-	httpServer, stop := startHTTPServer(log, requiredVariables)
+	httpServer, stop := startHTTPServer(log, variables)
 
 	<-stop // Block until the OS signal
 

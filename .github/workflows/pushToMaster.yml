@@ -1,5 +1,6 @@
+---
 name: build
-on:
+"on":
   push:
     branches:
       - master
@@ -25,7 +26,8 @@ jobs:
           PATH="${PATH}:$(go env GOPATH)/bin"
           INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"
 
-          curl -sSfL "${INSTALL_SCRIPT_URL}" | sh -s -- -b $(go env GOPATH)/bin v1.23.1
+          curl -sSfL "${INSTALL_SCRIPT_URL}" | \
+          sh -s -- -b $(go env GOPATH)/bin v1.23.1
 
           make lint
 
@@ -60,17 +62,20 @@ jobs:
           BOT_TOKEN: "${{ secrets.BOT_TOKEN }}"
           DISCORDRUS_WEBHOOK_URL: "${{ secrets.DISCORDRUS_WEBHOOK_URL }}"
           DISCORDBOTS_ORG_BOT_ID: "${{ secrets.DISCORDBOTS_ORG_BOT_ID }}"
-          DISCORDBOTS_ORG_TOKEN:  "${{ secrets.DISCORDBOTS_ORG_TOKEN }}"
+          DISCORDBOTS_ORG_TOKEN: "${{ secrets.DISCORDBOTS_ORG_TOKEN }}"
         run: |
           PATH="${PATH}:$(go env GOPATH)/bin"
           KUBECTL_BIN="$(go env GOPATH)/bin/kubectl"
 
-          KUBECTL_VERSION="$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)"
+          KUBECTL_VERSION_URL="https://storage.googleapis.com/kubernetes-release/release/stable.txt"
+          KUBECTL_VERSION="$(curl -s ${KUBECTL_VERSION_URL})"
+
           KUBECTL_URL="https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+
+          curl -sL "${KUBECTL_URL}" -o "${KUBECTL_BIN}"
+          chmod +x "${KUBECTL_BIN}"
 
           mkdir ~/.kube
           echo "${KUBERNETES_CONFIG}" > ~/.kube/config
-
-          curl -sL "${KUBECTL_URL}" -o "${KUBECTL_BIN}" && chmod +x "${KUBECTL_BIN}"
 
           make deploy

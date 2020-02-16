@@ -1,5 +1,6 @@
+---
 name: push
-on:
+"on":
   push:
     branches-ignore:
       - master
@@ -25,7 +26,8 @@ jobs:
           PATH="${PATH}:$(go env GOPATH)/bin"
           INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"
 
-          curl -sSfL "${INSTALL_SCRIPT_URL}" | sh -s -- -b $(go env GOPATH)/bin v1.23.1
+          curl -sSfL "${INSTALL_SCRIPT_URL}" | \
+          sh -s -- -b $(go env GOPATH)/bin v1.23.1
 
           make lint
 

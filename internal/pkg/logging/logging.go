@@ -4,7 +4,6 @@
 package logging
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -39,37 +38,50 @@ const (
 // methods.
 type Interface interface {
 	logrus.FieldLogger
-	UpdateLevel()
 	WrappedLogger() *logrus.Logger
+	UpdateLevel(level string)
 }
 
 // Logger is a struct to wrap a *logrus.Logger instance and provides custom
 // methods.
 type Logger struct {
 	*logrus.Logger
+	Location             *time.Location
+	DiscordrusWebHookURL string
 }
 
-// New returns a new *logrus.Logger instance.
-func New() *Logger {
+// New returns a new *Logger instance.
+func New(variables *environment.Variables) *Logger {
+	location := timestampLocation(variables.LogTimezoneLocation)
+
 	log := &Logger{
 		Logger: &logrus.Logger{
-			Formatter: newLocaleFormatter(),
-			Out:       os.Stdout,
-			Level:     logrus.InfoLevel,
-			Hooks:     make(logrus.LevelHooks),
+			Formatter: &localeFormatter{
+				&logrus.TextFormatter{},
+				location,
+			},
+			Out:   os.Stdout,
+			Level: logrus.InfoLevel,
+			Hooks: make(logrus.LevelHooks),
 		},
+		Location:             location,
+		DiscordrusWebHookURL: variables.DiscordrusWebHookURL,
 	}
 
-	log.UpdateLevel()
+	log.UpdateLevel(variables.LogLevel)
 
 	return log
 }
 
-// UpdateLevel allows for runtime updates of the logging level and resets the
-// hooks with new values from the environment.
-func (log *Logger) UpdateLevel() {
+// WrappedLogger returns the wrapped *logrus.Logger instance.
+func (log *Logger) WrappedLogger() *logrus.Logger {
+	return log.Logger
+}
+
+// UpdateLevel allows for runtime updates of the logging level.
+func (log *Logger) UpdateLevel(level string) {
 	// Update our global logging instance log level
-	log.SetLevel(environmentLevel())
+	log.SetLevel(parseLevel(level))
 
 	// Reset logging hooks
 	log.Hooks = make(logrus.LevelHooks)
@@ -78,65 +90,40 @@ func (log *Logger) UpdateLevel() {
 	log.discordrusIntegration()
 }
 
-// WrappedLogger returns the wrapped *logrus.Logger instance.
-func (log *Logger) WrappedLogger() *logrus.Logger {
-	return log.Logger
-}
-
 func (log *Logger) discordrusIntegration() {
-	if hookURLString, found := os.LookupEnv(environment.DiscordrusWebHookURL); found {
-		timeString := ""
-
-		timestampLocale, err := timestampLocalization()
-		if err != nil {
-			log.WithError(err).Debugf("Unable to determine timestamp locale, defaulting to local runtime")
-
-			timeString = time.Now().String()
-		} else {
-			timeString = time.Now().In(timestampLocale).String()
-		}
-
-		timeZoneToken := strings.Split(timeString, " ")[3]
-
-		log.AddHook(
-			discordrus.NewHook(
-				hookURLString,
-				log.Level,
-				&discordrus.Opts{
-					Username:           "",
-					Author:             "",
-					EnableCustomColors: true,
-					CustomLevelColors: &discordrus.LevelColors{
-						Debug: DebugColor,
-						Info:  InfoColor,
-						Warn:  WarningColor,
-						Error: ErrorColor,
-						Panic: PanicColor,
-						Fatal: FatalColor,
-					},
-					TimestampFormat: "Jan 2 15:04:05.00000 " + timeZoneToken,
-					TimestampLocale: timestampLocale,
-				},
-			),
-		)
+	if log.DiscordrusWebHookURL == "" {
+		return
 	}
+
+	timeString := time.Now().In(log.Location).String()
+	timeZoneToken := strings.Split(timeString, " ")[3]
+
+	log.AddHook(
+		discordrus.NewHook(
+			log.DiscordrusWebHookURL,
+			log.Level,
+			&discordrus.Opts{
+				Username:           "",
+				Author:             "",
+				EnableCustomColors: true,
+				CustomLevelColors: &discordrus.LevelColors{
+					Debug: DebugColor,
+					Info:  InfoColor,
+					Warn:  WarningColor,
+					Error: ErrorColor,
+					Panic: PanicColor,
+					Fatal: FatalColor,
+				},
+				TimestampFormat: "Jan 2 15:04:05.00000 " + timeZoneToken,
+				TimestampLocale: log.Location,
+			},
+		),
+	)
 }
 
 type localeFormatter struct {
 	logrus.Formatter
 	*time.Location
-}
-
-func newLocaleFormatter() *localeFormatter {
-	timestampLocale, err := timestampLocalization()
-	if err != nil {
-		timestampLocale = time.Local
-	}
-
-	return &localeFormatter{
-		&logrus.TextFormatter{},
-		timestampLocale,
-	}
 }
 
 // Format satisfies the logrus.Formatter interface.
@@ -146,29 +133,19 @@ func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
 	return l.Formatter.Format(e)
 }
 
-func timestampLocalization() (*time.Location, error) {
-	envLocation, found := os.LookupEnv(environment.LogTimezoneLocation)
-	if !found || envLocation == "" {
-		return time.Local, nil
-	}
-
-	timeLocalization, err := time.LoadLocation(envLocation)
+func timestampLocation(locationString string) *time.Location {
+	location, err := time.LoadLocation(locationString)
 	if err != nil {
-		return nil, fmt.Errorf("unable to load location %s: %s", environment.LogTimezoneLocation, err)
+		return time.UTC
 	}
 
-	return timeLocalization, nil
+	return location
 }
 
-func environmentLevel() logrus.Level {
-	logLevel := logrus.InfoLevel // Default to InfoLevel
+func parseLevel(level string) logrus.Level {
+	logLevel := logrus.InfoLevel
 
-	envLevel, found := os.LookupEnv(environment.LogLevel)
-	if !found || envLevel == "" {
-		return logLevel
-	}
-
-	switch strings.ToLower(strings.TrimSpace(envLevel)) {
+	switch strings.ToLower(strings.TrimSpace(level)) {
 	case DebugLevel:
 		logLevel = logrus.DebugLevel
 	case InfoLevel:

@@ -33,7 +33,7 @@ func (log *Logger) WrappedLogger() *logrus.Logger {
 }
 
 // UpdateLevel is a mock stub of the logging.Logger UpdateLevel method.
-func (log *Logger) UpdateLevel() {
+func (log *Logger) UpdateLevel(level string) {
 	// Nop
 }
 

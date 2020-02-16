@@ -19,7 +19,7 @@ func TestLogger_WrappedLogger(t *testing.T) {
 }
 
 func TestLogger_UpdateLevel(t *testing.T) {
-	NewLogger().UpdateLevel()
+	NewLogger().UpdateLevel("info")
 }
 
 func TestNewSession(t *testing.T) {

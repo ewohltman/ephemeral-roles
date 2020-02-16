@@ -14,16 +14,15 @@ SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")
 REPO_YMLS="${SCRIPT_DIR}/../deployments/kubernetes"
 
 NAMESPACE_YML="${REPO_YMLS}/namespace.yml"
-INGRESS_YML="${REPO_YMLS}/ingress.yml"
 SERVICE_YML="${REPO_YMLS}/service.yml"
 
-TEMPLATE_DEPLOYMENT_YML="${REPO_YMLS}/deployment.yml"
+DEPLOYMENT_YML="${REPO_YMLS}/deployment.yml"
 VARIABLIZED_DEPLOYMENT_YML="/tmp/deployment.yml"
 
 COMMIT=$(git rev-parse --short HEAD)
 
 setup() {
-  cp "${TEMPLATE_DEPLOYMENT_YML}" "${VARIABLIZED_DEPLOYMENT_YML}"
+  cp "${DEPLOYMENT_YML}" "${VARIABLIZED_DEPLOYMENT_YML}"
 }
 
 applyValues() {
@@ -36,7 +35,6 @@ applyValues() {
 
 deploy() {
   kubectl apply -f "${NAMESPACE_YML}"
-  kubectl apply -f "${INGRESS_YML}"
   kubectl apply -f "${SERVICE_YML}"
   kubectl apply -f "${VARIABLIZED_DEPLOYMENT_YML}"
   kubectl -n ephemeral-roles rollout status deployment/ephemeral-roles

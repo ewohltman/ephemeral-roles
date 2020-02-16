@@ -1,3 +1,4 @@
+---
 linters-settings:
   dupl:
     threshold: 100
@@ -84,6 +85,3 @@ run:
 issues:
   max-same-issues: 0
   exclude-use-default: false
-
-service:
-  golangci-lint-version: 1.23.x # use the fixed version to not introduce new linters unexpectedly

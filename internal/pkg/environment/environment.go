@@ -5,103 +5,114 @@ package environment
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 // Required environment variables.
 const (
-	Port       = "PORT"
-	BotToken   = "BOT_TOKEN"
-	BotName    = "BOT_NAME"
-	BotKeyword = "BOT_KEYWORD"
-	RolePrefix = "ROLE_PREFIX"
-	RoleColor  = "ROLE_COLOR_HEX2DEC"
+	BotToken = "BOT_TOKEN"
 )
 
 // Optional environment variables.
 const (
 	LogLevel             = "LOG_LEVEL"
-	DiscordrusWebHookURL = "DISCORDRUS_WEBHOOK_URL"
 	LogTimezoneLocation  = "LOG_TIMEZONE_LOCATION"
+	Port                 = "PORT"
+	BotName              = "BOT_NAME"
+	BotKeyword           = "BOT_KEYWORD"
+	RolePrefix           = "ROLE_PREFIX"
+	RoleColor            = "ROLE_COLOR_HEX2DEC"
+	DiscordrusWebHookURL = "DISCORDRUS_WEBHOOK_URL"
 	DiscordBotsOrgBotID  = "DISCORDBOTS_ORG_BOT_ID"
 	DiscordBotsOrgToken  = "DISCORDBOTS_ORG_TOKEN" //nolint:gosec // Not a hard-coded credential
 )
 
 const (
-	undefinedVariable   = "%s not defined in environment variables"
-	integrationDisabled = "integration with discordbots.org disabled"
+	defaultLogLevel            = "info"
+	defaultLogTimezoneLocation = "UTC"
+	defaultPort                = "8080"
+	defaultBotName             = "Ephemeral Roles"
+	defaultBotKeyword          = "!eph"
+	defaultRolePrefix          = "{eph}"
+	defaultRoleColor           = "16753920"
+
+	undefinedVariable = "%s not defined in environment variables"
 )
 
-// RequiredVariables are the required environment variables.
-type RequiredVariables struct {
-	Port      string
-	BotToken  string
-	RoleColor string
+// Variables are variables from the environment.
+type Variables struct {
+	// Required variables
+	BotToken string
+
+	// Optional variables
+	LogLevel             string
+	LogTimezoneLocation  string
+	Port                 string
+	BotName              string
+	BotKeyword           string
+	RolePrefix           string
+	RoleColor            int
+	DiscordrusWebHookURL string
+	DiscordBotsOrgBotID  string
+	DiscordBotsOrgToken  string
 }
 
-// OptionalVariables are the optional environment variables.
-type OptionalVariables struct {
-	DiscordBotsOrgBotID string
-	DiscordBotsOrgToken string
-}
+// Lookup looks up expected environment variables and returns a struct
+// containing those values.
+func Lookup() (*Variables, error) {
+	requiredVariables := []string{BotToken}
+	requiredVariableValues := make(map[string]string)
 
-// CheckRequiredVariables checks for required environment variables and returns
-// a struct containing those values.
-func CheckRequiredVariables() (*RequiredVariables, error) {
-	// Check for internal HTTP server port. If not defined, default to 8080
-	port, err := lookup(Port)
-	if err != nil {
-		port = "8080"
-	}
-
-	// Check for bot token, we need this to connect to Discord
-	botToken, err := lookup(BotToken)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check for other variables. These are not needed now, but are needed in
-	// the callbacks
-	for _, envVar := range []string{BotName, BotKeyword, RolePrefix, RoleColor} {
-		_, err = lookup(envVar)
+	for _, requiredVariable := range requiredVariables {
+		value, err := lookupRequired(requiredVariable)
 		if err != nil {
 			return nil, err
 		}
+
+		requiredVariableValues[requiredVariable] = value
 	}
 
-	return &RequiredVariables{
-		Port:     port,
-		BotToken: botToken,
+	roleColorHex2Dex := lookupOptional(RoleColor, defaultRoleColor)
+
+	roleColor, err := strconv.Atoi(roleColorHex2Dex)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"error converting %s (%s) to int: %s",
+			RoleColor,
+			roleColorHex2Dex,
+			err,
+		)
+	}
+
+	return &Variables{
+		BotToken:             requiredVariableValues[BotToken],
+		LogLevel:             lookupOptional(LogLevel, defaultLogLevel),
+		LogTimezoneLocation:  lookupOptional(LogTimezoneLocation, defaultLogTimezoneLocation),
+		Port:                 lookupOptional(Port, defaultPort),
+		BotName:              lookupOptional(BotName, defaultBotName),
+		BotKeyword:           lookupOptional(BotKeyword, defaultBotKeyword),
+		RolePrefix:           lookupOptional(RolePrefix, defaultRolePrefix),
+		RoleColor:            roleColor,
+		DiscordrusWebHookURL: lookupOptional(DiscordrusWebHookURL, ""),
+		DiscordBotsOrgBotID:  lookupOptional(DiscordBotsOrgBotID, ""),
+		DiscordBotsOrgToken:  lookupOptional(DiscordBotsOrgToken, ""),
 	}, nil
 }
 
-// CheckOptionalVariables checks for optional environment variables and returns
-// a struct containing those values.
-func CheckOptionalVariables() (*OptionalVariables, error) {
-	// Check for discordbots.org bot ID. We need this for optional
-	// discordbots.org integration
-	discordBotsOrgBotID, err := lookup(DiscordBotsOrgBotID)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %s", integrationDisabled, err)
-	}
-
-	// Check for discordbots.org token, we need this for optional
-	// discordbots.org integration
-	discordBotsOrgToken, err := lookup(DiscordBotsOrgToken)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %s", integrationDisabled, err)
-	}
-
-	return &OptionalVariables{
-		DiscordBotsOrgBotID: discordBotsOrgBotID,
-		DiscordBotsOrgToken: discordBotsOrgToken,
-	}, nil
-}
-
-func lookup(environmentVariable string) (string, error) {
-	value, found := os.LookupEnv(environmentVariable)
+func lookupRequired(name string) (string, error) {
+	value, found := os.LookupEnv(name)
 	if !found || value == "" {
-		return "", fmt.Errorf(undefinedVariable, environmentVariable)
+		return "", fmt.Errorf(undefinedVariable, name)
 	}
 
 	return value, nil
+}
+
+func lookupOptional(name, defaultValue string) string {
+	value, found := os.LookupEnv(name)
+	if !found || value == "" {
+		return defaultValue
+	}
+
+	return value
 }
