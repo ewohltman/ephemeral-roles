@@ -247,7 +247,7 @@ func (config *Config) revokeEphemeralRoles(event *vsuEvent) {
 				return
 			}
 
-			config.Log.WithError(err).WithFields(logrus.Fields{
+			config.Log.WithFields(logrus.Fields{
 				"user":  event.GuildMember.User.Username,
 				"role":  role.Name,
 				"guild": event.Guild.Name,
