@@ -96,7 +96,7 @@ func main() {
 
 	log := logging.New(variables)
 
-	log.Info("Ephemeral Roles starting up")
+	log.Infof("%s starting up", variables.BotName)
 
 	session, err := startSession(log, variables)
 	if err != nil {
