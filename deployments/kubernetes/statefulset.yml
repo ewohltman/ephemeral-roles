@@ -43,8 +43,8 @@ spec:
               value: "{DISCORDBOTS_ORG_BOT_ID}"
             - name: DISCORDBOTS_ORG_TOKEN
               value: "{DISCORDBOTS_ORG_TOKEN}"
-            - name: SHARDS
-              value: "{SHARDS}"
+            - name: SHARD_COUNT
+              value: "{SHARD_COUNT}"
             - name: INSTANCE_NAME
               valueFrom:
                 fieldRef:
