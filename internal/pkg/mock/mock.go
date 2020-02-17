@@ -14,7 +14,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const unsupportedMockRequest = "unsupported mock request"
+// String values to be used in other tests corresponding to the objects created
+// in the mock session.
+const (
+	TestGuild          = "testGuild"
+	TestChannel        = "testChannel"
+	TestPrivateChannel = "testPrivateChannel"
+	TestRole           = "testRole"
+	TestUser           = "testUser"
+)
+
+const (
+	largeMemberCount = 100
+
+	unsupportedMockRequest = "unsupported mock request"
+)
 
 // TestingInstance is an interface intended for testing.T and testing.B
 // instances.
@@ -67,57 +81,67 @@ func NewSession() (*discordgo.Session, error) {
 		Client:       mockRestClient(),
 	}
 
-	testUser := &discordgo.User{
-		ID:       "testUser",
-		Username: "testUser",
+	sessionUser := "mockSession"
+
+	session.State.User = &discordgo.User{
+		ID:       sessionUser,
+		Username: sessionUser,
+		Bot:      true,
 	}
 
-	session.State.User = testUser
-
-	err := session.State.GuildAdd(
-		&discordgo.Guild{
-			ID:   "testGuild",
-			Name: "testGuild",
-			Roles: []*discordgo.Role{
-				{
-					ID:   "testRole",
-					Name: "testRole",
-				},
-				{
-					ID:   "testRoleChannel",
-					Name: "testRolePrefix testChannel",
-				},
-			},
-		},
-	)
+	err := buildTestGuild(session)
 	if err != nil {
 		return nil, err
 	}
 
-	err = session.State.ChannelAdd(
-		&discordgo.Channel{
-			ID:      "testChannel",
-			Name:    "testChannel",
-			GuildID: "testGuild",
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	err = session.State.MemberAdd(
-		&discordgo.Member{
-			User:    testUser,
-			Nick:    "testUser",
-			GuildID: "testGuild",
-			Roles:   []string{"testRole"},
-		},
-	)
+	err = buildLargeMemberGuild(session)
 	if err != nil {
 		return nil, err
 	}
 
 	return session, nil
+}
+
+func buildTestGuild(session *discordgo.Session) error {
+	testGuild, err := addGuild(session, TestGuild)
+	if err != nil {
+		return err
+	}
+
+	err = addChannel(session, testGuild, TestChannel)
+	if err != nil {
+		return err
+	}
+
+	err = addRole(session, testGuild, TestRole)
+	if err != nil {
+		return err
+	}
+
+	err = addMember(session, testGuild, TestUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func buildLargeMemberGuild(session *discordgo.Session) error {
+	testGuild, err := addGuild(session, TestGuild+"2")
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < largeMemberCount; i++ {
+		testUser := fmt.Sprintf("%s-%d", TestUser, i)
+
+		err = addMember(session, testGuild, testUser)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // SessionClose closes a *discordgo.Session instance and if an error is encountered,
@@ -127,6 +151,53 @@ func SessionClose(testingInstance TestingInstance, session *discordgo.Session) {
 	if err != nil {
 		testingInstance.Error(err)
 	}
+}
+
+func addGuild(session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
+	guild := &discordgo.Guild{
+		ID:   guildID,
+		Name: guildID,
+	}
+
+	return guild, session.State.GuildAdd(guild)
+}
+
+func addChannel(session *discordgo.Session, guild *discordgo.Guild, channelID string) error {
+	channel := &discordgo.Channel{
+		ID:      channelID,
+		Name:    channelID,
+		GuildID: guild.ID,
+	}
+
+	guild.Channels = append(guild.Channels, channel)
+
+	return session.State.ChannelAdd(channel)
+}
+
+func addRole(session *discordgo.Session, guild *discordgo.Guild, roleID string) error {
+	role := &discordgo.Role{
+		ID:   roleID,
+		Name: roleID,
+	}
+
+	guild.Roles = append(guild.Roles, role)
+
+	return session.State.RoleAdd(guild.ID, role)
+}
+
+func addMember(session *discordgo.Session, guild *discordgo.Guild, userID string) error {
+	member := &discordgo.Member{
+		GuildID: guild.ID,
+		User: &discordgo.User{
+			ID:       userID,
+			Username: userID,
+		},
+	}
+
+	guild.Members = append(guild.Members, member)
+	guild.MemberCount++
+
+	return session.State.MemberAdd(member)
 }
 
 func mockRestClient() *http.Client {
@@ -165,7 +236,7 @@ func channelsResponse(r *http.Request) *http.Response {
 	pathTokens := strings.Split(r.URL.Path, "/")
 	channel := pathTokens[len(pathTokens)-1]
 
-	if channel == "privateChannel" {
+	if channel == TestPrivateChannel {
 		return newResponse(http.StatusForbidden, []byte{})
 	}
 

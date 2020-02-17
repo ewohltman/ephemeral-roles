@@ -28,17 +28,17 @@ func TestNewSession(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = session.User("testUser")
+	_, err = session.User(TestUser)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = session.Channel("testChannel")
+	_, err = session.Channel(TestChannel)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = session.GuildRoleCreate("testGuild")
+	_, err = session.GuildRoleCreate(TestGuild)
 	if err != nil {
 		t.Error(err)
 	}

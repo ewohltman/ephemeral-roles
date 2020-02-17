@@ -74,8 +74,8 @@ func setupCallbacks(monitorConfig *monitor.Config, variables *environment.Variab
 	monitorConfig.Session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
 }
 
-func startHTTPServer(log logging.Interface, required *environment.Variables) (httpServer *http.Server, stop chan os.Signal) {
-	httpServer = server.New(log, required.Port)
+func startHTTPServer(log logging.Interface, session *discordgo.Session, port string) (httpServer *http.Server, stop chan os.Signal) {
+	httpServer = server.New(log, session, port)
 	stop = make(chan os.Signal, 1)
 
 	go func() {
@@ -117,7 +117,7 @@ func main() {
 		}
 	}()
 
-	httpServer, stop := startHTTPServer(log, variables)
+	httpServer, stop := startHTTPServer(log, session, variables.Port)
 
 	<-stop // Block until the OS signal
 
