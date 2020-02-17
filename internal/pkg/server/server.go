@@ -39,8 +39,21 @@ type sortableGuild struct {
 
 type sortableGuilds []sortableGuild
 
+// Len returns the length of guilds to satisfy the sort.Interface interface.
+func (guilds sortableGuilds) Len() int {
+	return len(guilds)
+}
+
+// Less returns whether the element i is less than element j to satisfy the
+// sort.Interface interface.
 func (guilds sortableGuilds) Less(i, j int) bool {
 	return guilds[i].MemberCount < guilds[j].MemberCount
+}
+
+// Swap swaps the elements i and j in the slice to satisfy the sort.Interface
+// interface.
+func (guilds sortableGuilds) Swap(i, j int) {
+	guilds[i], guilds[j] = guilds[j], guilds[i]
 }
 
 // New returns a new pre-configured server instance.
@@ -80,7 +93,7 @@ func guildsHandler(log logging.Interface, session *discordgo.Session) func(http.
 			}
 		}
 
-		sort.SliceStable(sortedGuilds, sortedGuilds.Less)
+		sort.Sort(sort.Reverse(sortedGuilds))
 
 		sortedGuildsJSON, err := json.MarshalIndent(sortedGuilds, "", "    ")
 		if err != nil {

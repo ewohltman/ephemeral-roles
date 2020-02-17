@@ -33,6 +33,8 @@ func TestNew(t *testing.T) {
 		t.Fatalf("Error obtaining mock session: %s", err)
 	}
 
+	defer mock.SessionClose(t, session)
+
 	testServer := New(log, session, testPort)
 
 	go func() {
