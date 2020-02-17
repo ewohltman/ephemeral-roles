@@ -12,7 +12,7 @@ SCRIPT_PATH=$(readlink -f "${0}")
 SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")
 
 COMMIT=$(git rev-parse --short HEAD)
-SHARD_COUNT="3"
+SHARD_COUNT="4"
 
 REPO_YMLS="${SCRIPT_DIR}/../deployments/kubernetes"
 
