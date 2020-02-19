@@ -5,4 +5,4 @@
 coverage.out
 
 # Binary
-build/package/ephemeral-roles
+build/package/ephemeral-roles/ephemeral-roles
