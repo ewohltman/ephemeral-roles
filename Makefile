@@ -16,7 +16,7 @@ build:
 
 image:
 	docker pull "${parentImage}"
-	docker image build -t ewohltman/ephemeral-roles:latest build/package/ephemeral-roles/ephemeral-roles
+	docker image build -t ewohltman/ephemeral-roles:latest build/package/ephemeral-roles
 
 push:
 	docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}"
