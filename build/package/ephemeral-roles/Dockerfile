@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-COPY build/package/ephemeral-roles .
+COPY ephemeral-roles .
 
 EXPOSE 8080
 
