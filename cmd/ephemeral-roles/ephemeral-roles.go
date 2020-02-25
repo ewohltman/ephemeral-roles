@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/sirupsen/logrus"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
@@ -100,10 +99,7 @@ func main() {
 
 	log := logging.New(variables)
 
-	log.WithFields(logrus.Fields{
-		"shardID":    variables.ShardID,
-		"shardCount": variables.ShardCount,
-	}).Infof("%s starting up", variables.BotName)
+	log.WithField("shardID", variables.ShardID).Infof("%s starting up", variables.BotName)
 
 	session, err := startSession(log, variables)
 	if err != nil {
