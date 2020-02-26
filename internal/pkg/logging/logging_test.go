@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
 )
 
 const updateError = "Failed update logging level"
@@ -45,13 +43,7 @@ func TestLogger_WrappedLogger(t *testing.T) {
 }
 
 func testLogger() *Logger {
-	variables := &environment.Variables{
-		LogLevel:             "info",
-		LogTimezoneLocation:  "America/New_York",
-		DiscordrusWebHookURL: "",
-	}
-
-	log := New(variables)
+	log := New("info", "America/New_York", "")
 	log.SetOutput(ioutil.Discard)
 
 	return log

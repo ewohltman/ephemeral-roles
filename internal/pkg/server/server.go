@@ -80,7 +80,7 @@ func New(log logging.Interface, session *discordgo.Session, port string) *http.S
 	}
 }
 
-func guildsHandler(log logging.Interface, session *discordgo.Session) func(http.ResponseWriter, *http.Request) {
+func guildsHandler(log logging.Interface, session *discordgo.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer drainCloseRequest(log, r)
 
@@ -109,7 +109,7 @@ func guildsHandler(log logging.Interface, session *discordgo.Session) func(http.
 	}
 }
 
-func rootHandler(log logging.Interface) func(http.ResponseWriter, *http.Request) {
+func rootHandler(log logging.Interface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		drainCloseRequest(log, r)
 	}
