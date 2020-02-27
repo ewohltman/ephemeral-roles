@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 )
 
 type roundTripFunc func(r *http.Request) (*http.Response, error)
@@ -14,9 +16,7 @@ func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func TestUpdate(t *testing.T) {
-	client := &http.Client{
-		Transport: roundTripFunc(testResponse),
-	}
+	client := internalHTTP.NewClient(roundTripFunc(testResponse), nil)
 
 	err := Update(client, "", "", -1)
 	if err != nil {

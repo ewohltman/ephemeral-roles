@@ -41,24 +41,12 @@ type Interface interface {
 	UpdateLevel(level string)
 }
 
-// JaegerCompatible defines an interface compatible Jaeger.
-type JaegerCompatible interface {
-	Error(msg string)
-	Infof(msg string, args ...interface{})
-}
-
 // Logger wraps a *logrus.Logger instance and provides custom methods.
 type Logger struct {
 	sync.Mutex
 	*logrus.Logger
 	Location             *time.Location
 	DiscordrusWebHookURL string
-}
-
-// JaegerLogger wraps a *Logger and provides methods to satisfy the
-// JaegerCompatible interface.
-type JaegerLogger struct {
-	*Logger
 }
 
 // New returns a new *Logger instance.
@@ -82,12 +70,6 @@ func New(logLevel, timezoneLocation, discordrusWebHookURL string) *Logger {
 	log.UpdateLevel(logLevel)
 
 	return log
-}
-
-// Error satisfies the JaegerCompatible interface by delegating to the wrapped
-// *Logger Error method.
-func (jaegerLogger *JaegerLogger) Error(msg string) {
-	jaegerLogger.Logger.Error(msg)
 }
 
 // WrappedLogger returns the wrapped *logrus.Logger instance.

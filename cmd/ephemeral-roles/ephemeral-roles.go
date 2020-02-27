@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	stdLog "log"
 	"net/http"
@@ -14,21 +13,18 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/opentracing/opentracing-go"
-	"github.com/uber/jaeger-client-go"
-	jaegercfg "github.com/uber/jaeger-client-go/config"
-	"github.com/uber/jaeger-lib/metrics"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/client"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
+	http2 "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/server"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
 const (
-	jaegerServiceName  = "ephemeral-roles"
-	jaegerAlwaysSample = 1
+	jaegerServiceName       = "ephemeral-roles"
+	jaegerSampleProbability = 1
 
 	monitorInterval = 1 * time.Minute
 
@@ -39,36 +35,13 @@ func newLogger(variables *environment.Variables) *logging.Logger {
 	return logging.New(variables.LogLevel, variables.LogTimezoneLocation, variables.DiscordrusWebHookURL)
 }
 
-func setupJaegerTracer(log logging.JaegerCompatible) (opentracing.Tracer, io.Closer, error) {
-	cfg := jaegercfg.Configuration{
-		ServiceName: jaegerServiceName,
-		Sampler: &jaegercfg.SamplerConfig{
-			Type:  jaeger.SamplerTypeConst,
-			Param: jaegerAlwaysSample,
-		},
-		Reporter: &jaegercfg.ReporterConfig{
-			LogSpans: true,
-		},
-	}
-
-	tracer, closer, err := cfg.NewTracer(
-		jaegercfg.Logger(log),
-		jaegercfg.Metrics(metrics.NullFactory),
-	)
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not initialize jaeger tracer: %w", err)
-	}
-
-	return tracer, closer, nil
-}
-
-func startSession(log logging.Interface, variables *environment.Variables) (*discordgo.Session, error) {
+func startSession(log logging.Interface, variables *environment.Variables, jaegerTracer opentracing.Tracer) (*discordgo.Session, error) {
 	session, err := discordgo.New("Bot " + variables.BotToken)
 	if err != nil {
 		return nil, err
 	}
 
-	session.Client = client.New()
+	session.Client = http2.NewClient(nil, jaegerTracer)
 	session.ShardID = variables.ShardID
 	session.ShardCount = variables.ShardCount
 
@@ -113,7 +86,7 @@ func setupCallbacks(monitorConfig *monitor.Config, variables *environment.Variab
 }
 
 func startHTTPServer(log logging.Interface, session *discordgo.Session, port string) (httpServer *http.Server, stop chan os.Signal) {
-	httpServer = server.New(log, session, port)
+	httpServer = http2.NewServer(log, session, port)
 	stop = make(chan os.Signal, 1)
 
 	go func() {
@@ -147,14 +120,14 @@ func main() {
 
 	log.WithField("shardID", variables.ShardID).Infof("%s starting up", variables.BotName)
 
-	_, jaegerCloser, err := setupJaegerTracer(&logging.JaegerLogger{Logger: log})
+	jaegerTracer, jaegerCloser, err := tracer.New(log, jaegerServiceName, jaegerSampleProbability)
 	if err != nil {
-		log.WithError(err).Fatal("Error setting up Jaeger tracing")
+		log.WithError(err).Fatal("Error setting up Jaeger tracer")
 	}
 
 	defer closeComponent(log, "Jaeger tracer", jaegerCloser)
 
-	session, err := startSession(log, variables)
+	session, err := startSession(log, variables, jaegerTracer)
 	if err != nil {
 		log.WithError(err).Fatal("Error starting Discord session")
 	}

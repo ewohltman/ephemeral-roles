@@ -201,12 +201,7 @@ func addMember(session *discordgo.Session, guild *discordgo.Guild, userID string
 }
 
 func mockRestClient() *http.Client {
-	return &http.Client{
-		Transport:     roundTripFunc(discordAPIResponse),
-		CheckRedirect: nil,
-		Jar:           nil,
-		Timeout:       0,
-	}
+	return &http.Client{Transport: roundTripFunc(discordAPIResponse)}
 }
 
 func discordAPIResponse(r *http.Request) (*http.Response, error) {
