@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const contextTimeout = 15 * time.Second
+const contextTimeout = 20 * time.Second
 
 // New returns a new *HTTP client.
 func New() *http.Client {
