@@ -68,10 +68,9 @@ func startSession(log logging.Interface, variables *environment.Variables) (*dis
 		return nil, err
 	}
 
+	session.Client = client.New()
 	session.ShardID = variables.ShardID
 	session.ShardCount = variables.ShardCount
-
-	client.SetTransport(session.Client)
 
 	monitorConfig := &monitor.Config{
 		Log:                 log,
