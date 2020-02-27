@@ -5,18 +5,15 @@ package client
 import (
 	"context"
 	"net/http"
+	"reflect"
 	"time"
 )
 
-const (
-	clientTimeout = 20 * time.Second
-
-	contextTimeout = 15 * time.Second
-)
+const contextTimeout = 15 * time.Second
 
 // New returns a new *HTTP client.
 func New() *http.Client {
-	client := &http.Client{Timeout: clientTimeout}
+	client := &http.Client{}
 
 	SetTransport(client)
 
@@ -49,9 +46,13 @@ func (rt roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func roundTripper(next http.RoundTripper) roundTripperFunc {
 	return func(r *http.Request) (*http.Response, error) {
-		ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
-		defer cancelCtx()
+		if reflect.DeepEqual(r.Context(), context.Background()) {
+			ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+			defer cancelCtx()
 
-		return next.RoundTrip(r.WithContext(ctx))
+			r = r.Clone(ctx)
+		}
+
+		return next.RoundTrip(r)
 	}
 }

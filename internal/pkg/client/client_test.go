@@ -1,15 +1,20 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
 func TestNew(t *testing.T) {
+	testServer := httptest.NewServer(testServerHandler())
+	defer testServer.Close()
+
 	client := New()
 
 	if client == nil {
@@ -17,32 +22,49 @@ func TestNew(t *testing.T) {
 	}
 
 	if client.Transport == nil {
-		t.Fatal("Unexpected nil transport http.RoundTripper")
+		t.Fatal("Unexpected nil http.RoundTripper")
 	}
 
-	err := doTestRequest(client)
+	err := doTestRequests(client, testServer.URL)
 	if err != nil {
 		t.Fatalf("Error doing test request: %s", err)
 	}
 }
 
 func TestSetTransport(t *testing.T) {
-	client := &http.Client{}
+	testServer := httptest.NewServer(testServerHandler())
+	defer testServer.Close()
 
-	if client.Transport != nil {
-		t.Fatal("Unexpected non-nil transport http.RoundTripper")
+	clientNilTransport := &http.Client{}
+
+	err := testSetTransport(clientNilTransport, testServer.URL)
+	if err != nil {
+		t.Fatalf("Error testing nil http.RoundTripper: %s", err)
 	}
 
+	clientWithTransport := &http.Client{
+		Transport: http.DefaultTransport,
+	}
+
+	err = testSetTransport(clientWithTransport, testServer.URL)
+	if err != nil {
+		t.Fatalf("Error testing nil http.RoundTripper: %s", err)
+	}
+}
+
+func testSetTransport(client *http.Client, testServerURL string) error {
 	SetTransport(client)
 
 	if client.Transport == nil {
-		t.Fatal("Unexpected nil transport http.RoundTripper")
+		return fmt.Errorf("unexpected nil http.RoundTripper")
 	}
 
-	err := doTestRequest(client)
+	err := doTestRequests(client, testServerURL)
 	if err != nil {
-		t.Fatalf("Error doing test request: %s", err)
+		return fmt.Errorf("error doing test request: %s", err)
 	}
+
+	return nil
 }
 
 func testServerHandler() http.HandlerFunc {
@@ -66,20 +88,44 @@ func testServerHandler() http.HandlerFunc {
 	}
 }
 
-func doTestRequest(client *http.Client) (err error) {
-	testServer := httptest.NewServer(testServerHandler())
-	defer testServer.Close()
-
-	req, err := http.NewRequest(http.MethodGet, testServer.URL, nil)
+func doTestRequests(client *http.Client, testServerURL string) error {
+	resp, err := doRequest(context.Background(), client, testServerURL) //nolint:bodyclose // body is closed
 	if err != nil {
-		err = fmt.Errorf("unable to create test request: %w", err)
-		return
+		return err
 	}
 
-	resp, err := client.Do(req)
+	if reflect.DeepEqual(resp.Request.Context(), context.Background()) {
+		return fmt.Errorf("request context was not set")
+	}
+
+	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+	defer cancelCtx()
+
+	resp, err = doRequest(ctx, client, testServerURL) //nolint:bodyclose // body is closed
+	if err != nil {
+		return err
+	}
+
+	if reflect.DeepEqual(resp.Request.Context(), context.Background()) {
+		return fmt.Errorf("request context was not set")
+	}
+
+	return nil
+}
+
+func doRequest(ctx context.Context, client *http.Client, testServerURL string) (resp *http.Response, err error) {
+	var req *http.Request
+
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, testServerURL, nil)
+	if err != nil {
+		err = fmt.Errorf("unable to create test request: %w", err)
+		return nil, err
+	}
+
+	resp, err = client.Do(req)
 	if err != nil {
 		err = fmt.Errorf("unable to perform test request: %w", err)
-		return
+		return nil, err
 	}
 
 	defer func() {
@@ -104,8 +150,8 @@ func doTestRequest(client *http.Client) (err error) {
 	_, err = io.Copy(ioutil.Discard, resp.Body)
 	if err != nil {
 		err = fmt.Errorf("unable to drain test response body: %w", err)
-		return
+		return nil, err
 	}
 
-	return nil
+	return resp, nil
 }
