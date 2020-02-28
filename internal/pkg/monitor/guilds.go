@@ -43,8 +43,6 @@ func (g *guilds) update() {
 	g.cache.mutex.Lock()
 	defer g.cache.mutex.Unlock()
 
-	botName := g.Session.State.User.Username
-
 	originalCount := g.cache.numGuilds
 	newCount := len(g.Session.State.Guilds)
 
@@ -52,9 +50,11 @@ func (g *guilds) update() {
 	case newCount == originalCount:
 		return
 	case newCount > originalCount && originalCount != 0:
+		botName := g.Session.State.User.Username
 		newGuild := g.Session.State.Guilds[newCount-1]
 		g.Log.WithField("guild", newGuild.Name).Info(botName + " joined new guild")
 	case newCount < originalCount:
+		botName := g.Session.State.User.Username
 		g.Log.Info(botName + " removed from guild")
 	}
 

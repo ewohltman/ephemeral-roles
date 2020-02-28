@@ -14,16 +14,13 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
-const (
-	jaegerServiceName       = "ephemeral-roles"
-	jaegerSampleProbability = 1
-)
+const jaegerServiceName = "ephemeral-roles"
 
 func TestNewClient(t *testing.T) {
 	testServer := httptest.NewServer(testServerHandler())
 	defer testServer.Close()
 
-	jaegerTracer, jaegerCloser, err := tracer.New(mock.NewLogger(), jaegerServiceName, jaegerSampleProbability)
+	jaegerTracer, jaegerCloser, err := tracer.New(mock.NewLogger(), jaegerServiceName)
 	if err != nil {
 		t.Fatalf("Error setting up Jaeger tracer: %s", err)
 	}
@@ -35,7 +32,7 @@ func TestNewClient(t *testing.T) {
 		}
 	}()
 
-	client := NewClient(nil, jaegerTracer)
+	client := NewClient(nil, jaegerTracer, nil)
 
 	if client == nil {
 		t.Fatal("Unexpected nil *http.Client")
@@ -75,7 +72,7 @@ func TestSetTransport(t *testing.T) {
 }
 
 func testSetTransport(log logging.Interface, client *http.Client, testServerURL string) (err error) {
-	jaegerTracer, jaegerCloser, err := tracer.New(log, jaegerServiceName, jaegerSampleProbability)
+	jaegerTracer, jaegerCloser, err := tracer.New(log, jaegerServiceName)
 	if err != nil {
 		return fmt.Errorf("error setting up Jaeger tracer: %w", err)
 	}
@@ -92,7 +89,7 @@ func testSetTransport(log logging.Interface, client *http.Client, testServerURL 
 		}
 	}()
 
-	SetTransport(client, jaegerTracer)
+	SetTransport(client, jaegerTracer, nil)
 
 	if client.Transport == nil {
 		return fmt.Errorf("unexpected nil http.RoundTripper")

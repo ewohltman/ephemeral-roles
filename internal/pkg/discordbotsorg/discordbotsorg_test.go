@@ -16,7 +16,7 @@ func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func TestUpdate(t *testing.T) {
-	client := internalHTTP.NewClient(roundTripFunc(testResponse), nil)
+	client := internalHTTP.NewClient(roundTripFunc(testResponse), nil, nil)
 
 	err := Update(client, "", "", -1)
 	if err != nil {

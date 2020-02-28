@@ -2,94 +2,65 @@ package http
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
-const contextTimeout = 20 * time.Second
+const contextTimeout = 30 * time.Second
+
+type roundTripperFunc func(req *http.Request) (*http.Response, error)
+
+func (rt roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return rt(req)
+}
 
 // NewClient returns a new preconfigured *http.Client.
-func NewClient(transport http.RoundTripper, jaegerTracer opentracing.Tracer) *http.Client {
+func NewClient(transport http.RoundTripper, jaegerTracer opentracing.Tracer, parentSpanContext opentracing.SpanContext) *http.Client {
 	client := &http.Client{
 		Transport: transport,
 	}
 
-	SetTransport(client, jaegerTracer)
+	SetTransport(client, jaegerTracer, parentSpanContext)
 
 	return client
 }
 
-// SetTransport takes an *http.Client and sets its Transport to a custom
-// RoundTripper, wrapping an existing *http.Transport if already set or
-// allocating a new *http.Transport if not already set.
-func SetTransport(client *http.Client, jaegerTracer opentracing.Tracer) {
-	if client.Transport != nil {
-		transport, ok := client.Transport.(*http.Transport)
-		if ok {
-			client.Transport = roundTripperWithContext(transport)
-			return
-		}
+// SetTransport takes an *http.Client and wraps its Transport with RoundTripper
+// middleware. If the *http.Client does not have an initial Transport, a new
+// *http.Transport will be allocated for it.
+func SetTransport(client *http.Client, jaegerTracer opentracing.Tracer, parentSpanContext opentracing.SpanContext) {
+	transport := client.Transport
+
+	if transport == nil {
+		transport = &http.Transport{}
 	}
 
-	transport := &http.Transport{}
-
 	client.Transport = roundTripperWithTracer(
-		jaegerTracer, roundTripperWithContext(
+		jaegerTracer, parentSpanContext, roundTripperWithContext(
 			transport,
 		),
 	)
 }
 
-type roundTripperFunc func(req *http.Request) (*http.Response, error)
+func roundTripperWithContext(next http.RoundTripper) http.RoundTripper {
+	return roundTripperFunc(
+		func(req *http.Request) (*http.Response, error) {
+			if req.Context() == context.Background() {
+				ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+				defer cancelCtx()
 
-// RoundTrip implements the RoundTripper interface.
-func (rt roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
-	return rt(r)
-}
-
-func roundTripperWithTracer(jaegerTracer opentracing.Tracer, next http.RoundTripper) roundTripperFunc {
-	return func(r *http.Request) (*http.Response, error) {
-		if jaegerTracer == nil {
-			return next.RoundTrip(r)
-		}
-
-		carrier := opentracing.HTTPHeadersCarrier(r.Header)
-
-		spanContext, err := jaegerTracer.Extract(opentracing.HTTPHeaders, carrier)
-		if err != nil {
-			if !errors.Is(err, opentracing.ErrSpanContextNotFound) {
-				return nil, err
+				req = req.Clone(ctx)
 			}
 
-			span := jaegerTracer.StartSpan(
-				r.URL.String(),
-				opentracing.StartTime(time.Now()),
-			)
-
-			spanContext = span.Context()
-		}
-
-		err = jaegerTracer.Inject(spanContext, opentracing.HTTPHeaders, carrier)
-		if err != nil {
-			return nil, err
-		}
-
-		return next.RoundTrip(r)
-	}
+			return next.RoundTrip(req)
+		},
+	)
 }
 
-func roundTripperWithContext(next http.RoundTripper) roundTripperFunc {
-	return func(r *http.Request) (*http.Response, error) {
-		if r.Context() == context.Background() {
-			ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
-			defer cancelCtx()
-
-			r = r.Clone(ctx)
-		}
-
-		return next.RoundTrip(r)
-	}
+func roundTripperWithTracer(jaegerTracer opentracing.Tracer, parentSpanContext opentracing.SpanContext, next http.RoundTripper) http.RoundTripper {
+	return tracer.RoundTripper(jaegerTracer, parentSpanContext, next)
 }

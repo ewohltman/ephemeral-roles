@@ -10,6 +10,7 @@
   "DiscordrusWebHookURL": "",
   "DiscordBotsOrgBotID": "",
   "DiscordBotsOrgToken": "",
+  "InstanceName": "ephemeral-roles-0",
   "ShardID": 0,
   "ShardCount": 1
 }
