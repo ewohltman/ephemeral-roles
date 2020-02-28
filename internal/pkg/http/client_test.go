@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
@@ -139,7 +138,7 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 		return err
 	}
 
-	if reflect.DeepEqual(resp.Request.Context(), context.Background()) {
+	if resp.Request.Context() == context.Background() {
 		return fmt.Errorf("request context was not set")
 	}
 
@@ -156,7 +155,7 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 		return err
 	}
 
-	if reflect.DeepEqual(resp.Request.Context(), context.Background()) {
+	if resp.Request.Context() == context.Background() {
 		return fmt.Errorf("request context was not set")
 	}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"reflect"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -84,7 +83,7 @@ func roundTripperWithTracer(jaegerTracer opentracing.Tracer, next http.RoundTrip
 
 func roundTripperWithContext(next http.RoundTripper) roundTripperFunc {
 	return func(r *http.Request) (*http.Response, error) {
-		if reflect.DeepEqual(r.Context(), context.Background()) {
+		if r.Context() == context.Background() {
 			ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
 			defer cancelCtx()
 
