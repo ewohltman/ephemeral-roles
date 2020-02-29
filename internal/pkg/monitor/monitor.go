@@ -3,6 +3,7 @@
 package monitor
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -32,10 +33,10 @@ func Metrics(config *Config) *CallbackMetrics {
 }
 
 // Start begins the goroutines for monitoring metrics.
-func Start(config *Config) {
-	go config.guilds().Monitor()
+func Start(ctx context.Context, config *Config) {
+	go config.guilds().Monitor(ctx)
 
-	go config.members().Monitor()
+	go config.members().Monitor(ctx)
 }
 
 // CallbackMetrics are Prometheus objects for tracking and exposing metrics.

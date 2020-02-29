@@ -50,16 +50,6 @@ type Logger struct {
 	*logrus.Logger
 }
 
-// WrappedLogger returns the wrapped *logrus.Logger instance.
-func (log *Logger) WrappedLogger() *logrus.Logger {
-	return log.Logger
-}
-
-// UpdateLevel is a mock stub of the logging.Logger UpdateLevel method.
-func (log *Logger) UpdateLevel(level string) {
-	// Nop
-}
-
 // NewLogger provides mock *Logger instance.
 func NewLogger() *Logger {
 	log := &Logger{
@@ -72,6 +62,16 @@ func NewLogger() *Logger {
 	}
 
 	return log
+}
+
+// WrappedLogger returns the wrapped *logrus.Logger instance.
+func (log *Logger) WrappedLogger() *logrus.Logger {
+	return log.Logger
+}
+
+// UpdateLevel is a mock stub of the logging.Logger UpdateLevel method.
+func (log *Logger) UpdateLevel(level string) {
+	// Nop
 }
 
 // NewMirrorRoundTripper returns an http.RoundTripper that mirrors the request

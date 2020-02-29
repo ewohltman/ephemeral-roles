@@ -29,30 +29,6 @@ func TestLogger_UpdateLevel(t *testing.T) {
 	NewLogger().UpdateLevel("info")
 }
 
-func TestNewSession(t *testing.T) {
-	session, err := NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = session.User(TestUser)
-	if err != nil {
-		t.Error(err)
-	}
-
-	_, err = session.Channel(TestChannel)
-	if err != nil {
-		t.Error(err)
-	}
-
-	_, err = session.GuildRoleCreate(TestGuild)
-	if err != nil {
-		t.Error(err)
-	}
-
-	defer SessionClose(t, session)
-}
-
 func TestNewMirrorRoundTripper(t *testing.T) {
 	mirror := NewMirrorRoundTripper()
 
@@ -85,5 +61,29 @@ func TestNewMirrorRoundTripper(t *testing.T) {
 			string(reqBodyContent),
 			string(respBodyContent),
 		)
+	}
+}
+
+func TestNewSession(t *testing.T) {
+	session, err := NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer SessionClose(t, session)
+
+	_, err = session.User(TestUser)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = session.Channel(TestChannel)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = session.GuildRoleCreate(TestGuild)
+	if err != nil {
+		t.Error(err)
 	}
 }

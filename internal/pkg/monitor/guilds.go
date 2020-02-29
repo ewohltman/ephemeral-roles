@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"time"
@@ -30,12 +31,22 @@ type guildsCache struct {
 }
 
 // Monitor sets up an infinite loop checking guild changes
-func (g *guilds) Monitor() {
+func (g *guilds) Monitor(ctx context.Context) (done chan struct{}) {
+	done = make(chan struct{})
+	defer close(done)
+
 	g.cache = &guildsCache{}
 
+	updateTicker := time.NewTicker(g.Interval)
+	defer updateTicker.Stop()
+
 	for {
-		g.update()
-		time.Sleep(g.Interval)
+		select {
+		case <-updateTicker.C:
+			g.update()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 

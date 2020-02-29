@@ -22,15 +22,20 @@ import (
 )
 
 const (
-	monitorInterval = 1 * time.Minute
-	contextTimeout  = 20 * time.Second
+	monitorInterval        = 1 * time.Minute
+	shutdownContextTimeout = 20 * time.Second
 )
 
 func newLogger(variables *environment.Variables) *logging.Logger {
 	return logging.New(variables.LogLevel, variables.LogTimezoneLocation, variables.DiscordrusWebHookURL)
 }
 
-func startSession(log logging.Interface, variables *environment.Variables, client *http.Client) (*discordgo.Session, error) {
+func startSession(
+	ctx context.Context,
+	log logging.Interface,
+	variables *environment.Variables,
+	client *http.Client,
+) (*discordgo.Session, error) {
 	session, err := discordgo.New("Bot " + variables.BotToken)
 	if err != nil {
 		return nil, err
@@ -56,7 +61,7 @@ func startSession(log logging.Interface, variables *environment.Variables, clien
 		return nil, err
 	}
 
-	monitor.Start(monitorConfig)
+	monitor.Start(ctx, monitorConfig)
 
 	return session, nil
 }
@@ -127,7 +132,10 @@ func main() {
 
 	client := internalHTTP.NewClient(nil, jaegerTracer, parentSpan.Context())
 
-	session, err := startSession(log, variables, client)
+	monitorCtx, cancelMonitorCtx := context.WithCancel(context.Background())
+	defer cancelMonitorCtx()
+
+	session, err := startSession(monitorCtx, log, variables, client)
 	if err != nil {
 		log.WithError(err).Fatal("Error starting Discord session")
 	}
@@ -138,10 +146,10 @@ func main() {
 
 	<-stop // Block until the OS signal
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
-	defer cancelCtx()
+	shutdownCtx, cancelShutdownCtx := context.WithTimeout(context.Background(), shutdownContextTimeout)
+	defer cancelShutdownCtx()
 
-	err = httpServer.Shutdown(ctx)
+	err = httpServer.Shutdown(shutdownCtx)
 	if err != nil {
 		log.WithError(err).Error("Error shutting down HTTP server gracefully")
 	}

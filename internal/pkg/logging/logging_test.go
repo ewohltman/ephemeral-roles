@@ -70,12 +70,10 @@ func TestLocale_Format(t *testing.T) {
 			expectedFormat,
 		)
 	}
-
 }
 
 func testLogger() *Logger {
-	log := New("info", "America/New_York", "")
-	log = New("info", "America/New_York", "test")
+	log := New("info", "America/New_York", "test")
 	log.SetOutput(ioutil.Discard)
 
 	return log
