@@ -55,7 +55,7 @@ func New(logLevel, timezoneLocation, discordrusWebHookURL string) *Logger {
 
 	log := &Logger{
 		Logger: &logrus.Logger{
-			Formatter: &localeFormatter{
+			Formatter: &locale{
 				&logrus.TextFormatter{},
 				location,
 			},
@@ -119,16 +119,16 @@ func (log *Logger) discordrusIntegration() {
 	)
 }
 
-type localeFormatter struct {
+type locale struct {
 	logrus.Formatter
 	*time.Location
 }
 
 // Format satisfies the logrus.Formatter interface.
-func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
-	e.Time = e.Time.In(l.Location)
+func (locale *locale) Format(log *logrus.Entry) ([]byte, error) {
+	log.Time = log.Time.In(locale.Location)
 
-	return l.Formatter.Format(e)
+	return locale.Formatter.Format(log)
 }
 
 func parseTimezoneLocation(location string) *time.Location {
