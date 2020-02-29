@@ -123,7 +123,7 @@ func main() {
 	defer closeComponent(log, "Jaeger tracer", jaegerCloser)
 
 	parentSpan := tracer.NewSpan(jaegerTracer, nil, variables.InstanceName)
-	defer parentSpan.Finish()
+	parentSpan.Finish()
 
 	client := internalHTTP.NewClient(nil, jaegerTracer, parentSpan.Context())
 

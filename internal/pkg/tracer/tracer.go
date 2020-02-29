@@ -3,7 +3,6 @@
 package tracer
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -57,7 +56,6 @@ func New(log logging.Interface, serviceName string) (opentracing.Tracer, io.Clos
 			Param: samplerProbability,
 		},
 		Reporter: &config.ReporterConfig{
-			LogSpans:            true,
 			BufferFlushInterval: time.Second,
 		},
 	}
@@ -79,15 +77,11 @@ func NewSpan(jaegerTracer opentracing.Tracer, parentSpanContext opentracing.Span
 	if parentSpanContext != nil {
 		return jaegerTracer.StartSpan(
 			operationName,
-			opentracing.StartTime(time.Now()),
 			opentracing.ChildOf(parentSpanContext),
 		)
 	}
 
-	return jaegerTracer.StartSpan(
-		operationName,
-		opentracing.StartTime(time.Now()),
-	)
+	return jaegerTracer.StartSpan(operationName)
 }
 
 // RoundTripper is http.RoundTripper middleware to add Jaeger tracing to all
@@ -98,29 +92,12 @@ func RoundTripper(jaegerTracer opentracing.Tracer, parentSpanContext opentracing
 			return next.RoundTrip(req)
 		}
 
+		spanFromParent := NewSpan(jaegerTracer, parentSpanContext, req.URL.String())
+		defer spanFromParent.Finish()
+
 		carrier := opentracing.HTTPHeadersCarrier(req.Header)
 
-		extractedContext, err := jaegerTracer.Extract(opentracing.HTTPHeaders, carrier)
-		if err != nil {
-			if !errors.Is(err, opentracing.ErrSpanContextNotFound) {
-				return nil, err
-			}
-
-			spanFromParent := NewSpan(jaegerTracer, parentSpanContext, req.URL.String())
-			defer spanFromParent.Finish()
-
-			err = jaegerTracer.Inject(spanFromParent.Context(), opentracing.HTTPHeaders, carrier)
-			if err != nil {
-				return nil, err
-			}
-
-			return next.RoundTrip(req)
-		}
-
-		spanFromExtracted := NewSpan(jaegerTracer, extractedContext, req.URL.String())
-		defer spanFromExtracted.Finish()
-
-		err = jaegerTracer.Inject(spanFromExtracted.Context(), opentracing.HTTPHeaders, carrier)
+		err := jaegerTracer.Inject(spanFromParent.Context(), opentracing.HTTPHeaders, carrier)
 		if err != nil {
 			return nil, err
 		}
