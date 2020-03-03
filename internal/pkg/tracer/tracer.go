@@ -37,13 +37,13 @@ type jaegerLogger struct {
 // Infof satisfies the jaeger.Logger interface by delegating to the wrapped
 // logging.Interface Error method.
 func (jaegerLog *jaegerLogger) Infof(msg string, args ...interface{}) {
-	jaegerLog.log.Infof(msg, args...)
+	jaegerLog.log.Debugf(msg, args...)
 }
 
 // Error satisfies the jaeger.Logger interface by delegating to the wrapped
 // logging.Interface Error method.
 func (jaegerLog *jaegerLogger) Error(msg string) {
-	jaegerLog.log.Error(msg)
+	jaegerLog.log.Debug(msg)
 }
 
 // New returns a new opentracing.Tracer and io.Closer to be used for
