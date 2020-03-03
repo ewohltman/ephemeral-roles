@@ -7,7 +7,7 @@ metadata:
   labels:
     app: ephemeral-roles
   annotations:
-    sidecar.jaegertracing.io/inject: "true"
+    sidecar.jaegertracing.io/inject: "jaeger"
 spec:
   replicas: {SHARD_COUNT}
   selector:
