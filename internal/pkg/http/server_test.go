@@ -1,16 +1,13 @@
-package server
+package http
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
@@ -19,13 +16,10 @@ const (
 	testPort = "8080"
 	testURL  = "http://localhost:" + testPort
 
-	httpClientTimeout = time.Second
-	contextTimeout    = time.Second
-
 	expectedGuildsFile = "testdata/guilds.json"
 )
 
-func TestNew(t *testing.T) {
+func TestNewServer(t *testing.T) {
 	log := mock.NewLogger()
 
 	session, err := mock.NewSession()
@@ -35,7 +29,7 @@ func TestNew(t *testing.T) {
 
 	defer mock.SessionClose(t, session)
 
-	testServer := New(log, session, testPort)
+	testServer := NewServer(log, session, testPort)
 
 	go func() {
 		serverErr := testServer.ListenAndServe()
@@ -44,7 +38,7 @@ func TestNew(t *testing.T) {
 		}
 	}()
 
-	client := &http.Client{Timeout: httpClientTimeout}
+	client := NewClient(nil, nil, nil)
 
 	testRootEndpoint(t, client)
 	testGuildsEndpoint(t, client)
@@ -59,7 +53,7 @@ func TestNew(t *testing.T) {
 }
 
 func testRootEndpoint(t *testing.T, client *http.Client) {
-	resp, err := doRequest(client, rootEndpoint)
+	resp, err := doRequest(context.TODO(), client, testURL+rootEndpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +77,7 @@ func testGuildsEndpoint(t *testing.T, client *http.Client) {
 		t.Fatalf("Error unmarshaling expected guild data: %s", err)
 	}
 
-	resp, err := doRequest(client, guildsEndpoint)
+	resp, err := doRequest(context.TODO(), client, testURL+guildsEndpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,54 +101,4 @@ func testGuildsEndpoint(t *testing.T, client *http.Client) {
 			string(expectedGuildsBytes),
 		)
 	}
-}
-
-func doRequest(client *http.Client, endpoint string) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, testURL+endpoint, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating test request: %w", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error performing test request: %w", err)
-	}
-
-	return resp, nil
-}
-
-func readCloseResponse(resp *http.Response) (respBytes []byte, err error) {
-	defer func() {
-		err = closeResponse(resp, err)
-	}()
-
-	return ioutil.ReadAll(resp.Body)
-}
-
-func drainCloseResponse(resp *http.Response) (err error) {
-	defer func() {
-		err = closeResponse(resp, err)
-	}()
-
-	_, err = io.Copy(ioutil.Discard, resp.Body)
-	if err != nil {
-		err = fmt.Errorf("error draining test response body: %w", err)
-	}
-
-	return
-}
-
-func closeResponse(resp *http.Response, err error) error {
-	closeErr := resp.Body.Close()
-	if closeErr != nil {
-		closeErr = fmt.Errorf("error closing test response body: %w", closeErr)
-
-		if err != nil {
-			return fmt.Errorf("%s: %w", closeErr, err)
-		}
-
-		return closeErr
-	}
-
-	return err
 }

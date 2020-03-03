@@ -36,19 +36,18 @@ type TestingInstance interface {
 	Error(args ...interface{})
 }
 
+// RoundTripperFunc allows functions to satisfy the http.RoundTripper
+// interface.
+type RoundTripperFunc func(req *http.Request) (*http.Response, error)
+
+// RoundTrip implements the http.RoundTripper interface.
+func (rt RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return rt(req)
+}
+
 // Logger is a mock logger to suppress printing any actual log messages.
 type Logger struct {
 	*logrus.Logger
-}
-
-// WrappedLogger returns the wrapped *logrus.Logger instance.
-func (log *Logger) WrappedLogger() *logrus.Logger {
-	return log.Logger
-}
-
-// UpdateLevel is a mock stub of the logging.Logger UpdateLevel method.
-func (log *Logger) UpdateLevel(level string) {
-	// Nop
 }
 
 // NewLogger provides mock *Logger instance.
@@ -65,10 +64,51 @@ func NewLogger() *Logger {
 	return log
 }
 
-type roundTripFunc func(r *http.Request) (*http.Response, error)
+// WrappedLogger returns the wrapped *logrus.Logger instance.
+func (log *Logger) WrappedLogger() *logrus.Logger {
+	return log.Logger
+}
 
-func (s roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
-	return s(r)
+// UpdateLevel is a mock stub of the logging.Logger UpdateLevel method.
+func (log *Logger) UpdateLevel(level string) {
+	// Nop
+}
+
+// NewMirrorRoundTripper returns an http.RoundTripper that mirrors the request
+// body in the response body.
+func NewMirrorRoundTripper() http.RoundTripper {
+	return RoundTripperFunc(
+		func(req *http.Request) (*http.Response, error) {
+			resp := &http.Response{
+				Status:     http.StatusText(http.StatusOK),
+				StatusCode: http.StatusOK,
+				Header:     make(http.Header),
+				Request:    req,
+			}
+
+			if req.Body == nil {
+				resp.ContentLength = 0
+				resp.Body = ioutil.NopCloser(bytes.NewReader([]byte{}))
+
+				return resp, nil
+			}
+
+			reqBody, err := ioutil.ReadAll(req.Body)
+			if err != nil {
+				return nil, err
+			}
+
+			err = req.Body.Close()
+			if err != nil {
+				return nil, err
+			}
+
+			resp.ContentLength = int64(len(reqBody))
+			resp.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
+
+			return resp, nil
+		},
+	)
 }
 
 // NewSession provides a *discordgo.Session instance to be used in unit testing
@@ -100,6 +140,15 @@ func NewSession() (*discordgo.Session, error) {
 	}
 
 	return session, nil
+}
+
+// SessionClose closes a *discordgo.Session instance and if an error is encountered,
+// the provided testingInstance logs the error and marks the test as failed.
+func SessionClose(testingInstance TestingInstance, session *discordgo.Session) {
+	err := session.Close()
+	if err != nil {
+		testingInstance.Error(err)
+	}
 }
 
 func buildTestGuild(session *discordgo.Session) error {
@@ -142,15 +191,6 @@ func buildLargeMemberGuild(session *discordgo.Session) error {
 	}
 
 	return nil
-}
-
-// SessionClose closes a *discordgo.Session instance and if an error is encountered,
-// the provided testingInstance logs the error and marks the test as failed.
-func SessionClose(testingInstance TestingInstance, session *discordgo.Session) {
-	err := session.Close()
-	if err != nil {
-		testingInstance.Error(err)
-	}
 }
 
 func addGuild(session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
@@ -201,12 +241,7 @@ func addMember(session *discordgo.Session, guild *discordgo.Guild, userID string
 }
 
 func mockRestClient() *http.Client {
-	return &http.Client{
-		Transport:     roundTripFunc(discordAPIResponse),
-		CheckRedirect: nil,
-		Jar:           nil,
-		Timeout:       0,
-	}
+	return &http.Client{Transport: RoundTripperFunc(discordAPIResponse)}
 }
 
 func discordAPIResponse(r *http.Request) (*http.Response, error) {

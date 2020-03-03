@@ -17,6 +17,8 @@ spec:
       labels:
         app: ephemeral-roles
         version: "{COMMIT}"
+      annotations:
+        sidecar.jaegertracing.io/inject: "true"
     spec:
       terminationGracePeriodSeconds: 30
       containers:

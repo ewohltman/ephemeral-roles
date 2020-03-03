@@ -1,6 +1,4 @@
-// Package server provides an HTTP server implementation with handlers to
-// expose Prometheus metrics.
-package server
+package http
 
 import (
 	"encoding/json"
@@ -56,8 +54,8 @@ func (guilds sortableGuilds) Swap(i, j int) {
 	guilds[i], guilds[j] = guilds[j], guilds[i]
 }
 
-// New returns a new pre-configured server instance.
-func New(log logging.Interface, session *discordgo.Session, port string) *http.Server {
+// NewServer returns a new pre-configured *http.Server..
+func NewServer(log logging.Interface, session *discordgo.Session, port string) *http.Server {
 	mux := http.NewServeMux()
 
 	mux.Handle(metricsEndpoint, promhttp.Handler())
@@ -80,7 +78,7 @@ func New(log logging.Interface, session *discordgo.Session, port string) *http.S
 	}
 }
 
-func guildsHandler(log logging.Interface, session *discordgo.Session) func(http.ResponseWriter, *http.Request) {
+func guildsHandler(log logging.Interface, session *discordgo.Session) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer drainCloseRequest(log, r)
 
@@ -109,7 +107,7 @@ func guildsHandler(log logging.Interface, session *discordgo.Session) func(http.
 	}
 }
 
-func rootHandler(log logging.Interface) func(http.ResponseWriter, *http.Request) {
+func rootHandler(log logging.Interface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		drainCloseRequest(log, r)
 	}

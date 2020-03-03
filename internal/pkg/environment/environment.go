@@ -61,6 +61,7 @@ type Variables struct {
 	DiscordrusWebHookURL string
 	DiscordBotsOrgBotID  string
 	DiscordBotsOrgToken  string
+	InstanceName         string
 	ShardID              int
 	ShardCount           int
 }
@@ -80,12 +81,12 @@ func Lookup() (*Variables, error) {
 		requiredVariableValues[requiredVariable] = value
 	}
 
-	roleColor, err := lookupOptionalInt(RoleColor, defaultRoleColor)
+	shardID, err := parseShardID()
 	if err != nil {
 		return nil, err
 	}
 
-	shardID, err := parseShardID()
+	roleColor, err := lookupOptionalInt(RoleColor, defaultRoleColor)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +108,7 @@ func Lookup() (*Variables, error) {
 		DiscordrusWebHookURL: lookupOptional(DiscordrusWebHookURL, ""),
 		DiscordBotsOrgBotID:  lookupOptional(DiscordBotsOrgBotID, ""),
 		DiscordBotsOrgToken:  lookupOptional(DiscordBotsOrgToken, ""),
+		InstanceName:         lookupOptional(InstanceName, defaultInstanceName),
 		ShardID:              shardID,
 		ShardCount:           shardCount,
 	}, nil

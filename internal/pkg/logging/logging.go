@@ -6,12 +6,11 @@ package logging
 import (
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
 )
 
 // Logging level strings.
@@ -42,21 +41,21 @@ type Interface interface {
 	UpdateLevel(level string)
 }
 
-// Logger is a struct to wrap a *logrus.Logger instance and provides custom
-// methods.
+// Logger wraps a *logrus.Logger instance and provides custom methods.
 type Logger struct {
+	sync.Mutex
 	*logrus.Logger
 	Location             *time.Location
 	DiscordrusWebHookURL string
 }
 
 // New returns a new *Logger instance.
-func New(variables *environment.Variables) *Logger {
-	location := timestampLocation(variables.LogTimezoneLocation)
+func New(logLevel, timezoneLocation, discordrusWebHookURL string) *Logger {
+	location := parseTimezoneLocation(timezoneLocation)
 
 	log := &Logger{
 		Logger: &logrus.Logger{
-			Formatter: &localeFormatter{
+			Formatter: &locale{
 				&logrus.TextFormatter{},
 				location,
 			},
@@ -65,10 +64,10 @@ func New(variables *environment.Variables) *Logger {
 			Hooks: make(logrus.LevelHooks),
 		},
 		Location:             location,
-		DiscordrusWebHookURL: variables.DiscordrusWebHookURL,
+		DiscordrusWebHookURL: discordrusWebHookURL,
 	}
 
-	log.UpdateLevel(variables.LogLevel)
+	log.UpdateLevel(logLevel)
 
 	return log
 }
@@ -80,13 +79,7 @@ func (log *Logger) WrappedLogger() *logrus.Logger {
 
 // UpdateLevel allows for runtime updates of the logging level.
 func (log *Logger) UpdateLevel(level string) {
-	// Update our global logging instance log level
 	log.SetLevel(parseLevel(level))
-
-	// Reset logging hooks
-	log.Hooks = make(logrus.LevelHooks)
-
-	// Check/apply `github.com/kz/discordrus` hook integration
 	log.discordrusIntegration()
 }
 
@@ -94,6 +87,11 @@ func (log *Logger) discordrusIntegration() {
 	if log.DiscordrusWebHookURL == "" {
 		return
 	}
+
+	log.Lock()
+	defer log.Unlock()
+
+	log.Hooks = make(logrus.LevelHooks)
 
 	timeString := time.Now().In(log.Location).String()
 	timeZoneToken := strings.Split(timeString, " ")[3]
@@ -121,25 +119,25 @@ func (log *Logger) discordrusIntegration() {
 	)
 }
 
-type localeFormatter struct {
+type locale struct {
 	logrus.Formatter
 	*time.Location
 }
 
 // Format satisfies the logrus.Formatter interface.
-func (l *localeFormatter) Format(e *logrus.Entry) ([]byte, error) {
-	e.Time = e.Time.In(l.Location)
+func (locale *locale) Format(log *logrus.Entry) ([]byte, error) {
+	log.Time = log.Time.In(locale.Location)
 
-	return l.Formatter.Format(e)
+	return locale.Formatter.Format(log)
 }
 
-func timestampLocation(locationString string) *time.Location {
-	location, err := time.LoadLocation(locationString)
+func parseTimezoneLocation(location string) *time.Location {
+	timezoneLocation, err := time.LoadLocation(location)
 	if err != nil {
 		return time.UTC
 	}
 
-	return location
+	return timezoneLocation
 }
 
 func parseLevel(level string) logrus.Level {

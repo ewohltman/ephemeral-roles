@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -26,12 +27,22 @@ type membersCache struct {
 }
 
 // Monitor sets up an infinite loop checking member changes
-func (m *members) Monitor() {
+func (m *members) Monitor(ctx context.Context) (done chan struct{}) {
+	done = make(chan struct{})
+	defer close(done)
+
 	m.cache = &membersCache{}
 
+	updateTicker := time.NewTicker(m.Interval)
+	defer updateTicker.Stop()
+
 	for {
-		m.update()
-		time.Sleep(m.Interval)
+		select {
+		case <-updateTicker.C:
+			m.update()
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
