@@ -66,7 +66,7 @@ func newTestConfig() (*Config, *discordgo.Session, error) {
 	config := &Config{
 		Log:        mock.NewLogger(),
 		Session:    mockSession,
-		HTTPClient: http.NewClient(mock.NewMirrorRoundTripper(), nil, nil),
+		HTTPClient: http.NewClient(mock.NewMirrorRoundTripper(), nil),
 		Interval:   testMonitorInterval,
 	}
 

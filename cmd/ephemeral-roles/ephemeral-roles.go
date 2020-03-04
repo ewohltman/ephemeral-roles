@@ -127,10 +127,7 @@ func main() {
 
 	defer closeComponent(log, "Jaeger tracer", jaegerCloser)
 
-	parentSpan := tracer.NewSpan(jaegerTracer, nil, variables.InstanceName)
-	parentSpan.Finish()
-
-	client := internalHTTP.NewClient(nil, jaegerTracer, parentSpan.Context())
+	client := internalHTTP.NewClient(nil, jaegerTracer)
 
 	monitorCtx, cancelMonitorCtx := context.WithCancel(context.Background())
 	defer cancelMonitorCtx()

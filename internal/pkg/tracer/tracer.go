@@ -71,33 +71,20 @@ func New(log logging.Interface, serviceName string) (opentracing.Tracer, io.Clos
 	return tracer, closer, nil
 }
 
-// NewSpan returns a new opentracing.Span. If parentSpan is not nil, it will be
-// a child of parentSpan.
-func NewSpan(jaegerTracer opentracing.Tracer, parentSpanContext opentracing.SpanContext, operationName string) opentracing.Span {
-	if parentSpanContext != nil {
-		return jaegerTracer.StartSpan(
-			operationName,
-			opentracing.ChildOf(parentSpanContext),
-		)
-	}
-
-	return jaegerTracer.StartSpan(operationName)
-}
-
 // RoundTripper is http.RoundTripper middleware to add Jaeger tracing to all
 // HTTP requests.
-func RoundTripper(jaegerTracer opentracing.Tracer, parentSpanContext opentracing.SpanContext, next http.RoundTripper) RoundTripperFunc {
+func RoundTripper(jaegerTracer opentracing.Tracer, next http.RoundTripper) RoundTripperFunc {
 	return func(req *http.Request) (*http.Response, error) {
 		if jaegerTracer == nil {
 			return next.RoundTrip(req)
 		}
 
-		spanFromParent := NewSpan(jaegerTracer, parentSpanContext, req.URL.String())
-		defer spanFromParent.Finish()
+		span := jaegerTracer.StartSpan(req.URL.String())
+		defer span.Finish()
 
 		carrier := opentracing.HTTPHeadersCarrier(req.Header)
 
-		err := jaegerTracer.Inject(spanFromParent.Context(), opentracing.HTTPHeaders, carrier)
+		err := jaegerTracer.Inject(span.Context(), opentracing.HTTPHeaders, carrier)
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +94,7 @@ func RoundTripper(jaegerTracer opentracing.Tracer, parentSpanContext opentracing
 			return resp, err
 		}
 
-		spanFromParent.SetTag("response", resp.StatusCode)
+		span.SetTag("response", resp.StatusCode)
 
 		return resp, err
 	}

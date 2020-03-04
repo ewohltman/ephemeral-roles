@@ -80,10 +80,7 @@ func TestRoundTripper(t *testing.T) {
 		}
 	}()
 
-	parentSpan := NewSpan(jaegerTracer, nil, jaegerServiceName)
-	defer parentSpan.Finish()
-
-	_, err = doRoundTrip(RoundTripper(jaegerTracer, parentSpan.Context(), mock.NewMirrorRoundTripper()), nil)
+	_, err = doRoundTrip(RoundTripper(jaegerTracer, mock.NewMirrorRoundTripper()), nil)
 	if err != nil {
 		t.Fatalf("Error performing round trip: %s", err)
 	}
