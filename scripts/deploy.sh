@@ -17,6 +17,9 @@ SHARD_COUNT="4"
 REPO_YMLS="${SCRIPT_DIR}/../deployments/kubernetes"
 
 NAMESPACE_YML="${REPO_YMLS}/namespace.yml"
+JAEGER_YML="${REPO_YMLS}/jaeger.yml"
+JAEGER_SERVICE_YML="${REPO_YMLS}/jaeger-service.yml"
+JAEGER_HTTPPROXY_YML="${REPO_YMLS}/jaeger-httpproxy.yml"
 SERVICE_YML="${REPO_YMLS}/service.yml"
 
 DEPLOYMENT_YML="${REPO_YMLS}/statefulset.yml"
@@ -37,6 +40,9 @@ applyValues() {
 
 deploy() {
   kubectl apply -f "${NAMESPACE_YML}"
+  kubectl apply -f "${JAEGER_SERVICE_YML}"
+  kubectl apply -f "${JAEGER_HTTPPROXY_YML}"
+  kubectl apply -f "${JAEGER_YML}"
   kubectl apply -f "${SERVICE_YML}"
   kubectl apply -f "${VARIABLIZED_DEPLOYMENT_YML}"
   kubectl -n ephemeral-roles rollout status --timeout 120s statefulset/ephemeral-roles

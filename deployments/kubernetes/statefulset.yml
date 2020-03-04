@@ -6,8 +6,6 @@ metadata:
   namespace: ephemeral-roles
   labels:
     app: ephemeral-roles
-  annotations:
-    sidecar.jaegertracing.io/inject: "true"
 spec:
   replicas: {SHARD_COUNT}
   selector:
@@ -51,6 +49,44 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: JAEGER_SERVICE_NAME
+              value: ephemeral-roles.ephemeral-roles
+            - name: JAEGER_PROPAGATION
+              value: jaeger,b3
           ports:
             - name: http
               containerPort: 8080
+        - name: jaeger-agent
+          image: jaegertracing/jaeger-agent:1.17.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5775
+              name: zk-compact-trft
+              protocol: UDP
+            - containerPort: 5778
+              name: config-rest
+              protocol: TCP
+            - containerPort: 6831
+              name: jg-compact-trft
+              protocol: UDP
+            - containerPort: 6832
+              name: jg-binary-trft
+              protocol: UDP
+            - containerPort: 14271
+              name: admin-http
+              protocol: TCP
+          resources: {}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+          args:
+            - --reporter.grpc.host-port=dns:///jaeger-collector-headless.ephemeral-roles:14250
+            - --reporter.type=grpc

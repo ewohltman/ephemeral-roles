@@ -10,7 +10,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
-const contextTimeout = 30 * time.Second
+const contextTimeout = 45 * time.Second
 
 type roundTripperFunc func(req *http.Request) (*http.Response, error)
 
