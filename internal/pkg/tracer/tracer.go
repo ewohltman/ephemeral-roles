@@ -37,13 +37,13 @@ type jaegerLogger struct {
 // Infof satisfies the jaeger.Logger interface by delegating to the wrapped
 // logging.Interface Error method.
 func (jaegerLog *jaegerLogger) Infof(msg string, args ...interface{}) {
-	jaegerLog.log.Debugf(msg, args...)
+	jaegerLog.log.Infof(msg, args...)
 }
 
 // Error satisfies the jaeger.Logger interface by delegating to the wrapped
 // logging.Interface Error method.
 func (jaegerLog *jaegerLogger) Error(msg string) {
-	jaegerLog.log.Debug(msg)
+	jaegerLog.log.Error(msg)
 }
 
 // New returns a new opentracing.Tracer and io.Closer to be used for
@@ -102,6 +102,13 @@ func RoundTripper(jaegerTracer opentracing.Tracer, parentSpanContext opentracing
 			return nil, err
 		}
 
-		return next.RoundTrip(req)
+		resp, err := next.RoundTrip(req)
+		if err != nil {
+			return resp, err
+		}
+
+		spanFromParent.SetTag("response", resp.StatusCode)
+
+		return resp, err
 	}
 }

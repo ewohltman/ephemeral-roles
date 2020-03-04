@@ -1,0 +1,11 @@
+---
+kind: HTTPProxy
+apiVersion: projectcontour.io/v1
+metadata:
+  name: jaeger-httpproxy
+  namespace: ephemeral-roles
+spec:
+  routes:
+    - services:
+        - name: jaeger
+          port: 16686
