@@ -27,6 +27,11 @@ type userNotFoundError struct {
 	err error
 }
 
+func (unf *userNotFoundError) Is(target error) bool {
+	_, ok := target.(*userNotFoundError)
+	return ok
+}
+
 func (unf *userNotFoundError) UnWrap() error {
 	return unf.err
 }

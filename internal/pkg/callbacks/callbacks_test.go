@@ -1,11 +1,31 @@
 package callbacks
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 )
 
-const wrapMsg = "wrapped error"
+const (
+	wrapMsg               = "wrapped error"
+	invalidErrorAssertion = "Invalid error assertion"
+)
+
+func TestUserNotFoundError_Is(t *testing.T) {
+	unf := &userNotFoundError{}
+
+	if errors.Is(nil, &userNotFoundError{}) {
+		t.Error(invalidErrorAssertion)
+	}
+
+	if errors.Is(fmt.Errorf(wrapMsg), &userNotFoundError{}) {
+		t.Error(invalidErrorAssertion)
+	}
+
+	if !errors.Is(unf, &userNotFoundError{}) {
+		t.Errorf(invalidErrorAssertion)
+	}
+}
 
 func TestUserNotFound_UnWrap(t *testing.T) {
 	wrappedErr := fmt.Errorf(wrapMsg)
