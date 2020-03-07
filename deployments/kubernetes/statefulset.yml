@@ -25,11 +25,11 @@ spec:
           imagePullPolicy: Always
           resources:
             limits:
-              cpu: "250m"
-              memory: "1Gi"
+              cpu: "100m"
+              memory: "256Mi"
             requests:
-              cpu: "250m"
-              memory: "1Gi"
+              cpu: "100m"
+              memory: "256Mi"
           env:
             - name: LOG_LEVEL
               value: "info"
@@ -75,7 +75,13 @@ spec:
             - containerPort: 14271
               name: admin-http
               protocol: TCP
-          resources: {}
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
           env:
             - name: POD_NAME
               valueFrom:

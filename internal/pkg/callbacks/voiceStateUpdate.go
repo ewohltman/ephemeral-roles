@@ -21,12 +21,11 @@ type vsuEvent struct {
 
 // VoiceStateUpdate is the callback function for the VoiceStateUpdate event from Discord
 func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
-	// Increment the total number of VoiceStateUpdate events
 	config.VoiceStateUpdateCounter.Inc()
 
 	event, err := config.parseEvent(s, vsu)
 	if err != nil {
-		if errors.Is(err, &userNotFound{}) {
+		if errors.Is(err, &userNotFoundError{}) {
 			config.Log.WithError(err).Debug(voiceStateUpdateError)
 			return
 		}
@@ -113,7 +112,7 @@ func (config *Config) parseEvent(s *discordgo.Session, vsu *discordgo.VoiceState
 	}
 
 	if guildMember == nil {
-		return nil, &userNotFound{}
+		return nil, &userNotFoundError{err: fmt.Errorf("not found in guild members")}
 	}
 
 	guildRoleMap := make(map[string]*discordgo.Role)
@@ -139,7 +138,7 @@ func (config *Config) getUserGuild(
 	// Get the user
 	user, err := s.User(vsu.UserID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("unable to determine user: %w", err)
+		return nil, nil, &userNotFoundError{err: err}
 	}
 
 	// Get the guild
