@@ -29,11 +29,7 @@ type userNotFoundError struct {
 
 func (unf *userNotFoundError) Is(target error) bool {
 	_, ok := target.(*userNotFoundError)
-	if !ok {
-		return false
-	}
-
-	return true
+	return ok
 }
 
 func (unf *userNotFoundError) UnWrap() error {
