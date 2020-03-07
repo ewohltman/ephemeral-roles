@@ -45,7 +45,7 @@ deploy() {
   kubectl apply -f "${JAEGER_YML}"
   kubectl apply -f "${SERVICE_YML}"
   kubectl apply -f "${VARIABLIZED_DEPLOYMENT_YML}"
-  kubectl -n ephemeral-roles rollout status --timeout 120s statefulset/ephemeral-roles
+  kubectl -n ephemeral-roles rollout status --timeout 180s statefulset/ephemeral-roles
 }
 
 cleanup() {
