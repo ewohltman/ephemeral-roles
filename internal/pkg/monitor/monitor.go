@@ -4,7 +4,6 @@ package monitor
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -15,12 +14,9 @@ import (
 
 // Config contains fields for the monitoring methods.
 type Config struct {
-	Log                 logging.Interface
-	Session             *discordgo.Session
-	HTTPClient          *http.Client
-	DiscordBotsOrgBotID string
-	DiscordBotsOrgToken string
-	Interval            time.Duration
+	Log      logging.Interface
+	Session  *discordgo.Session
+	Interval time.Duration
 }
 
 // Metrics returns back configured *CallbackMetrics.
@@ -120,13 +116,10 @@ func (config *Config) guilds() *guilds {
 	}
 
 	return &guilds{
-		Log:                 config.Log,
-		HTTPClient:          config.HTTPClient,
-		Session:             config.Session,
-		DiscordBotsOrgBotID: config.DiscordBotsOrgBotID,
-		DiscordBotsOrgToken: config.DiscordBotsOrgToken,
-		PrometheusGauge:     prometheusGuildsGauge,
-		Interval:            config.Interval,
+		Log:             config.Log,
+		Session:         config.Session,
+		PrometheusGauge: prometheusGuildsGauge,
+		Interval:        config.Interval,
 	}
 }
 
@@ -145,11 +138,9 @@ func (config *Config) members() *members {
 	}
 
 	return &members{
-		Log:                 config.Log,
-		Session:             config.Session,
-		DiscordBotsOrgBotID: config.DiscordBotsOrgBotID,
-		DiscordBotsOrgToken: config.DiscordBotsOrgToken,
-		PrometheusGauge:     prometheusMembersGauge,
-		Interval:            config.Interval,
+		Log:             config.Log,
+		Session:         config.Session,
+		PrometheusGauge: prometheusMembersGauge,
+		Interval:        config.Interval,
 	}
 }

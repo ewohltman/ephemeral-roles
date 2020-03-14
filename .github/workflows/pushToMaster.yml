@@ -61,8 +61,6 @@ jobs:
           KUBERNETES_CONFIG: "${{ secrets.KUBERNETES_CONFIG }}"
           BOT_TOKEN: "${{ secrets.BOT_TOKEN }}"
           DISCORDRUS_WEBHOOK_URL: "${{ secrets.DISCORDRUS_WEBHOOK_URL }}"
-          DISCORDBOTS_ORG_BOT_ID: "${{ secrets.DISCORDBOTS_ORG_BOT_ID }}"
-          DISCORDBOTS_ORG_TOKEN: "${{ secrets.DISCORDBOTS_ORG_TOKEN }}"
         run: |
           PATH="${PATH}:$(go env GOPATH)/bin"
           KUBECTL_BIN="$(go env GOPATH)/bin/kubectl"

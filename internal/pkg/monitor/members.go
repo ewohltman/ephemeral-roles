@@ -12,13 +12,11 @@ import (
 )
 
 type members struct {
-	Log                 logging.Interface
-	Session             *discordgo.Session
-	DiscordBotsOrgBotID string
-	DiscordBotsOrgToken string
-	PrometheusGauge     prometheus.Gauge
-	Interval            time.Duration
-	cache               *membersCache
+	Log             logging.Interface
+	Session         *discordgo.Session
+	PrometheusGauge prometheus.Gauge
+	Interval        time.Duration
+	cache           *membersCache
 }
 
 type membersCache struct {

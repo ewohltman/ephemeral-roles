@@ -39,10 +39,6 @@ spec:
               value: "{BOT_TOKEN}"
             - name: DISCORDRUS_WEBHOOK_URL
               value: "{DISCORDRUS_WEBHOOK_URL}"
-            - name: DISCORDBOTS_ORG_BOT_ID
-              value: "{DISCORDBOTS_ORG_BOT_ID}"
-            - name: DISCORDBOTS_ORG_TOKEN
-              value: "{DISCORDBOTS_ORG_TOKEN}"
             - name: SHARD_COUNT
               value: "{SHARD_COUNT}"
             - name: INSTANCE_NAME
