@@ -7,7 +7,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
@@ -64,10 +63,9 @@ func newTestConfig() (*Config, *discordgo.Session, error) {
 	}
 
 	config := &Config{
-		Log:        mock.NewLogger(),
-		Session:    mockSession,
-		HTTPClient: http.NewClient(mock.NewMirrorRoundTripper(), nil),
-		Interval:   testMonitorInterval,
+		Log:      mock.NewLogger(),
+		Session:  mockSession,
+		Interval: testMonitorInterval,
 	}
 
 	return config, mockSession, nil

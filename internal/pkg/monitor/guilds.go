@@ -2,26 +2,21 @@ package monitor
 
 import (
 	"context"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/discordbotsorg"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 type guilds struct {
-	Log                 logging.Interface
-	Session             *discordgo.Session
-	HTTPClient          *http.Client
-	DiscordBotsOrgBotID string
-	DiscordBotsOrgToken string
-	PrometheusGauge     prometheus.Gauge
-	Interval            time.Duration
-	cache               *guildsCache
+	Log             logging.Interface
+	Session         *discordgo.Session
+	PrometheusGauge prometheus.Gauge
+	Interval        time.Duration
+	cache           *guildsCache
 }
 
 type guildsCache struct {
@@ -72,18 +67,4 @@ func (g *guilds) update() {
 	g.cache.numGuilds = newCount
 	g.cache.guildList = g.Session.State.Guilds
 	g.PrometheusGauge.Set(float64(newCount))
-
-	// discordbots.org integration
-	if g.DiscordBotsOrgBotID != "" && g.DiscordBotsOrgToken != "" {
-		err := discordbotsorg.Update(
-			g.HTTPClient,
-			g.DiscordBotsOrgToken,
-			g.DiscordBotsOrgBotID,
-			newCount,
-		)
-		if err != nil {
-			g.Log.WithError(err).Warnf("unable to update discordbots.org guild count")
-			return
-		}
-	}
 }

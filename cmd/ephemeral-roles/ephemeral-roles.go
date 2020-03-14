@@ -46,12 +46,9 @@ func startSession(
 	session.ShardCount = variables.ShardCount
 
 	monitorConfig := &monitor.Config{
-		Log:                 log,
-		Session:             session,
-		HTTPClient:          session.Client,
-		DiscordBotsOrgBotID: variables.DiscordBotsOrgBotID,
-		DiscordBotsOrgToken: variables.DiscordBotsOrgToken,
-		Interval:            monitorInterval,
+		Log:      log,
+		Session:  session,
+		Interval: monitorInterval,
 	}
 
 	setupCallbacks(monitorConfig, variables)

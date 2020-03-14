@@ -5,8 +5,6 @@ set -o pipefail # Only exit with zero if all commands of the pipeline exit succe
 
 [[ -z ${BOT_TOKEN} ]] && echo "BOT_TOKEN not defined" && exit 1
 [[ -z ${DISCORDRUS_WEBHOOK_URL} ]] && echo "DISCORDRUS_WEBHOOK_URL not defined" && exit 1
-[[ -z ${DISCORDBOTS_ORG_BOT_ID} ]] && echo "DISCORDBOTS_ORG_BOT_ID not defined" && exit 1
-[[ -z ${DISCORDBOTS_ORG_TOKEN} ]] && echo "DISCORDBOTS_ORG_TOKEN not defined" && exit 1
 
 SCRIPT_PATH=$(readlink -f "${0}")
 SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")
@@ -33,8 +31,6 @@ applyValues() {
   sed -i "s|{COMMIT}|${COMMIT}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
   sed -i "s|{BOT_TOKEN}|${BOT_TOKEN}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
   sed -i "s|{DISCORDRUS_WEBHOOK_URL}|${DISCORDRUS_WEBHOOK_URL}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
-  sed -i "s|{DISCORDBOTS_ORG_BOT_ID}|${DISCORDBOTS_ORG_BOT_ID}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
-  sed -i "s|{DISCORDBOTS_ORG_TOKEN}|${DISCORDBOTS_ORG_TOKEN}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
   sed -i "s|{SHARD_COUNT}|${SHARD_COUNT}|g" "${VARIABLIZED_DEPLOYMENT_YML}"
 }
 
@@ -45,7 +41,7 @@ deploy() {
   kubectl apply -f "${JAEGER_YML}"
   kubectl apply -f "${SERVICE_YML}"
   kubectl apply -f "${VARIABLIZED_DEPLOYMENT_YML}"
-  kubectl -n ephemeral-roles rollout status --timeout 120s statefulset/ephemeral-roles
+  kubectl -n ephemeral-roles rollout status --timeout 180s statefulset/ephemeral-roles
 }
 
 cleanup() {

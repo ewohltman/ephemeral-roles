@@ -25,8 +25,6 @@ const (
 	RolePrefix           = "ROLE_PREFIX"
 	RoleColor            = "ROLE_COLOR_HEX2DEC"
 	DiscordrusWebHookURL = "DISCORDRUS_WEBHOOK_URL"
-	DiscordBotsOrgBotID  = "DISCORDBOTS_ORG_BOT_ID"
-	DiscordBotsOrgToken  = "DISCORDBOTS_ORG_TOKEN" //nolint:gosec // Not a hard-coded credential
 	InstanceName         = "INSTANCE_NAME"
 	ShardCount           = "SHARD_COUNT"
 )
@@ -59,8 +57,6 @@ type Variables struct {
 	RolePrefix           string
 	RoleColor            int
 	DiscordrusWebHookURL string
-	DiscordBotsOrgBotID  string
-	DiscordBotsOrgToken  string
 	InstanceName         string
 	ShardID              int
 	ShardCount           int
@@ -106,8 +102,6 @@ func Lookup() (*Variables, error) {
 		RolePrefix:           lookupOptional(RolePrefix, defaultRolePrefix),
 		RoleColor:            roleColor,
 		DiscordrusWebHookURL: lookupOptional(DiscordrusWebHookURL, ""),
-		DiscordBotsOrgBotID:  lookupOptional(DiscordBotsOrgBotID, ""),
-		DiscordBotsOrgToken:  lookupOptional(DiscordBotsOrgToken, ""),
 		InstanceName:         lookupOptional(InstanceName, defaultInstanceName),
 		ShardID:              shardID,
 		ShardCount:           shardCount,
