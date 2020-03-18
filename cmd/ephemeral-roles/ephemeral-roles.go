@@ -27,7 +27,12 @@ const (
 )
 
 func newLogger(variables *environment.Variables) *logging.Logger {
-	return logging.New(variables.LogLevel, variables.LogTimezoneLocation, variables.DiscordrusWebHookURL)
+	return logging.New(
+		variables.ShardID,
+		variables.LogLevel,
+		variables.LogTimezoneLocation,
+		variables.DiscordrusWebHookURL,
+	)
 }
 
 func startSession(
@@ -115,7 +120,7 @@ func main() {
 
 	log := newLogger(variables)
 
-	log.WithField("shardID", variables.ShardID).Infof("%s starting up", variables.BotName)
+	log.Infof("%s starting up", variables.BotName)
 
 	jaegerTracer, jaegerCloser, err := tracer.New(log, variables.InstanceName)
 	if err != nil {
