@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	ephemeralRoles         = "ephemeral-roles"
 	monitorInterval        = 1 * time.Minute
 	shutdownContextTimeout = 20 * time.Second
 )
@@ -122,14 +123,14 @@ func main() {
 
 	log.Infof("%s starting up", variables.BotName)
 
-	jaegerTracer, jaegerCloser, err := tracer.New(log, variables.InstanceName)
+	jaegerTracer, jaegerCloser, err := tracer.New(log, ephemeralRoles)
 	if err != nil {
 		log.WithError(err).Fatal("Error setting up Jaeger tracer")
 	}
 
 	defer closeComponent(log, "Jaeger tracer", jaegerCloser)
 
-	client := internalHTTP.NewClient(nil, jaegerTracer)
+	client := internalHTTP.NewClient(nil, jaegerTracer, variables.InstanceName)
 
 	monitorCtx, cancelMonitorCtx := context.WithCancel(context.Background())
 	defer cancelMonitorCtx()

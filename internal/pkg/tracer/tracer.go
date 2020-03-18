@@ -73,13 +73,13 @@ func New(log logging.Interface, serviceName string) (opentracing.Tracer, io.Clos
 
 // RoundTripper is http.RoundTripper middleware to add Jaeger tracing to all
 // HTTP requests.
-func RoundTripper(jaegerTracer opentracing.Tracer, next http.RoundTripper) RoundTripperFunc {
+func RoundTripper(jaegerTracer opentracing.Tracer, instanceName string, next http.RoundTripper) RoundTripperFunc {
 	return func(req *http.Request) (*http.Response, error) {
 		if jaegerTracer == nil {
 			return next.RoundTrip(req)
 		}
 
-		span := jaegerTracer.StartSpan(req.URL.String())
+		span := jaegerTracer.StartSpan(fmt.Sprintf("%s: %s", instanceName, req.URL.String()))
 		defer span.Finish()
 
 		carrier := opentracing.HTTPHeadersCarrier(req.Header)
