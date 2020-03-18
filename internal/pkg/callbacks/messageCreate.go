@@ -34,7 +34,7 @@ const (
 	infoMessageColor = 0xffa500
 
 	logoURLBase = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles"
-	logoURLPath = "/master/web/static/logo_Testa_anatomica_(1854)_-_Filippo_Balbi.jpg"
+	logoURLPath = "/master/web/static/Testa_Anatomica-Filippo_Balbi.jpg"
 	logoURL     = logoURLBase + logoURLPath
 
 	logLevelChange = "Logging level changed"
