@@ -53,7 +53,7 @@ type Logger struct {
 func New(shardID int, logLevel, timezoneLocation, discordrusWebHookURL string) *Logger {
 	location := parseTimezoneLocation(timezoneLocation)
 
-	logger := &logrus.Logger{
+	logrusLogger := &logrus.Logger{
 		Formatter: &locale{
 			&logrus.TextFormatter{},
 			location,
@@ -64,7 +64,7 @@ func New(shardID int, logLevel, timezoneLocation, discordrusWebHookURL string) *
 	}
 
 	log := &Logger{
-		Entry:                logrus.NewEntry(logger).WithField("shardID", shardID),
+		Entry:                logrus.NewEntry(logrusLogger).WithField("shardID", shardID),
 		Location:             location,
 		DiscordrusWebHookURL: discordrusWebHookURL,
 	}
@@ -101,7 +101,7 @@ func (log *Logger) discordrusIntegration() {
 	log.Logger.AddHook(
 		discordrus.NewHook(
 			log.DiscordrusWebHookURL,
-			log.Level,
+			log.Logger.Level,
 			&discordrus.Opts{
 				Username:           "",
 				Author:             "",
