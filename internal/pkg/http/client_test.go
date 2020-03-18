@@ -32,7 +32,7 @@ func TestNewClient(t *testing.T) {
 		}
 	}()
 
-	client := NewClient(nil, jaegerTracer)
+	client := NewClient(nil, jaegerTracer, "")
 
 	if client == nil {
 		t.Fatal("Unexpected nil *http.Client")
@@ -89,7 +89,7 @@ func testSetTransport(log logging.Interface, client *http.Client, testServerURL 
 		}
 	}()
 
-	SetTransport(client, jaegerTracer)
+	SetTransport(client, jaegerTracer, "")
 
 	if client.Transport == nil {
 		return fmt.Errorf("unexpected nil http.RoundTripper")

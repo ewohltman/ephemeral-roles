@@ -80,7 +80,7 @@ func TestRoundTripper(t *testing.T) {
 		}
 	}()
 
-	_, err = doRoundTrip(RoundTripper(jaegerTracer, mock.NewMirrorRoundTripper()), nil)
+	_, err = doRoundTrip(RoundTripper(jaegerTracer, "", mock.NewMirrorRoundTripper()), nil)
 	if err != nil {
 		t.Fatalf("Error performing round trip: %s", err)
 	}

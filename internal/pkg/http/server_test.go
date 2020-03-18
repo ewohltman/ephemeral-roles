@@ -38,7 +38,7 @@ func TestNewServer(t *testing.T) {
 		}
 	}()
 
-	client := NewClient(nil, nil)
+	client := NewClient(nil, nil, "")
 
 	testRootEndpoint(t, client)
 	testGuildsEndpoint(t, client)
