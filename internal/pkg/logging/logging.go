@@ -44,25 +44,27 @@ type Interface interface {
 // Logger wraps a *logrus.Logger instance and provides custom methods.
 type Logger struct {
 	sync.Mutex
-	*logrus.Logger
+	*logrus.Entry
 	Location             *time.Location
 	DiscordrusWebHookURL string
 }
 
 // New returns a new *Logger instance.
-func New(logLevel, timezoneLocation, discordrusWebHookURL string) *Logger {
+func New(shardID int, logLevel, timezoneLocation, discordrusWebHookURL string) *Logger {
 	location := parseTimezoneLocation(timezoneLocation)
 
-	log := &Logger{
-		Logger: &logrus.Logger{
-			Formatter: &locale{
-				&logrus.TextFormatter{},
-				location,
-			},
-			Out:   os.Stdout,
-			Level: logrus.InfoLevel,
-			Hooks: make(logrus.LevelHooks),
+	logger := &logrus.Logger{
+		Formatter: &locale{
+			&logrus.TextFormatter{},
+			location,
 		},
+		Out:   os.Stdout,
+		Level: logrus.InfoLevel,
+		Hooks: make(logrus.LevelHooks),
+	}
+
+	log := &Logger{
+		Entry:                logrus.NewEntry(logger).WithField("shardID", shardID),
 		Location:             location,
 		DiscordrusWebHookURL: discordrusWebHookURL,
 	}
@@ -79,7 +81,7 @@ func (log *Logger) WrappedLogger() *logrus.Logger {
 
 // UpdateLevel allows for runtime updates of the logging level.
 func (log *Logger) UpdateLevel(level string) {
-	log.SetLevel(parseLevel(level))
+	log.Logger.SetLevel(parseLevel(level))
 	log.discordrusIntegration()
 }
 
@@ -91,12 +93,12 @@ func (log *Logger) discordrusIntegration() {
 	log.Lock()
 	defer log.Unlock()
 
-	log.Hooks = make(logrus.LevelHooks)
+	log.Logger.Hooks = make(logrus.LevelHooks)
 
 	timeString := time.Now().In(log.Location).String()
 	timeZoneToken := strings.Split(timeString, " ")[3]
 
-	log.AddHook(
+	log.Logger.AddHook(
 		discordrus.NewHook(
 			log.DiscordrusWebHookURL,
 			log.Level,

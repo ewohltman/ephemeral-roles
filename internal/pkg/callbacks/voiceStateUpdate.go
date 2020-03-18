@@ -10,7 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const voiceStateUpdateError = "Unable to process VoiceStateUpdate"
+const (
+	discordBotList = "Discord Bot List"
+
+	voiceStateUpdateError = "Unable to process VoiceStateUpdate"
+)
 
 type vsuEvent struct {
 	Session      *discordgo.Session
@@ -40,8 +44,13 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 		"guild": event.Guild.Name,
 	})
 
+	if event.Guild.Name == discordBotList {
+		logWithFields.Debug("Ignoring VoiceStateUpdate event")
+		return
+	}
+
 	if config.userDisconnectEvent(vsu, event) {
-		logWithFields.Debugf("User disconnected from voice channels and ephemeral roles revoked")
+		logWithFields.Debug("User disconnected from voice channels and ephemeral roles revoked")
 		return
 	}
 

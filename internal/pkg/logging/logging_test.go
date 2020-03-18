@@ -38,7 +38,7 @@ func TestLogger_UpdateLevel(t *testing.T) {
 	for _, testLevel := range testLevels {
 		log.UpdateLevel(testLevel.String())
 
-		if log.Level != testLevel {
+		if log.Logger.Level != testLevel {
 			t.Error(updateError)
 		}
 	}
@@ -73,8 +73,8 @@ func TestLocale_Format(t *testing.T) {
 }
 
 func testLogger() *Logger {
-	log := New("info", "America/New_York", "test")
-	log.SetOutput(ioutil.Discard)
+	log := New(0, "info", "America/New_York", "test")
+	log.Logger.SetOutput(ioutil.Discard)
 
 	return log
 }
