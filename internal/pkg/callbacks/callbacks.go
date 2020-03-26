@@ -3,13 +3,18 @@ package callbacks
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
-const userNotFoundErrorMessage = "user not found"
+const (
+	contextTimeout = 30 * time.Second
+
+	userNotFoundErrorMessage = "user not found"
+)
 
 // Config contains fields for the callback methods.
 type Config struct {

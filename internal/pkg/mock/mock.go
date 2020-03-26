@@ -4,6 +4,7 @@ package mock
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -275,12 +276,16 @@ func channelsResponse(r *http.Request) *http.Response {
 		return newResponse(http.StatusForbidden, []byte{})
 	}
 
-	respBody := []byte(
-		fmt.Sprintf(`{"id":"%s","name":"%s"}`,
-			channel,
-			channel,
-		),
-	)
+	mockChannel := &discordgo.Channel{
+		ID:      channel,
+		GuildID: TestGuild,
+		Name:    channel,
+	}
+
+	respBody, err := json.Marshal(mockChannel)
+	if err != nil {
+		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+	}
 
 	return newResponse(http.StatusOK, respBody)
 }
@@ -289,13 +294,15 @@ func usersResponse(r *http.Request) *http.Response {
 	pathTokens := strings.Split(r.URL.Path, "/")
 	user := pathTokens[len(pathTokens)-1]
 
-	respBody := []byte(
-		fmt.Sprintf(
-			`{"id":"%s","username":"%s"}`,
-			user,
-			user,
-		),
-	)
+	mockUser := &discordgo.User{
+		ID:       user,
+		Username: user,
+	}
+
+	respBody, err := json.Marshal(mockUser)
+	if err != nil {
+		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+	}
 
 	return newResponse(http.StatusOK, respBody)
 }

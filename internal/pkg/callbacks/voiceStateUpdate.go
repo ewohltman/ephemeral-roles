@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -27,7 +28,10 @@ type vsuEvent struct {
 func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	config.VoiceStateUpdateCounter.Inc()
 
-	event, err := config.parseEvent(s, vsu)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+	defer cancelCtx()
+
+	event, err := config.parseEvent(ctx, s, vsu)
 	if err != nil {
 		if errors.Is(err, &userNotFoundError{}) {
 			config.Log.WithError(err).Debug(voiceStateUpdateError)
@@ -49,12 +53,12 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 		return
 	}
 
-	if config.userDisconnectEvent(vsu, event) {
+	if config.userDisconnectEvent(ctx, vsu, event) {
 		logWithFields.Debug("User disconnected from voice channels and ephemeral roles revoked")
 		return
 	}
 
-	channel, err := s.Channel(vsu.ChannelID)
+	channel, err := s.State.Channel(vsu.ChannelID)
 	if err != nil {
 		var restErr *discordgo.RESTError
 
@@ -82,7 +86,7 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 		"role":  ephRoleName,
 	})
 
-	err = config.grantEphemeralRole(event, ephRoleName)
+	err = config.grantEphemeralRole(ctx, event, ephRoleName)
 	if err != nil {
 		var restErr *discordgo.RESTError
 
@@ -103,13 +107,15 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	logWithFields.Debugf("Ephemeral role granted")
 }
 
-func (config *Config) parseEvent(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
-	user, guild, err := config.getUserGuild(s, vsu)
+func (config *Config) parseEvent(ctx context.Context, s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
+	user, guild, err := config.getUserGuild(ctx, s, vsu)
 	if err != nil {
 		return nil, err
 	}
 
 	var guildMember *discordgo.Member
+
+	config.Log.WithField("members", guild.MemberCount).Debugf("guild: %s", guild.Name)
 
 	for _, member := range guild.Members {
 		if member.User.ID == user.ID {
@@ -139,15 +145,16 @@ func (config *Config) parseEvent(s *discordgo.Session, vsu *discordgo.VoiceState
 }
 
 func (config *Config) getUserGuild(
+	ctx context.Context,
 	s *discordgo.Session,
 	vsu *discordgo.VoiceStateUpdate,
 ) (*discordgo.User, *discordgo.Guild, error) {
-	user, err := s.User(vsu.UserID)
+	user, err := s.UserWithContext(ctx, vsu.UserID)
 	if err != nil {
 		return nil, nil, &userNotFoundError{err: err}
 	}
 
-	guild, err := s.Guild(vsu.GuildID)
+	guild, err := s.State.Guild(vsu.GuildID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to determine guild: %w", err)
 	}
@@ -155,12 +162,12 @@ func (config *Config) getUserGuild(
 	return user, guild, nil
 }
 
-func (config *Config) userDisconnectEvent(vsu *discordgo.VoiceStateUpdate, event *vsuEvent) bool {
+func (config *Config) userDisconnectEvent(ctx context.Context, vsu *discordgo.VoiceStateUpdate, event *vsuEvent) bool {
 	if vsu.ChannelID != "" {
 		return false
 	}
 
-	config.revokeEphemeralRoles(event)
+	config.revokeEphemeralRoles(ctx, event)
 
 	return true
 }
@@ -175,15 +182,15 @@ func (config *Config) userHasRole(event *vsuEvent, ephRoleName string) bool {
 	return false
 }
 
-func (config *Config) grantEphemeralRole(event *vsuEvent, ephRoleName string) error {
-	config.revokeEphemeralRoles(event)
+func (config *Config) grantEphemeralRole(ctx context.Context, event *vsuEvent, ephRoleName string) error {
+	config.revokeEphemeralRoles(ctx, event)
 
-	ephRole, err := config.getGuildRole(event, ephRoleName)
+	ephRole, err := config.getGuildRole(ctx, event, ephRoleName)
 	if err != nil {
 		return err
 	}
 
-	err = event.Session.GuildMemberRoleAdd(event.Guild.ID, event.GuildMember.User.ID, ephRole.ID)
+	err = event.Session.GuildMemberRoleAddWithContext(ctx, event.Guild.ID, event.GuildMember.User.ID, ephRole.ID)
 	if err != nil {
 		return err
 	}
@@ -191,14 +198,14 @@ func (config *Config) grantEphemeralRole(event *vsuEvent, ephRoleName string) er
 	return nil
 }
 
-func (config *Config) getGuildRole(event *vsuEvent, ephRoleName string) (*discordgo.Role, error) {
+func (config *Config) getGuildRole(ctx context.Context, event *vsuEvent, ephRoleName string) (*discordgo.Role, error) {
 	for _, guildRole := range event.GuildRoleMap {
 		if guildRole.Name == ephRoleName {
 			return guildRole, nil
 		}
 	}
 
-	ephRole, err := config.guildRoleCreate(event, ephRoleName)
+	ephRole, err := config.guildRoleCreate(ctx, event, ephRoleName)
 	if err != nil {
 		return nil, err
 	}
@@ -206,13 +213,14 @@ func (config *Config) getGuildRole(event *vsuEvent, ephRoleName string) (*discor
 	return ephRole, nil
 }
 
-func (config *Config) guildRoleCreate(event *vsuEvent, ephRoleName string) (*discordgo.Role, error) {
-	ephRole, err := event.Session.GuildRoleCreate(event.Guild.ID)
+func (config *Config) guildRoleCreate(ctx context.Context, event *vsuEvent, ephRoleName string) (*discordgo.Role, error) {
+	ephRole, err := event.Session.GuildRoleCreateWithContext(ctx, event.Guild.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create ephemeral role: %w", err)
 	}
 
-	ephRole, err = event.Session.GuildRoleEdit(
+	ephRole, err = event.Session.GuildRoleEditWithContext(
+		ctx,
 		event.Guild.ID,
 		ephRole.ID,
 		ephRoleName,
@@ -228,12 +236,12 @@ func (config *Config) guildRoleCreate(event *vsuEvent, ephRoleName string) (*dis
 	return ephRole, nil
 }
 
-func (config *Config) revokeEphemeralRoles(event *vsuEvent) {
+func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent) {
 	for _, roleID := range event.GuildMember.Roles {
 		role := event.GuildRoleMap[roleID]
 
 		if strings.HasPrefix(role.Name, config.RolePrefix) {
-			err := event.Session.GuildMemberRoleRemove(event.Guild.ID, event.GuildMember.User.ID, role.ID)
+			err := event.Session.GuildMemberRoleRemoveWithContext(ctx, event.Guild.ID, event.GuildMember.User.ID, role.ID)
 			if err != nil {
 				config.Log.WithError(err).
 					WithFields(logrus.Fields{
