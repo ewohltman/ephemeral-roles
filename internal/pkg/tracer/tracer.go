@@ -87,10 +87,10 @@ func RoundTripper(jaegerTracer opentracing.Tracer, instanceName string, next htt
 			return next.RoundTrip(req)
 		}
 
-		span := jaegerTracer.StartSpan(fmt.Sprintf("%s: %s", instanceName, req.URL.String()))
-		defer span.Finish()
+		operationName := fmt.Sprintf("%s: %s", instanceName, req.URL.String())
 
-		traceCtx := opentracing.ContextWithSpan(req.Context(), span)
+		span, traceCtx := opentracing.StartSpanFromContextWithTracer(req.Context(), jaegerTracer, operationName)
+		defer span.Finish()
 
 		resp, err := next.RoundTrip(req.Clone(traceCtx))
 		if err != nil {
