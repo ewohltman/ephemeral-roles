@@ -53,14 +53,14 @@ func roundTripperWithTracer(jaegerTracer opentracing.Tracer, instanceName string
 func roundTripperWithContext(next http.RoundTripper) http.RoundTripper {
 	return roundTripperFunc(
 		func(req *http.Request) (*http.Response, error) {
-			if req.Context() == context.Background() {
-				ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
-				defer cancelCtx()
-
-				req = req.Clone(ctx)
+			if req.Context() != context.Background() {
+				return next.RoundTrip(req)
 			}
 
-			return next.RoundTrip(req)
+			ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+			defer cancelCtx()
+
+			return next.RoundTrip(req.Clone(ctx))
 		},
 	)
 }

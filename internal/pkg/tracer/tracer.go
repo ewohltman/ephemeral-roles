@@ -37,12 +37,20 @@ type jaegerLogger struct {
 // Infof satisfies the jaeger.Logger interface by delegating to the wrapped
 // logging.Interface Error method.
 func (jaegerLog *jaegerLogger) Infof(msg string, args ...interface{}) {
+	if jaegerLog.log == nil {
+		return
+	}
+
 	jaegerLog.log.Infof(msg, args...)
 }
 
 // Error satisfies the jaeger.Logger interface by delegating to the wrapped
 // logging.Interface Error method.
 func (jaegerLog *jaegerLogger) Error(msg string) {
+	if jaegerLog.log == nil {
+		return
+	}
+
 	jaegerLog.log.Error(msg)
 }
 
@@ -82,14 +90,9 @@ func RoundTripper(jaegerTracer opentracing.Tracer, instanceName string, next htt
 		span := jaegerTracer.StartSpan(fmt.Sprintf("%s: %s", instanceName, req.URL.String()))
 		defer span.Finish()
 
-		carrier := opentracing.HTTPHeadersCarrier(req.Header)
+		traceCtx := opentracing.ContextWithSpan(req.Context(), span)
 
-		err := jaegerTracer.Inject(span.Context(), opentracing.HTTPHeaders, carrier)
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err := next.RoundTrip(req)
+		resp, err := next.RoundTrip(req.Clone(traceCtx))
 		if err != nil {
 			span.SetTag("error", err.Error())
 			return resp, err

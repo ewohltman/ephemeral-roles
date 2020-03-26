@@ -4,6 +4,7 @@ package mock
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -252,6 +253,8 @@ func discordAPIResponse(r *http.Request) (*http.Response, error) {
 		return channelsResponse(r), nil
 	case strings.Contains(r.URL.Path, "users"):
 		return usersResponse(r), nil
+	case strings.Contains(r.URL.Path, "guilds"):
+		return guildsResponse(r), nil
 	}
 
 	return nil, errors.New(unsupportedMockRequest)
@@ -275,12 +278,16 @@ func channelsResponse(r *http.Request) *http.Response {
 		return newResponse(http.StatusForbidden, []byte{})
 	}
 
-	respBody := []byte(
-		fmt.Sprintf(`{"id":"%s","name":"%s"}`,
-			channel,
-			channel,
-		),
-	)
+	mockChannel := &discordgo.Channel{
+		ID:      channel,
+		GuildID: TestGuild,
+		Name:    channel,
+	}
+
+	respBody, err := json.Marshal(mockChannel)
+	if err != nil {
+		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+	}
 
 	return newResponse(http.StatusOK, respBody)
 }
@@ -289,13 +296,50 @@ func usersResponse(r *http.Request) *http.Response {
 	pathTokens := strings.Split(r.URL.Path, "/")
 	user := pathTokens[len(pathTokens)-1]
 
-	respBody := []byte(
-		fmt.Sprintf(
-			`{"id":"%s","username":"%s"}`,
-			user,
-			user,
-		),
-	)
+	mockUser := &discordgo.User{
+		ID:       user,
+		Username: user,
+	}
+
+	respBody, err := json.Marshal(mockUser)
+	if err != nil {
+		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+	}
+
+	return newResponse(http.StatusOK, respBody)
+}
+
+func guildsResponse(r *http.Request) *http.Response {
+	pathTokens := strings.Split(r.URL.Path, "/")
+	guild := pathTokens[len(pathTokens)-1]
+	memberCount := 1
+
+	mockGuild := &discordgo.Guild{
+		ID:          guild,
+		Name:        guild,
+		MemberCount: memberCount,
+		Members: []*discordgo.Member{
+			{
+				GuildID: guild,
+				User: &discordgo.User{
+					ID:       TestUser,
+					Username: TestUser,
+				},
+			},
+		},
+		Channels: []*discordgo.Channel{
+			{
+				ID:      TestChannel,
+				GuildID: guild,
+				Name:    TestChannel,
+			},
+		},
+	}
+
+	respBody, err := json.Marshal(mockGuild)
+	if err != nil {
+		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+	}
 
 	return newResponse(http.StatusOK, respBody)
 }

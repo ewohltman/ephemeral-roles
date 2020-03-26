@@ -47,17 +47,7 @@ func startSession(
 		return nil, err
 	}
 
-	session.Client = client
-	session.ShardID = variables.ShardID
-	session.ShardCount = variables.ShardCount
-
-	monitorConfig := &monitor.Config{
-		Log:      log,
-		Session:  session,
-		Interval: monitorInterval,
-	}
-
-	setupCallbacks(monitorConfig, variables)
+	monitorConfig := configureSession(log, session, client, variables)
 
 	err = session.Open()
 	if err != nil {
@@ -69,11 +59,22 @@ func startSession(
 	return session, nil
 }
 
-func setupCallbacks(monitorConfig *monitor.Config, variables *environment.Variables) {
+func configureSession(
+	log logging.Interface,
+	session *discordgo.Session,
+	client *http.Client,
+	variables *environment.Variables,
+) *monitor.Config {
+	monitorConfig := &monitor.Config{
+		Log:      log,
+		Session:  session,
+		Interval: monitorInterval,
+	}
+
 	callbackMetrics := monitor.Metrics(monitorConfig)
 
 	callbackConfig := &callbacks.Config{
-		Log:                     monitorConfig.Log,
+		Log:                     log,
 		BotName:                 variables.BotName,
 		BotKeyword:              variables.BotKeyword,
 		RolePrefix:              variables.RolePrefix,
@@ -83,9 +84,19 @@ func setupCallbacks(monitorConfig *monitor.Config, variables *environment.Variab
 		VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
 	}
 
-	monitorConfig.Session.AddHandler(callbackConfig.Ready)            // Connection established with Discord
-	monitorConfig.Session.AddHandler(callbackConfig.MessageCreate)    // Chat messages with BOT_KEYWORD
-	monitorConfig.Session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
+	session.Client = client
+	session.ShardID = variables.ShardID
+	session.ShardCount = variables.ShardCount
+
+	setupCallbacks(session, callbackConfig)
+
+	return monitorConfig
+}
+
+func setupCallbacks(session *discordgo.Session, callbackConfig *callbacks.Config) {
+	session.AddHandler(callbackConfig.Ready)            // Connection established with Discord
+	session.AddHandler(callbackConfig.MessageCreate)    // Chat messages with BOT_KEYWORD
+	session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
 }
 
 func startHTTPServer(log logging.Interface, session *discordgo.Session, port string) (httpServer *http.Server, stop chan os.Signal) {
