@@ -5,15 +5,35 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
 func TestConfig_VoiceStateUpdate(t *testing.T) {
+	jaegerTracer, jaegerCloser, err := tracer.New(mock.NewLogger(), "test")
+	if err != nil {
+		t.Fatalf("Error creating Jaeger tracer: %s", err)
+	}
+
+	defer func() {
+		closeErr := jaegerCloser.Close()
+		if closeErr != nil {
+			t.Errorf("Error closing Jaeger tracer: %s", err)
+		}
+	}()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	session.Client = http.NewClient(
+		session.Client.Transport,
+		jaegerTracer,
+		"test-0",
+	)
 
 	defer mock.SessionClose(t, session)
 

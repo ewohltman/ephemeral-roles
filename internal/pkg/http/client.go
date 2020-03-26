@@ -39,10 +39,8 @@ func SetTransport(client *http.Client, jaegerTracer opentracing.Tracer, instance
 		transport = &http.Transport{}
 	}
 
-	client.Transport = roundTripperWithTracer(
-		jaegerTracer, instanceName, roundTripperWithContext(
-			transport,
-		),
+	client.Transport = roundTripperWithTracer(jaegerTracer, instanceName,
+		roundTripperWithContext(transport),
 	)
 }
 
