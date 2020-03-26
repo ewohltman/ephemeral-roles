@@ -253,8 +253,6 @@ func discordAPIResponse(r *http.Request) (*http.Response, error) {
 		return channelsResponse(r), nil
 	case strings.Contains(r.URL.Path, "users"):
 		return usersResponse(r), nil
-	case strings.Contains(r.URL.Path, "guilds"):
-		return guildsResponse(r), nil
 	}
 
 	return nil, errors.New(unsupportedMockRequest)
@@ -302,41 +300,6 @@ func usersResponse(r *http.Request) *http.Response {
 	}
 
 	respBody, err := json.Marshal(mockUser)
-	if err != nil {
-		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
-	}
-
-	return newResponse(http.StatusOK, respBody)
-}
-
-func guildsResponse(r *http.Request) *http.Response {
-	pathTokens := strings.Split(r.URL.Path, "/")
-	guild := pathTokens[len(pathTokens)-1]
-	memberCount := 1
-
-	mockGuild := &discordgo.Guild{
-		ID:          guild,
-		Name:        guild,
-		MemberCount: memberCount,
-		Members: []*discordgo.Member{
-			{
-				GuildID: guild,
-				User: &discordgo.User{
-					ID:       TestUser,
-					Username: TestUser,
-				},
-			},
-		},
-		Channels: []*discordgo.Channel{
-			{
-				ID:      TestChannel,
-				GuildID: guild,
-				Name:    TestChannel,
-			},
-		},
-	}
-
-	respBody, err := json.Marshal(mockGuild)
 	if err != nil {
 		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
 	}
