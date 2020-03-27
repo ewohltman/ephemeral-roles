@@ -108,14 +108,22 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 }
 
 func (config *Config) parseEvent(ctx context.Context, s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
-	user, guild, err := config.getUserGuild(ctx, s, vsu)
+	user, err := s.UserWithContext(ctx, vsu.UserID)
 	if err != nil {
-		return nil, err
+		return nil, &userNotFoundError{err: err}
+	}
+
+	guild, err := s.State.Guild(vsu.GuildID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to determine guild: %w", err)
+	}
+
+	guildRoles, err := s.GuildRoles(vsu.GuildID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to determine guild roles: %w", err)
 	}
 
 	var guildMember *discordgo.Member
-
-	config.Log.WithField("members", guild.MemberCount).Debugf("guild: %s", guild.Name)
 
 	for _, member := range guild.Members {
 		if member.User.ID == user.ID {
@@ -130,7 +138,7 @@ func (config *Config) parseEvent(ctx context.Context, s *discordgo.Session, vsu 
 
 	guildRoleMap := make(map[string]*discordgo.Role)
 
-	for _, role := range guild.Roles {
+	for _, role := range guildRoles {
 		guildRoleMap[role.ID] = role
 	}
 
@@ -142,24 +150,6 @@ func (config *Config) parseEvent(ctx context.Context, s *discordgo.Session, vsu 
 	}
 
 	return event, nil
-}
-
-func (config *Config) getUserGuild(
-	ctx context.Context,
-	s *discordgo.Session,
-	vsu *discordgo.VoiceStateUpdate,
-) (*discordgo.User, *discordgo.Guild, error) {
-	user, err := s.UserWithContext(ctx, vsu.UserID)
-	if err != nil {
-		return nil, nil, &userNotFoundError{err: err}
-	}
-
-	guild, err := s.State.Guild(vsu.GuildID)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to determine guild: %w", err)
-	}
-
-	return user, guild, nil
 }
 
 func (config *Config) userDisconnectEvent(ctx context.Context, vsu *discordgo.VoiceStateUpdate, event *vsuEvent) bool {
