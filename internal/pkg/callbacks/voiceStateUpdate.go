@@ -123,6 +123,8 @@ func (config *Config) parseEvent(ctx context.Context, s *discordgo.Session, vsu 
 		return nil, fmt.Errorf("unable to determine guild roles: %w", err)
 	}
 
+	guild.Roles = guildRoles
+
 	var guildMember *discordgo.Member
 
 	for _, member := range guild.Members {
