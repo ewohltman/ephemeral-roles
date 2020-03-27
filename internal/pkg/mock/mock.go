@@ -162,7 +162,7 @@ func buildTestGuild(session *discordgo.Session) error {
 		return err
 	}
 
-	err = addRole(session, testGuild, TestRole)
+	err = addRole(session, testGuild, TestRole, "{eph} "+TestChannel)
 	if err != nil {
 		return err
 	}
@@ -214,15 +214,22 @@ func addChannel(session *discordgo.Session, guild *discordgo.Guild, channelID st
 	return session.State.ChannelAdd(channel)
 }
 
-func addRole(session *discordgo.Session, guild *discordgo.Guild, roleID string) error {
-	role := &discordgo.Role{
-		ID:   roleID,
-		Name: roleID,
+func addRole(session *discordgo.Session, guild *discordgo.Guild, roleIDs ...string) error {
+	for _, roleID := range roleIDs {
+		role := &discordgo.Role{
+			ID:   roleID,
+			Name: roleID,
+		}
+
+		guild.Roles = append(guild.Roles, role)
+
+		err := session.State.RoleAdd(guild.ID, role)
+		if err != nil {
+			return err
+		}
 	}
 
-	guild.Roles = append(guild.Roles, role)
-
-	return session.State.RoleAdd(guild.ID, role)
+	return nil
 }
 
 func addMember(session *discordgo.Session, guild *discordgo.Guild, userID string) error {
@@ -252,6 +259,8 @@ func discordAPIResponse(r *http.Request) (*http.Response, error) {
 		return channelsResponse(r), nil
 	case strings.Contains(r.URL.Path, "users"):
 		return usersResponse(r), nil
+	case strings.Contains(r.URL.Path, "members"):
+		return membersResponse(r), nil
 	}
 
 	return nil, fmt.Errorf(unsupportedMockRequest)
@@ -260,7 +269,14 @@ func discordAPIResponse(r *http.Request) (*http.Response, error) {
 func roleCreateResponse(r *http.Request) *http.Response {
 	switch r.Method {
 	case http.MethodGet:
-		respBody := []byte(fmt.Sprintf(`[{"id":"%s","name":"%s"}]`, TestRole, TestRole))
+		respBody := []byte(
+			fmt.Sprintf(
+				`[{"id":"%s","name":"%s"},{"id":"%s","name":"%s"}]`,
+				TestRole, TestRole,
+				"{eph} "+TestChannel, "{eph} "+TestChannel,
+			),
+		)
+
 		return newResponse(http.StatusOK, respBody)
 	case http.MethodPost, http.MethodPatch:
 		respBody := []byte(`{"id":"newRole","name":"newRole"}`)
@@ -302,6 +318,27 @@ func usersResponse(r *http.Request) *http.Response {
 	}
 
 	respBody, err := json.Marshal(mockUser)
+	if err != nil {
+		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+	}
+
+	return newResponse(http.StatusOK, respBody)
+}
+
+func membersResponse(r *http.Request) *http.Response {
+	pathTokens := strings.Split(r.URL.Path, "/")
+	member := pathTokens[len(pathTokens)-1]
+
+	mockMember := &discordgo.Member{
+		GuildID: TestGuild,
+		User: &discordgo.User{
+			ID:       member,
+			Username: member,
+		},
+		Roles: []string{TestRole, "{eph} " + TestChannel},
+	}
+
+	respBody, err := json.Marshal(mockMember)
 	if err != nil {
 		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
 	}

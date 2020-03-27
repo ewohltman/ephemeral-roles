@@ -31,7 +31,7 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancelCtx()
 
-	event, err := config.parseEvent(ctx, s, vsu)
+	event, err := config.parseEvent(s, vsu)
 	if err != nil {
 		if errors.Is(err, &userNotFoundError{}) {
 			config.Log.WithError(err).Debug(voiceStateUpdateError)
@@ -107,35 +107,20 @@ func (config *Config) VoiceStateUpdate(s *discordgo.Session, vsu *discordgo.Voic
 	logWithFields.Debugf("Ephemeral role granted")
 }
 
-func (config *Config) parseEvent(ctx context.Context, s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
-	user, err := s.UserWithContext(ctx, vsu.UserID)
-	if err != nil {
-		return nil, &userNotFoundError{err: err}
-	}
-
+func (config *Config) parseEvent(s *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
 	guild, err := s.State.Guild(vsu.GuildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to determine guild: %w", err)
 	}
 
+	guildMember, err := s.GuildMember(vsu.GuildID, vsu.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to determine guild member: %w", err)
+	}
+
 	guildRoles, err := s.GuildRoles(vsu.GuildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to determine guild roles: %w", err)
-	}
-
-	guild.Roles = guildRoles
-
-	var guildMember *discordgo.Member
-
-	for _, member := range guild.Members {
-		if member.User.ID == user.ID {
-			guildMember = member
-			break
-		}
-	}
-
-	if guildMember == nil {
-		return nil, &userNotFoundError{err: fmt.Errorf("not found in guild members")}
 	}
 
 	guildRoleMap := make(map[string]*discordgo.Role)
