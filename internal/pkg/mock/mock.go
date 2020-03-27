@@ -5,7 +5,6 @@ package mock
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -255,11 +254,14 @@ func discordAPIResponse(r *http.Request) (*http.Response, error) {
 		return usersResponse(r), nil
 	}
 
-	return nil, errors.New(unsupportedMockRequest)
+	return nil, fmt.Errorf(unsupportedMockRequest)
 }
 
 func roleCreateResponse(r *http.Request) *http.Response {
 	switch r.Method {
+	case http.MethodGet:
+		respBody := []byte(fmt.Sprintf(`[{"id":"%s","name":"%s"}]`, TestRole, TestRole))
+		return newResponse(http.StatusOK, respBody)
 	case http.MethodPost, http.MethodPatch:
 		respBody := []byte(`{"id":"newRole","name":"newRole"}`)
 		return newResponse(http.StatusOK, respBody)
