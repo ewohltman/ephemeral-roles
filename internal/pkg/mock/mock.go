@@ -162,7 +162,7 @@ func buildTestGuild(session *discordgo.Session) error {
 		return err
 	}
 
-	err = addRole(session, testGuild, TestRole, "{eph} "+TestChannel)
+	err = addRoles(session, testGuild, mockRoles())
 	if err != nil {
 		return err
 	}
@@ -214,15 +214,10 @@ func addChannel(session *discordgo.Session, guild *discordgo.Guild, channelID st
 	return session.State.ChannelAdd(channel)
 }
 
-func addRole(session *discordgo.Session, guild *discordgo.Guild, roleIDs ...string) error {
-	for _, roleID := range roleIDs {
-		role := &discordgo.Role{
-			ID:   roleID,
-			Name: roleID,
-		}
+func addRoles(session *discordgo.Session, guild *discordgo.Guild, roles discordgo.Roles) error {
+	guild.Roles = append(guild.Roles, roles...)
 
-		guild.Roles = append(guild.Roles, role)
-
+	for _, role := range guild.Roles {
 		err := session.State.RoleAdd(guild.ID, role)
 		if err != nil {
 			return err
@@ -253,71 +248,26 @@ func mockRestClient() *http.Client {
 
 func discordAPIResponse(r *http.Request) (*http.Response, error) {
 	switch {
-	case strings.Contains(r.URL.Path, "roles"):
-		return roleCreateResponse(r), nil
-	case strings.Contains(r.URL.Path, "channels"):
-		return channelsResponse(r), nil
 	case strings.Contains(r.URL.Path, "users"):
 		return usersResponse(r), nil
 	case strings.Contains(r.URL.Path, "members"):
 		return membersResponse(r), nil
+	case strings.Contains(r.URL.Path, "roles"):
+		return rolesResponse(r), nil
+	case strings.Contains(r.URL.Path, "channels"):
+		return channelsResponse(r), nil
+	case strings.Contains(r.URL.Path, "guilds"):
+		return guildsResponse(r), nil
 	}
 
 	return nil, fmt.Errorf(unsupportedMockRequest)
 }
 
-func roleCreateResponse(r *http.Request) *http.Response {
-	switch r.Method {
-	case http.MethodGet:
-		respBody := []byte(
-			fmt.Sprintf(
-				`[{"id":"%s","name":"%s"},{"id":"%s","name":"%s"}]`,
-				TestRole, TestRole,
-				"{eph} "+TestChannel, "{eph} "+TestChannel,
-			),
-		)
-
-		return newResponse(http.StatusOK, respBody)
-	case http.MethodPost, http.MethodPatch:
-		respBody := []byte(`{"id":"newRole","name":"newRole"}`)
-		return newResponse(http.StatusOK, respBody)
-	}
-
-	return newResponse(http.StatusMethodNotAllowed, []byte{})
-}
-
-func channelsResponse(r *http.Request) *http.Response {
-	pathTokens := strings.Split(r.URL.Path, "/")
-	channel := pathTokens[len(pathTokens)-1]
-
-	if channel == TestPrivateChannel {
-		return newResponse(http.StatusForbidden, []byte{})
-	}
-
-	mockChannel := &discordgo.Channel{
-		ID:      channel,
-		GuildID: TestGuild,
-		Name:    channel,
-	}
-
-	respBody, err := json.Marshal(mockChannel)
-	if err != nil {
-		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
-	}
-
-	return newResponse(http.StatusOK, respBody)
-}
-
 func usersResponse(r *http.Request) *http.Response {
 	pathTokens := strings.Split(r.URL.Path, "/")
-	user := pathTokens[len(pathTokens)-1]
+	userID := pathTokens[len(pathTokens)-1]
 
-	mockUser := &discordgo.User{
-		ID:       user,
-		Username: user,
-	}
-
-	respBody, err := json.Marshal(mockUser)
+	respBody, err := json.Marshal(mockUser(userID))
 	if err != nil {
 		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
 	}
@@ -327,23 +277,143 @@ func usersResponse(r *http.Request) *http.Response {
 
 func membersResponse(r *http.Request) *http.Response {
 	pathTokens := strings.Split(r.URL.Path, "/")
-	member := pathTokens[len(pathTokens)-1]
+	userID := pathTokens[len(pathTokens)-1]
 
-	mockMember := &discordgo.Member{
-		GuildID: TestGuild,
-		User: &discordgo.User{
-			ID:       member,
-			Username: member,
-		},
-		Roles: []string{TestRole, "{eph} " + TestChannel},
-	}
-
-	respBody, err := json.Marshal(mockMember)
+	respBody, err := json.Marshal(mockMember(userID))
 	if err != nil {
 		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
 	}
 
 	return newResponse(http.StatusOK, respBody)
+}
+
+func rolesResponse(r *http.Request) *http.Response {
+	switch r.Method {
+	case http.MethodGet:
+		respBody, err := json.Marshal(mockRoles())
+		if err != nil {
+			return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+		}
+
+		return newResponse(http.StatusOK, respBody)
+	case http.MethodPost:
+		respBody, err := json.Marshal(mockRole(TestRole))
+		if err != nil {
+			return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+		}
+
+		return newResponse(http.StatusOK, respBody)
+	case http.MethodPatch:
+		reqBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+		}
+
+		err = r.Body.Close()
+		if err != nil {
+			return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+		}
+
+		return newResponse(http.StatusOK, reqBody)
+	}
+
+	return newResponse(http.StatusMethodNotAllowed, []byte{})
+}
+
+func channelsResponse(r *http.Request) *http.Response {
+	var (
+		respBody []byte
+		err      error
+	)
+
+	if strings.Contains(r.URL.Path, "guilds") {
+		respBody, err = json.Marshal(mockChannels())
+	} else {
+		respBody, err = json.Marshal(mockChannel(TestChannel))
+	}
+
+	if err != nil {
+		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+	}
+
+	return newResponse(http.StatusOK, respBody)
+}
+
+func guildsResponse(r *http.Request) *http.Response {
+	pathTokens := strings.Split(r.URL.Path, "/")
+	guildID := pathTokens[len(pathTokens)-1]
+
+	respBody, err := json.Marshal(mockGuild(guildID))
+	if err != nil {
+		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
+	}
+
+	return newResponse(http.StatusOK, respBody)
+}
+
+func mockUser(userID string) *discordgo.User {
+	return &discordgo.User{
+		ID:       userID,
+		Username: userID,
+	}
+}
+
+func mockMember(userID string) *discordgo.Member {
+	return &discordgo.Member{
+		GuildID: TestGuild,
+		User:    mockUser(userID),
+		Roles:   mockRoleIDs(mockRoles()),
+	}
+}
+
+func mockMembers() []*discordgo.Member {
+	return []*discordgo.Member{mockMember(TestUser)}
+}
+
+func mockRole(roleID string) *discordgo.Role {
+	return &discordgo.Role{
+		ID:   roleID,
+		Name: roleID,
+	}
+}
+
+func mockRoles() discordgo.Roles {
+	return discordgo.Roles{
+		mockRole(TestRole),
+		mockRole("{eph} " + TestChannel),
+	}
+}
+
+func mockRoleIDs(roles discordgo.Roles) []string {
+	roleIDs := make([]string, len(roles))
+
+	for i, role := range roles {
+		roleIDs[i] = role.ID
+	}
+
+	return roleIDs
+}
+
+func mockChannel(channelID string) *discordgo.Channel {
+	return &discordgo.Channel{
+		ID:      channelID,
+		Name:    channelID,
+		GuildID: TestGuild,
+	}
+}
+
+func mockChannels() []*discordgo.Channel {
+	return []*discordgo.Channel{mockChannel(TestChannel)}
+}
+
+func mockGuild(guildID string) *discordgo.Guild {
+	return &discordgo.Guild{
+		ID:       guildID,
+		Name:     guildID,
+		Roles:    mockRoles(),
+		Members:  mockMembers(),
+		Channels: mockChannels(),
+	}
 }
 
 func newResponse(status int, respBody []byte) *http.Response {

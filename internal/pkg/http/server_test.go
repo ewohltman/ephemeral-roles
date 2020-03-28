@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
@@ -15,6 +16,8 @@ import (
 const (
 	testPort = "8080"
 	testURL  = "http://localhost:" + testPort
+
+	serverStartupDelay = 50 * time.Millisecond
 
 	expectedGuildsFile = "testdata/guilds.json"
 )
@@ -37,6 +40,8 @@ func TestNewServer(t *testing.T) {
 			t.Errorf("Test server error: %s", serverErr)
 		}
 	}()
+
+	time.Sleep(serverStartupDelay)
 
 	client := NewClient(nil, nil, "")
 

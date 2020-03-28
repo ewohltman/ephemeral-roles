@@ -12,17 +12,17 @@ const (
 )
 
 func TestUserNotFoundError_Is(t *testing.T) {
-	unf := &userNotFoundError{}
+	unf := &userNotFound{}
 
-	if errors.Is(nil, &userNotFoundError{}) {
+	if errors.Is(nil, &userNotFound{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &userNotFoundError{}) {
+	if errors.Is(fmt.Errorf(wrapMsg), &userNotFound{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if !errors.Is(unf, &userNotFoundError{}) {
+	if !errors.Is(unf, &userNotFound{}) {
 		t.Errorf(invalidErrorAssertion)
 	}
 }
@@ -30,7 +30,7 @@ func TestUserNotFoundError_Is(t *testing.T) {
 func TestUserNotFound_UnWrap(t *testing.T) {
 	wrappedErr := fmt.Errorf(wrapMsg)
 
-	unf := &userNotFoundError{err: wrappedErr}
+	unf := &userNotFound{err: wrappedErr}
 
 	unwrappedErr := unf.UnWrap()
 
@@ -44,23 +44,23 @@ func TestUserNotFound_UnWrap(t *testing.T) {
 }
 
 func TestUserNotFound_Error(t *testing.T) {
-	unf := &userNotFoundError{}
+	unf := &userNotFound{}
 
 	errMsg := unf.Error()
 
-	if errMsg != userNotFoundErrorMessage {
+	if errMsg != userNotFoundMessage {
 		t.Errorf(
 			"Unexpected error message. Got %s, Expected: %s",
 			errMsg,
-			userNotFoundErrorMessage,
+			userNotFoundMessage,
 		)
 	}
 
-	unf = &userNotFoundError{err: fmt.Errorf(wrapMsg)}
+	unf = &userNotFound{err: fmt.Errorf(wrapMsg)}
 
 	errMsg = unf.Error()
 
-	expectedErrMsg := fmt.Sprintf("%s: %s", userNotFoundErrorMessage, wrapMsg)
+	expectedErrMsg := fmt.Sprintf("%s: %s", userNotFoundMessage, wrapMsg)
 
 	if errMsg != expectedErrMsg {
 		t.Errorf(

@@ -41,7 +41,7 @@ func (jaegerLog *jaegerLogger) Infof(msg string, args ...interface{}) {
 		return
 	}
 
-	jaegerLog.log.Infof(msg, args...)
+	jaegerLog.log.Debugf(msg, args...)
 }
 
 // Error satisfies the jaeger.Logger interface by delegating to the wrapped
@@ -51,7 +51,7 @@ func (jaegerLog *jaegerLogger) Error(msg string) {
 		return
 	}
 
-	jaegerLog.log.Error(msg)
+	jaegerLog.log.WithError(fmt.Errorf("%s", msg)).Debug()
 }
 
 // New returns a new opentracing.Tracer and io.Closer to be used for

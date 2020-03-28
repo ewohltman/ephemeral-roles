@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"os"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
@@ -38,6 +39,7 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	defer mock.SessionClose(t, session)
 
 	log := mock.NewLogger()
+	log.Out = os.Stdout
 
 	monitorConfig := &monitor.Config{
 		Log: log,
@@ -47,7 +49,7 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 		Log:                     log,
 		BotName:                 "testBot",
 		BotKeyword:              "testKeyword",
-		RolePrefix:              "testRolePrefix",
+		RolePrefix:              "{eph}",
 		ReadyCounter:            nil,
 		MessageCreateCounter:    nil,
 		VoiceStateUpdateCounter: monitorConfig.VoiceStateUpdateCounter(),
@@ -62,9 +64,9 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	sendUpdate(session, config, mock.TestUser, "")
 }
 
-func sendUpdate(s *discordgo.Session, config *Config, userID, channelID string) {
+func sendUpdate(session *discordgo.Session, config *Config, userID, channelID string) {
 	config.VoiceStateUpdate(
-		s,
+		session,
 		&discordgo.VoiceStateUpdate{
 			VoiceState: &discordgo.VoiceState{
 				UserID:    userID,
