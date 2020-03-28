@@ -74,7 +74,7 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 		return
 	}
 
-	log.Debug("Granting Ephemeral Role")
+	log.WithField("role", event.GuildRoleName).Debug("Granting Ephemeral Role")
 
 	err = config.grantEphemeralRole(ctx, event)
 	if err != nil {
@@ -91,8 +91,6 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 
 		return
 	}
-
-	log.Debugf("Ephemeral role granted")
 }
 
 func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
