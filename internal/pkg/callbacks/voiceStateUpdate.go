@@ -15,7 +15,8 @@ const (
 	discordBotList = "Discord Bot List"
 
 	voiceStateUpdateError     = "Unable to process VoiceStateUpdate"
-	revokeEphemeralRolesError = "unable to revoke ephemeral roles"
+	revokeEphemeralRolesError = "Unable to revoke ephemeral roles"
+	grantEphemeralRoleError   = "Unable to grant ephemeral role"
 )
 
 type vsuEvent struct {
@@ -67,7 +68,11 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 
 	err = config.revokeEphemeralRoles(ctx, event)
 	if err != nil {
-		log.WithError(err).Error(revokeEphemeralRolesError)
+		if checkForbidden(err) {
+			log.WithError(err).Debug(revokeEphemeralRolesError)
+		} else {
+			log.WithError(err).Error(revokeEphemeralRolesError)
+		}
 	}
 
 	if event.Channel == nil {
@@ -78,18 +83,11 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 
 	err = config.grantEphemeralRole(ctx, event)
 	if err != nil {
-		var restErr *discordgo.RESTError
-
-		if errors.As(err, &restErr) {
-			if restErr.Response.StatusCode == http.StatusForbidden {
-				log.WithError(err).Debug(voiceStateUpdateError)
-				return
-			}
+		if checkForbidden(err) {
+			log.WithError(err).Debug(grantEphemeralRoleError)
+		} else {
+			log.WithError(err).Error(grantEphemeralRoleError)
 		}
-
-		log.WithError(err).Error(voiceStateUpdateError)
-
-		return
 	}
 }
 
@@ -146,19 +144,6 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 	}, nil
 }
 
-func (config *Config) grantEphemeralRole(ctx context.Context, event *vsuEvent) error {
-	if event.GuildRole == nil {
-		newRole, err := createGuildRole(ctx, event.Session, event.Guild.ID, event.GuildRoleName, config.RoleColor)
-		if err != nil {
-			return err
-		}
-
-		event.GuildRole = newRole
-	}
-
-	return addRoleToMember(ctx, event.Session, event.Guild.ID, event.GuildMember.User.ID, event.GuildRole.ID)
-}
-
 func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent) error {
 	var revokeErrors []error
 
@@ -184,4 +169,29 @@ func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent)
 	}
 
 	return nil
+}
+
+func (config *Config) grantEphemeralRole(ctx context.Context, event *vsuEvent) error {
+	if event.GuildRole == nil {
+		newRole, err := createGuildRole(ctx, event.Session, event.Guild.ID, event.GuildRoleName, config.RoleColor)
+		if err != nil {
+			return err
+		}
+
+		event.GuildRole = newRole
+	}
+
+	return addRoleToMember(ctx, event.Session, event.Guild.ID, event.GuildMember.User.ID, event.GuildRole.ID)
+}
+
+func checkForbidden(err error) bool {
+	var restErr *discordgo.RESTError
+
+	if errors.As(err, &restErr) {
+		if restErr.Response.StatusCode == http.StatusForbidden {
+			return true
+		}
+	}
+
+	return false
 }
