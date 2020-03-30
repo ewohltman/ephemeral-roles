@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"context"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
@@ -41,17 +42,17 @@ const (
 )
 
 // MessageCreate is the callback function for the MessageCreate event from Discord
-func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func (config *Config) MessageCreate(session *discordgo.Session, mc *discordgo.MessageCreate) {
 	// Increment the total number of MessageCreate events
 	config.MessageCreateCounter.Inc()
 
 	// Ignore all messages from bots
-	if m.Author.Bot {
+	if mc.Author.Bot {
 		return
 	}
 
 	// [BOT_KEYWORD] [command] [options] :: "!eph" "log_level" "debug"
-	contentTokens := strings.Split(strings.TrimSpace(m.Content), " ")
+	contentTokens := strings.Split(strings.TrimSpace(mc.Content), " ")
 	if len(contentTokens) < numTokensMinimum {
 		return
 	}
@@ -62,28 +63,28 @@ func (config *Config) MessageCreate(s *discordgo.Session, m *discordgo.MessageCr
 	}
 
 	// Find the channel
-	c, err := s.State.Channel(m.ChannelID)
+	c, err := lookupGuildChannel(context.TODO(), session, mc.GuildID, mc.ChannelID)
 	if err != nil {
 		config.Log.WithError(err).Debugf("Unable to find channel")
 		return
 	}
 
 	// Find the guild for that channel
-	g, err := s.State.Guild(c.GuildID)
+	g, err := lookupGuild(context.TODO(), session, c.GuildID)
 	if err != nil {
 		config.Log.WithError(err).Debugf("Unable to find guild")
 		return
 	}
 
 	config.Log.WithFields(logrus.Fields{
-		"author":        m.Author.Username,
-		"content":       m.Content,
+		"author":        mc.Author.Username,
+		"content":       mc.Content,
 		"contentTokens": contentTokens,
 		"channel":       c.Name,
 		"guild":         g.Name,
 	}).Debugf("New message")
 
-	config.parseMessage(s, m.ChannelID, contentTokens)
+	config.parseMessage(session, mc.ChannelID, contentTokens)
 }
 
 func (config *Config) parseMessage(s *discordgo.Session, channelID string, contentTokens []string) {
@@ -97,7 +98,6 @@ func (config *Config) parseMessage(s *discordgo.Session, channelID string, conte
 		config.handleInfo(s, channelID)
 	case logLevelCommand:
 		config.handleLogLevel(contentTokens)
-	default: // Do nothing for unrecognized command
 	}
 }
 
