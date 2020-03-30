@@ -41,8 +41,7 @@ func lookupGuild(ctx context.Context, session *discordgo.Session, guildID string
 }
 
 func lookupGuildMember(ctx context.Context, session *discordgo.Session, guildID, userID string) (*discordgo.Member, error) {
-	// TODO Add context
-	member, err := session.GuildMember(guildID, userID)
+	member, err := session.GuildMemberWithContext(ctx, guildID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%w", &memberNotFound{err: err})
 	}
@@ -51,8 +50,7 @@ func lookupGuildMember(ctx context.Context, session *discordgo.Session, guildID,
 }
 
 func lookupGuildRoles(ctx context.Context, session *discordgo.Session, guildID string) (discordgo.Roles, error) {
-	// TODO Add context
-	return session.GuildRoles(guildID)
+	return session.GuildRolesWithContext(ctx, guildID)
 }
 
 func lookupGuildChannel(ctx context.Context, session *discordgo.Session, guildID, channelID string) (*discordgo.Channel, error) {
