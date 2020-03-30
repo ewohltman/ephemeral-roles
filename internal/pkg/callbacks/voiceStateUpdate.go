@@ -162,7 +162,7 @@ func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent)
 		var err error
 
 		for _, revokeError := range revokeErrors {
-			err = fmt.Errorf("%s, %w", revokeError, err)
+			err = fmt.Errorf("%s, %w", err, revokeError)
 		}
 
 		return err
