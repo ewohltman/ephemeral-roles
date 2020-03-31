@@ -395,6 +395,22 @@ func mockRoleIDs(roles discordgo.Roles) []string {
 }
 
 func mockChannel(channelID string) *discordgo.Channel {
+	if channelID == TestPrivateChannel {
+		return &discordgo.Channel{
+			ID:      channelID,
+			Name:    channelID,
+			GuildID: TestGuild,
+			PermissionOverwrites: []*discordgo.PermissionOverwrite{
+				{
+					ID:    "",
+					Type:  "role",
+					Deny:  discordgo.PermissionReadMessages,
+					Allow: 0,
+				},
+			},
+		}
+	}
+
 	return &discordgo.Channel{
 		ID:      channelID,
 		Name:    channelID,
@@ -403,7 +419,10 @@ func mockChannel(channelID string) *discordgo.Channel {
 }
 
 func mockChannels() []*discordgo.Channel {
-	return []*discordgo.Channel{mockChannel(TestChannel)}
+	return []*discordgo.Channel{
+		mockChannel(TestChannel),
+		mockChannel(TestPrivateChannel),
+	}
 }
 
 func mockGuild(guildID string) *discordgo.Guild {
