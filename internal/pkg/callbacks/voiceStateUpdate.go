@@ -68,7 +68,7 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 
 	err = config.revokeEphemeralRoles(ctx, event)
 	if err != nil {
-		if checkForbidden(err) {
+		if forbiddenResponse(err) {
 			log.WithError(err).Debug(revokeEphemeralRolesError)
 		} else {
 			log.WithError(err).Error(revokeEphemeralRolesError)
@@ -83,7 +83,7 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 
 	err = config.grantEphemeralRole(ctx, event)
 	if err != nil {
-		if checkForbidden(err) {
+		if forbiddenResponse(err) {
 			log.WithError(err).Debug(grantEphemeralRoleError)
 		} else {
 			log.WithError(err).Error(grantEphemeralRoleError)
@@ -114,7 +114,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 
 	guildRoleMap := mapGuildRoleIDs(guildRoles)
 
-	if channel == nil {
+	if channel == nil || !config.botHasChannelPermission(channel, guildRoles) {
 		return &vsuEvent{
 			Session:      session,
 			Guild:        guild,
@@ -142,6 +142,30 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 		GuildRole:     guildRole,
 		GuildRoleName: guildRoleName,
 	}, nil
+}
+
+func (config *Config) botHasChannelPermission(channel *discordgo.Channel, guildRoles discordgo.Roles) bool {
+	if channel == nil {
+		return false
+	}
+
+	var botRoleID string
+
+	for _, guildRole := range guildRoles {
+		if guildRole.Name == config.BotName {
+			botRoleID = guildRole.ID
+		}
+	}
+
+	for _, permissionOverwrite := range channel.PermissionOverwrites {
+		if permissionOverwrite.Type == "role" && permissionOverwrite.ID == botRoleID {
+			if permissionOverwrite.Deny&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent) error {
@@ -184,7 +208,7 @@ func (config *Config) grantEphemeralRole(ctx context.Context, event *vsuEvent) e
 	return addRoleToMember(ctx, event.Session, event.Guild.ID, event.GuildMember.User.ID, event.GuildRole.ID)
 }
 
-func checkForbidden(err error) bool {
+func forbiddenResponse(err error) bool {
 	var restErr *discordgo.RESTError
 
 	if errors.As(err, &restErr) {
