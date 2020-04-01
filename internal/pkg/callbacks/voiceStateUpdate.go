@@ -8,10 +8,13 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
 const (
+	voiceStateUpdate = "VoiceStateUpdate"
+
 	discordBotList = "Discord Bot List"
 
 	voiceStateUpdateError     = "Unable to process VoiceStateUpdate"
@@ -33,10 +36,15 @@ type vsuEvent struct {
 func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
 	config.VoiceStateUpdateCounter.Inc()
 
+	config.Log.Debugf("Parsing %s event", voiceStateUpdate)
+
+	span := config.JaegerTracer.StartSpan(voiceStateUpdate)
+	defer span.Finish()
+
 	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancelCtx()
 
-	config.Log.Debug("Parsing VoiceStateUpdate event")
+	ctx = opentracing.ContextWithSpan(ctx, span)
 
 	event, err := config.parseEvent(ctx, session, vsu)
 	if err != nil {

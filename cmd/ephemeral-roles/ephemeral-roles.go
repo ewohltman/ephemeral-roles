@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/opentracing/opentracing-go"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
@@ -41,13 +42,14 @@ func startSession(
 	log logging.Interface,
 	variables *environment.Variables,
 	client *http.Client,
+	jaegerTracer opentracing.Tracer,
 ) (*discordgo.Session, error) {
 	session, err := discordgo.New("Bot " + variables.BotToken)
 	if err != nil {
 		return nil, err
 	}
 
-	monitorConfig := configureSession(log, session, client, variables)
+	monitorConfig := configureSession(log, session, client, jaegerTracer, variables)
 
 	err = session.Open()
 	if err != nil {
@@ -63,6 +65,7 @@ func configureSession(
 	log logging.Interface,
 	session *discordgo.Session,
 	client *http.Client,
+	jaegerTracer opentracing.Tracer,
 	variables *environment.Variables,
 ) *monitor.Config {
 	monitorConfig := &monitor.Config{
@@ -79,6 +82,7 @@ func configureSession(
 		BotKeyword:              variables.BotKeyword,
 		RolePrefix:              variables.RolePrefix,
 		RoleColor:               variables.RoleColor,
+		JaegerTracer:            jaegerTracer,
 		ReadyCounter:            callbackMetrics.ReadyCounter,
 		MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
 		VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
@@ -146,7 +150,7 @@ func main() {
 	monitorCtx, cancelMonitorCtx := context.WithCancel(context.Background())
 	defer cancelMonitorCtx()
 
-	session, err := startSession(monitorCtx, log, variables, client)
+	session, err := startSession(monitorCtx, log, variables, client, jaegerTracer)
 	if err != nil {
 		log.WithError(err).Fatal("Error starting Discord session")
 	}

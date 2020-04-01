@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
@@ -21,6 +22,7 @@ type Config struct {
 	BotKeyword              string
 	RolePrefix              string
 	RoleColor               int
+	JaegerTracer            opentracing.Tracer
 	ReadyCounter            prometheus.Counter
 	MessageCreateCounter    prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter

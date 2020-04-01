@@ -50,6 +50,7 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 		BotName:                 "testBot",
 		BotKeyword:              "testKeyword",
 		RolePrefix:              "{eph}",
+		JaegerTracer:            jaegerTracer,
 		ReadyCounter:            nil,
 		MessageCreateCounter:    nil,
 		VoiceStateUpdateCounter: monitorConfig.VoiceStateUpdateCounter(),
