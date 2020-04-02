@@ -48,11 +48,11 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 
 	event, err := config.parseEvent(ctx, session, vsu)
 	if err != nil {
-		for _, customError := range []error{&memberNotFound{}, &userNotFound{}} {
-			if errors.Is(err, customError) {
-				config.Log.WithError(customError).Debug(voiceStateUpdateError)
-				return
-			}
+		var memberNotFoundErr *memberNotFound
+
+		if errors.As(err, &memberNotFoundErr) {
+			config.Log.WithError(memberNotFoundErr).Debug(voiceStateUpdateError)
+			return
 		}
 
 		config.Log.WithError(err).Error(voiceStateUpdateError)
@@ -110,19 +110,14 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 		return nil, err
 	}
 
-	guildRoles, err := lookupGuildRoles(ctx, session, vsu.GuildID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to determine guild roles: %w", err)
-	}
-
 	channel, err := lookupGuildChannel(ctx, session, vsu.GuildID, vsu.ChannelID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to determine guild channel: %w", err)
 	}
 
-	guildRoleMap := mapGuildRoleIDs(guildRoles)
+	guildRoleMap := mapGuildRoleIDs(guild.Roles)
 
-	if channel == nil || !config.botHasChannelPermission(channel, guildRoles) {
+	if channel == nil || !config.botHasChannelPermission(channel, guild.Roles) {
 		return &vsuEvent{
 			Session:      session,
 			Guild:        guild,

@@ -3,31 +3,9 @@ package callbacks
 import "fmt"
 
 const (
-	userNotFoundMessage    = "user not found"
 	memberNotFoundMessage  = "guild member not found"
 	channelNotFoundMessage = "channel not found"
 )
-
-type userNotFound struct {
-	err error
-}
-
-func (unf *userNotFound) Is(target error) bool {
-	_, ok := target.(*userNotFound)
-	return ok
-}
-
-func (unf *userNotFound) UnWrap() error {
-	return unf.err
-}
-
-func (unf *userNotFound) Error() string {
-	if unf.err != nil {
-		return fmt.Sprintf("%s: %s", userNotFoundMessage, unf.err)
-	}
-
-	return userNotFoundMessage
-}
 
 type memberNotFound struct {
 	err error
