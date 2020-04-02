@@ -1,10 +1,9 @@
 package callbacks
 
 import (
+	"errors"
 	"fmt"
 	"testing"
-
-	"github.com/pkg/errors"
 )
 
 const (
