@@ -74,15 +74,15 @@ func TestMemberNotFound_Error(t *testing.T) {
 func TestChannelNotFoundError_Is(t *testing.T) {
 	cnf := &channelNotFound{}
 
-	if errors.Is(nil, &memberNotFound{}) {
+	if errors.Is(nil, &channelNotFound{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &memberNotFound{}) {
+	if errors.Is(fmt.Errorf(wrapMsg), &channelNotFound{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if !errors.Is(cnf, &memberNotFound{}) {
+	if !errors.Is(cnf, &channelNotFound{}) {
 		t.Errorf(invalidErrorAssertion)
 	}
 }

@@ -162,7 +162,7 @@ func (config *Config) botHasChannelPermission(channel *discordgo.Channel, guildR
 
 	for _, permissionOverwrite := range channel.PermissionOverwrites {
 		if permissionOverwrite.Type == "role" && permissionOverwrite.ID == botRoleID {
-			if permissionOverwrite.Deny&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
+			if permissionOverwrite.Deny&discordgo.PermissionViewChannel == discordgo.PermissionViewChannel {
 				return false
 			}
 		}
