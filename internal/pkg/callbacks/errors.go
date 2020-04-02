@@ -3,6 +3,7 @@ package callbacks
 import "fmt"
 
 const (
+	guildNotFoundMessage   = "guild not found"
 	memberNotFoundMessage  = "guild member not found"
 	channelNotFoundMessage = "channel not found"
 )

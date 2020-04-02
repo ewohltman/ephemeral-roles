@@ -50,12 +50,12 @@ func lookupGuild(ctx context.Context, session *discordgo.Session, guildID string
 func queryGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
 	guild, err := session.GuildWithContext(ctx, guildID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", guildNotFoundMessage, err)
 	}
 
 	err = session.State.GuildAdd(guild)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to add guild to session cache: %w", err)
 	}
 
 	return guild, nil
@@ -78,7 +78,7 @@ func queryGuildMember(ctx context.Context, session *discordgo.Session, guildID, 
 
 	err = session.State.MemberAdd(guildMember)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to add guild member to session cache: %w", err)
 	}
 
 	return guildMember, nil
@@ -108,7 +108,7 @@ func queryGuildChannel(ctx context.Context, session *discordgo.Session, guildID,
 	for _, guildChannel := range guildChannels {
 		err = session.State.ChannelAdd(guildChannel)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to add channel to session cache: %w", err)
 		}
 
 		if guildChannel.ID == channelID {
@@ -139,6 +139,11 @@ func createGuildRole(ctx context.Context, session *discordgo.Session, guildID, r
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to edit ephemeral role: %w", err)
+	}
+
+	err = session.State.RoleAdd(guildID, role)
+	if err != nil {
+		return nil, fmt.Errorf("unable to add ephemeral role to session cache: %w", err)
 	}
 
 	return role, nil
