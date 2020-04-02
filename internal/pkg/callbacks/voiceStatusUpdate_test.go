@@ -1,7 +1,6 @@
 package callbacks
 
 import (
-	"os"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
@@ -39,7 +38,6 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	defer mock.SessionClose(t, session)
 
 	log := mock.NewLogger()
-	log.Out = os.Stdout
 
 	monitorConfig := &monitor.Config{
 		Log: log,

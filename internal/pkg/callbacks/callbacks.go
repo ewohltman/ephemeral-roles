@@ -39,20 +39,49 @@ func mapGuildRoleIDs(guildRoles discordgo.Roles) map[string]*discordgo.Role {
 }
 
 func lookupGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
-	return session.GuildWithContext(ctx, guildID)
+	guild, err := session.State.Guild(guildID)
+	if err != nil {
+		return queryGuild(ctx, session, guildID)
+	}
+
+	return guild, nil
+}
+
+func queryGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
+	guild, err := session.GuildWithContext(ctx, guildID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = session.State.GuildAdd(guild)
+	if err != nil {
+		return nil, err
+	}
+
+	return guild, nil
 }
 
 func lookupGuildMember(ctx context.Context, session *discordgo.Session, guildID, userID string) (*discordgo.Member, error) {
-	member, err := session.GuildMemberWithContext(ctx, guildID, userID)
+	guildMember, err := session.State.Member(guildID, userID)
+	if err != nil {
+		return queryGuildMember(ctx, session, guildID, userID)
+	}
+
+	return guildMember, nil
+}
+
+func queryGuildMember(ctx context.Context, session *discordgo.Session, guildID, userID string) (*discordgo.Member, error) {
+	guildMember, err := session.GuildMemberWithContext(ctx, guildID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("%w", &memberNotFound{err: err})
 	}
 
-	return member, nil
-}
+	err = session.State.MemberAdd(guildMember)
+	if err != nil {
+		return nil, err
+	}
 
-func lookupGuildRoles(ctx context.Context, session *discordgo.Session, guildID string) (discordgo.Roles, error) {
-	return session.GuildRolesWithContext(ctx, guildID)
+	return guildMember, nil
 }
 
 func lookupGuildChannel(ctx context.Context, session *discordgo.Session, guildID, channelID string) (*discordgo.Channel, error) {
@@ -60,18 +89,38 @@ func lookupGuildChannel(ctx context.Context, session *discordgo.Session, guildID
 		return nil, nil
 	}
 
+	channel, err := session.State.Channel(channelID)
+	if err != nil {
+		return queryGuildChannel(ctx, session, guildID, channelID)
+	}
+
+	return channel, nil
+}
+
+func queryGuildChannel(ctx context.Context, session *discordgo.Session, guildID, channelID string) (*discordgo.Channel, error) {
 	guildChannels, err := session.GuildChannelsWithContext(ctx, guildID)
 	if err != nil {
 		return nil, fmt.Errorf("%w", &channelNotFound{err: err})
 	}
 
+	var channel *discordgo.Channel
+
 	for _, guildChannel := range guildChannels {
+		err = session.State.ChannelAdd(guildChannel)
+		if err != nil {
+			return nil, err
+		}
+
 		if guildChannel.ID == channelID {
-			return guildChannel, nil
+			channel = guildChannel
 		}
 	}
 
-	return nil, &channelNotFound{}
+	if channel == nil {
+		return nil, &channelNotFound{}
+	}
+
+	return channel, nil
 }
 
 func createGuildRole(ctx context.Context, session *discordgo.Session, guildID, roleName string, roleColor int) (*discordgo.Role, error) {
