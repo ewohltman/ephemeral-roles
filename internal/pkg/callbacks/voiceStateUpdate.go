@@ -112,7 +112,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 
 	channel, err := lookupGuildChannel(ctx, session, vsu.GuildID, vsu.ChannelID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to determine guild channel: %w", err)
+		return nil, err
 	}
 
 	guildRoleMap := mapGuildRoleIDs(guild.Roles)
