@@ -404,7 +404,7 @@ func mockChannel(channelID string) *discordgo.Channel {
 				{
 					ID:    "",
 					Type:  "role",
-					Deny:  discordgo.PermissionReadMessages,
+					Deny:  discordgo.PermissionViewChannel,
 					Allow: 0,
 				},
 			},

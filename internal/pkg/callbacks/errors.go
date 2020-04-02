@@ -33,7 +33,7 @@ type channelNotFound struct {
 }
 
 func (cnf *channelNotFound) Is(target error) bool {
-	_, ok := target.(*memberNotFound)
+	_, ok := target.(*channelNotFound)
 	return ok
 }
 

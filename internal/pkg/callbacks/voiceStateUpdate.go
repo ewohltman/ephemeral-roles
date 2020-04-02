@@ -112,7 +112,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 
 	channel, err := lookupGuildChannel(ctx, session, vsu.GuildID, vsu.ChannelID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to determine guild channel: %w", err)
+		return nil, err
 	}
 
 	guildRoleMap := mapGuildRoleIDs(guild.Roles)
@@ -162,7 +162,7 @@ func (config *Config) botHasChannelPermission(channel *discordgo.Channel, guildR
 
 	for _, permissionOverwrite := range channel.PermissionOverwrites {
 		if permissionOverwrite.Type == "role" && permissionOverwrite.ID == botRoleID {
-			if permissionOverwrite.Deny&discordgo.PermissionReadMessages == discordgo.PermissionReadMessages {
+			if permissionOverwrite.Deny&discordgo.PermissionViewChannel == discordgo.PermissionViewChannel {
 				return false
 			}
 		}
