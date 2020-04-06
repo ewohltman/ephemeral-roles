@@ -126,7 +126,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 		}, nil
 	}
 
-	err = config.botHasChannelPermission(channel, guild.Roles)
+	err = config.botHasChannelPermission(session, channel)
 	if err != nil {
 		if errors.Is(err, &insufficientPermission{}) {
 			config.Log.WithError(err).WithFields(
@@ -160,21 +160,19 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 	}, nil
 }
 
-func (config *Config) botHasChannelPermission(channel *discordgo.Channel, guildRoles discordgo.Roles) error {
-	var botRoleID string
-
-	for _, guildRole := range guildRoles {
-		if guildRole.Name == config.BotName {
-			botRoleID = guildRole.ID
-		}
+func (config *Config) botHasChannelPermission(session *discordgo.Session, channel *discordgo.Channel) error {
+	bot, err := session.User("@me")
+	if err != nil {
+		return fmt.Errorf("unable to determine bot user: %w", err)
 	}
 
-	for _, permissionOverwrite := range channel.PermissionOverwrites {
-		if permissionOverwrite.Type == "role" && permissionOverwrite.ID == botRoleID {
-			if permissionOverwrite.Deny&discordgo.PermissionViewChannel == discordgo.PermissionViewChannel {
-				return &insufficientPermission{}
-			}
-		}
+	permissions, err := session.UserChannelPermissions(bot.ID, channel.ID)
+	if err != nil {
+		return fmt.Errorf("unable to determine channel permissions: %w", err)
+	}
+
+	if permissions&discordgo.PermissionViewChannel != discordgo.PermissionViewChannel {
+		return &insufficientPermission{}
 	}
 
 	return nil
