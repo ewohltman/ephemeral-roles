@@ -56,7 +56,7 @@ func (jaegerLog *jaegerLogger) Error(msg string) {
 
 // New returns a new opentracing.Tracer and io.Closer to be used for
 // instrumenting HTTP requests to collect metrics.
-func New(log logging.Interface, serviceName string) (opentracing.Tracer, io.Closer, error) {
+func New(serviceName string) (opentracing.Tracer, io.Closer, error) {
 	cfg := config.Configuration{
 		ServiceName: serviceName,
 		Sampler: &config.SamplerConfig{
@@ -69,7 +69,7 @@ func New(log logging.Interface, serviceName string) (opentracing.Tracer, io.Clos
 	}
 
 	tracer, closer, err := cfg.NewTracer(
-		config.Logger(&jaegerLogger{log: log}),
+		config.Logger(jaeger.NullLogger),
 		config.Metrics(metrics.NullFactory),
 	)
 	if err != nil {

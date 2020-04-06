@@ -2,7 +2,7 @@ module github.com/ewohltman/ephemeral-roles
 
 go 1.14
 
-replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.20.3-0.20200402194854-8d267da95451
+replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.20.3-0.20200406180121-08fa6d59a656
 
 require (
 	github.com/bwmarrin/discordgo v0.20.2
@@ -19,6 +19,6 @@ require (
 	github.com/uber/jaeger-client-go v2.22.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
 	go.uber.org/atomic v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59 // indirect
-	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d // indirect
+	golang.org/x/crypto v0.0.0-20200406173513-056763e48d71 // indirect
+	golang.org/x/sys v0.0.0-20200406155108-e3b113bbe6a4 // indirect
 )

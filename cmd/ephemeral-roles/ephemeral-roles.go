@@ -138,7 +138,7 @@ func main() {
 
 	log.Infof("%s starting up", variables.BotName)
 
-	jaegerTracer, jaegerCloser, err := tracer.New(log, ephemeralRoles)
+	jaegerTracer, jaegerCloser, err := tracer.New(ephemeralRoles)
 	if err != nil {
 		log.WithError(err).Fatal("Error setting up Jaeger tracer")
 	}

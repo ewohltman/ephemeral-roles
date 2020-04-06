@@ -111,5 +111,5 @@ func doRoundTrip(roundTripper http.RoundTripper, reqBody io.Reader) ([]byte, err
 }
 
 func newTestTracer() (opentracing.Tracer, io.Closer, error) {
-	return New(mock.NewLogger(), jaegerServiceName)
+	return New(jaegerServiceName)
 }

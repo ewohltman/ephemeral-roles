@@ -23,13 +23,13 @@ const (
 )
 
 type vsuEvent struct {
-	Session       *discordgo.Session
-	Guild         *discordgo.Guild
-	GuildMember   *discordgo.Member
-	GuildRoleMap  map[string]*discordgo.Role
-	Channel       *discordgo.Channel
-	GuildRole     *discordgo.Role
-	GuildRoleName string
+	Session           *discordgo.Session
+	Guild             *discordgo.Guild
+	GuildMember       *discordgo.Member
+	GuildRoleMap      roleIDMap
+	Channel           *discordgo.Channel
+	EphemeralRole     *discordgo.Role
+	EphemeralRoleName string
 }
 
 // VoiceStateUpdate is the callback function for the VoiceStateUpdate event from Discord.
@@ -87,7 +87,7 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 		return
 	}
 
-	log.WithField("role", event.GuildRoleName).Debug("Granting Ephemeral Role")
+	log.WithField("role", event.EphemeralRoleName).Debug("Granting Ephemeral Role")
 
 	err = config.grantEphemeralRole(ctx, event)
 	if err != nil {
@@ -117,7 +117,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 
 	guildRoleMap := mapGuildRoleIDs(guild.Roles)
 
-	if channel == nil || !config.botHasChannelPermission(channel, guild.Roles) {
+	if channel == nil {
 		return &vsuEvent{
 			Session:      session,
 			Guild:        guild,
@@ -126,32 +126,41 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 		}, nil
 	}
 
-	guildRoleName := config.RolePrefix + " " + channel.Name
+	err = config.botHasChannelPermission(channel, guild.Roles)
+	if err != nil {
+		if errors.Is(err, &insufficientPermission{}) {
+			config.Log.WithError(err).WithFields(
+				logrus.Fields{
+					"guild":   guild.Name,
+					"channel": channel.Name,
+				},
+			).Debugf("")
 
-	var guildRole *discordgo.Role
-
-	for _, role := range guildRoleMap {
-		if role.Name == guildRoleName {
-			guildRole = role
+			return &vsuEvent{
+				Session:      session,
+				Guild:        guild,
+				GuildMember:  guildMember,
+				GuildRoleMap: guildRoleMap,
+			}, nil
 		}
+
+		return nil, err
 	}
 
+	ephemeralRole, ephemeralRoleName := config.lookupRole(channel, guildRoleMap)
+
 	return &vsuEvent{
-		Session:       session,
-		Guild:         guild,
-		GuildMember:   guildMember,
-		GuildRoleMap:  guildRoleMap,
-		Channel:       channel,
-		GuildRole:     guildRole,
-		GuildRoleName: guildRoleName,
+		Session:           session,
+		Guild:             guild,
+		GuildMember:       guildMember,
+		GuildRoleMap:      guildRoleMap,
+		Channel:           channel,
+		EphemeralRole:     ephemeralRole,
+		EphemeralRoleName: ephemeralRoleName,
 	}, nil
 }
 
-func (config *Config) botHasChannelPermission(channel *discordgo.Channel, guildRoles discordgo.Roles) bool {
-	if channel == nil {
-		return false
-	}
-
+func (config *Config) botHasChannelPermission(channel *discordgo.Channel, guildRoles discordgo.Roles) error {
 	var botRoleID string
 
 	for _, guildRole := range guildRoles {
@@ -163,19 +172,32 @@ func (config *Config) botHasChannelPermission(channel *discordgo.Channel, guildR
 	for _, permissionOverwrite := range channel.PermissionOverwrites {
 		if permissionOverwrite.Type == "role" && permissionOverwrite.ID == botRoleID {
 			if permissionOverwrite.Deny&discordgo.PermissionViewChannel == discordgo.PermissionViewChannel {
-				return false
+				return &insufficientPermission{}
 			}
 		}
 	}
 
-	return true
+	return nil
+}
+
+func (config *Config) lookupRole(channel *discordgo.Channel, roleMap roleIDMap) (ephemeralRole *discordgo.Role, ephemeralRoleName string) {
+	ephemeralRoleName = config.RolePrefix + " " + channel.Name
+
+	for _, role := range roleMap {
+		if role.Name == ephemeralRoleName {
+			ephemeralRole = role
+			break
+		}
+	}
+
+	return
 }
 
 func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent) error {
 	var revokeErrors []error
 
-	for _, roleID := range event.GuildMember.Roles {
-		role := event.GuildRoleMap[roleID]
+	for _, memberRoleID := range event.GuildMember.Roles {
+		role := event.GuildRoleMap[roleID(memberRoleID)]
 
 		if strings.HasPrefix(role.Name, config.RolePrefix) {
 			err := removeRoleFromMember(ctx, event.Session, event.Guild.ID, event.GuildMember.User.ID, role.ID)
@@ -199,16 +221,16 @@ func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent)
 }
 
 func (config *Config) grantEphemeralRole(ctx context.Context, event *vsuEvent) error {
-	if event.GuildRole == nil {
-		newRole, err := createGuildRole(ctx, event.Session, event.Guild.ID, event.GuildRoleName, config.RoleColor)
+	if event.EphemeralRole == nil {
+		newRole, err := createGuildRole(ctx, event.Session, event.Guild.ID, event.EphemeralRoleName, config.RoleColor)
 		if err != nil {
 			return err
 		}
 
-		event.GuildRole = newRole
+		event.EphemeralRole = newRole
 	}
 
-	return addRoleToMember(ctx, event.Session, event.Guild.ID, event.GuildMember.User.ID, event.GuildRole.ID)
+	return addRoleToMember(ctx, event.Session, event.Guild.ID, event.GuildMember.User.ID, event.EphemeralRole.ID)
 }
 
 func forbiddenResponse(err error) bool {

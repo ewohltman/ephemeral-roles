@@ -43,6 +43,7 @@ func TestConfig_MessageCreate(t *testing.T) {
 		"ixnay",           // no keyword
 		config.BotKeyword, // only keyword
 		fmt.Sprintf("%s %s", config.BotKeyword, "ixnay"), // keyword, unrecognized command
+		fmt.Sprintf("%s %s", config.BotKeyword, infoCommand),
 		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamDebug),
 		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamInfo),
 		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamWarning),

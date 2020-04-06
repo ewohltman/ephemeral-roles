@@ -11,7 +11,7 @@ const (
 	invalidErrorAssertion = "Invalid error assertion"
 )
 
-func TestMemberNotFoundError_Is(t *testing.T) {
+func TestMemberNotFound_Is(t *testing.T) {
 	mnf := &memberNotFound{}
 
 	if errors.Is(nil, &memberNotFound{}) {
@@ -34,7 +34,7 @@ func TestMemberNotFound_UnWrap(t *testing.T) {
 
 	unwrappedErr := mnf.UnWrap()
 
-	if wrappedErr != unwrappedErr {
+	if unwrappedErr != wrappedErr {
 		t.Errorf(
 			"Unexpected wrapped error. Got %s, Expected: %s",
 			unwrappedErr,
@@ -45,33 +45,29 @@ func TestMemberNotFound_UnWrap(t *testing.T) {
 
 func TestMemberNotFound_Error(t *testing.T) {
 	mnf := &memberNotFound{}
+	expectedErrMsg := memberNotFoundMessage
 
-	errMsg := mnf.Error()
-
-	if errMsg != memberNotFoundMessage {
+	if mnf.Error() != expectedErrMsg {
 		t.Errorf(
 			"Unexpected error message. Got %s, Expected: %s",
-			errMsg,
-			memberNotFoundMessage,
+			mnf.Error(),
+			expectedErrMsg,
 		)
 	}
 
-	mnf = &memberNotFound{err: fmt.Errorf(wrapMsg)}
+	mnf.err = fmt.Errorf(wrapMsg)
+	expectedErrMsg = fmt.Sprintf("%s: %s", memberNotFoundMessage, wrapMsg)
 
-	errMsg = mnf.Error()
-
-	expectedErrMsg := fmt.Sprintf("%s: %s", memberNotFoundMessage, wrapMsg)
-
-	if errMsg != expectedErrMsg {
+	if mnf.Error() != expectedErrMsg {
 		t.Errorf(
 			"Unexpected error message. Got %s, Expected: %s",
-			errMsg,
+			mnf.Error(),
 			expectedErrMsg,
 		)
 	}
 }
 
-func TestChannelNotFoundError_Is(t *testing.T) {
+func TestChannelNotFound_Is(t *testing.T) {
 	cnf := &channelNotFound{}
 
 	if errors.Is(nil, &channelNotFound{}) {
@@ -94,7 +90,7 @@ func TestChannelNotFound_UnWrap(t *testing.T) {
 
 	unwrappedErr := cnf.UnWrap()
 
-	if wrappedErr != unwrappedErr {
+	if unwrappedErr != wrappedErr {
 		t.Errorf(
 			"Unexpected wrapped error. Got %s, Expected: %s",
 			unwrappedErr,
@@ -105,27 +101,76 @@ func TestChannelNotFound_UnWrap(t *testing.T) {
 
 func TestChannelNotFound_Error(t *testing.T) {
 	cnf := &channelNotFound{}
+	expectedErrMsg := channelNotFoundMessage
 
-	errMsg := cnf.Error()
-
-	if errMsg != channelNotFoundMessage {
+	if cnf.Error() != expectedErrMsg {
 		t.Errorf(
 			"Unexpected error message. Got %s, Expected: %s",
-			errMsg,
-			channelNotFoundMessage,
+			cnf.Error(),
+			expectedErrMsg,
 		)
 	}
 
-	cnf = &channelNotFound{err: fmt.Errorf(wrapMsg)}
+	cnf.err = fmt.Errorf(wrapMsg)
+	expectedErrMsg = fmt.Sprintf("%s: %s", channelNotFoundMessage, wrapMsg)
 
-	errMsg = cnf.Error()
-
-	expectedErrMsg := fmt.Sprintf("%s: %s", channelNotFoundMessage, wrapMsg)
-
-	if errMsg != expectedErrMsg {
+	if cnf.Error() != expectedErrMsg {
 		t.Errorf(
 			"Unexpected error message. Got %s, Expected: %s",
-			errMsg,
+			cnf.Error(),
+			expectedErrMsg,
+		)
+	}
+}
+
+func TestInsufficientPermission_Is(t *testing.T) {
+	inp := &insufficientPermission{}
+
+	if errors.Is(nil, &insufficientPermission{}) {
+		t.Error(invalidErrorAssertion)
+	}
+
+	if errors.Is(fmt.Errorf(wrapMsg), &insufficientPermission{}) {
+		t.Error(invalidErrorAssertion)
+	}
+
+	if !errors.Is(inp, &insufficientPermission{}) {
+		t.Errorf(invalidErrorAssertion)
+	}
+}
+
+func TestInsufficientPermission_UnWrap(t *testing.T) {
+	inp := &insufficientPermission{}
+
+	unwrappedErr := inp.UnWrap()
+
+	if unwrappedErr != nil {
+		t.Errorf(
+			"Unexpected wrapped error. Got %s, Expected: nil",
+			unwrappedErr,
+		)
+	}
+}
+
+func TestInsufficientPermission_Error(t *testing.T) {
+	inp := &insufficientPermission{}
+	expectedErrMsg := insufficientPermissionMessage
+
+	if inp.Error() != expectedErrMsg {
+		t.Errorf(
+			"Unexpected error message. Got %s, Expected: %s",
+			inp.Error(),
+			expectedErrMsg,
+		)
+	}
+
+	inp.err = fmt.Errorf(wrapMsg)
+	expectedErrMsg = fmt.Sprintf("%s: %s", insufficientPermissionMessage, wrapMsg)
+
+	if inp.Error() != expectedErrMsg {
+		t.Errorf(
+			"Unexpected error message. Got %s, Expected: %s",
+			inp.Error(),
 			expectedErrMsg,
 		)
 	}
