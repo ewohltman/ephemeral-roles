@@ -6,3 +6,4 @@ coverage.out
 
 # Binary
 build/package/ephemeral-roles/ephemeral-roles
+build/package/ephemeral-roles-debug/ephemeral-roles-debug

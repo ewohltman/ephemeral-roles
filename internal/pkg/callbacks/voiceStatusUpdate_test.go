@@ -12,7 +12,7 @@ import (
 )
 
 func TestConfig_VoiceStateUpdate(t *testing.T) {
-	jaegerTracer, jaegerCloser, err := tracer.New(mock.NewLogger(), "test")
+	jaegerTracer, jaegerCloser, err := tracer.New("test")
 	if err != nil {
 		t.Fatalf("Error creating Jaeger tracer: %s", err)
 	}

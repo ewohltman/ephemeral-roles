@@ -28,26 +28,21 @@ type Config struct {
 	VoiceStateUpdateCounter prometheus.Counter
 }
 
-func mapGuildRoleIDs(guildRoles discordgo.Roles) map[string]*discordgo.Role {
-	guildRoleMap := make(map[string]*discordgo.Role)
+type roleID string
+
+type roleIDMap map[roleID]*discordgo.Role
+
+func mapGuildRoleIDs(guildRoles discordgo.Roles) roleIDMap {
+	guildRoleMap := make(roleIDMap)
 
 	for _, role := range guildRoles {
-		guildRoleMap[role.ID] = role
+		guildRoleMap[roleID(role.ID)] = role
 	}
 
 	return guildRoleMap
 }
 
 func lookupGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
-	guild, err := session.State.Guild(guildID)
-	if err != nil {
-		return queryGuild(ctx, session, guildID)
-	}
-
-	return guild, nil
-}
-
-func queryGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
 	guild, err := session.GuildWithContext(ctx, guildID)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", guildNotFoundMessage, err)
@@ -149,8 +144,8 @@ func createGuildRole(ctx context.Context, session *discordgo.Session, guildID, r
 	return role, nil
 }
 
-func addRoleToMember(ctx context.Context, session *discordgo.Session, guildID, userID, roleID string) error {
-	err := session.GuildMemberRoleAddWithContext(ctx, guildID, userID, roleID)
+func addRoleToMember(ctx context.Context, session *discordgo.Session, guildID, userID, ephemeralRoleID string) error {
+	err := session.GuildMemberRoleAddWithContext(ctx, guildID, userID, ephemeralRoleID)
 	if err != nil {
 		return fmt.Errorf("unable to grant ephemeral role: %w", err)
 	}
@@ -158,8 +153,8 @@ func addRoleToMember(ctx context.Context, session *discordgo.Session, guildID, u
 	return nil
 }
 
-func removeRoleFromMember(ctx context.Context, session *discordgo.Session, guildID, userID, roleID string) error {
-	err := session.GuildMemberRoleRemoveWithContext(ctx, guildID, userID, roleID)
+func removeRoleFromMember(ctx context.Context, session *discordgo.Session, guildID, userID, ephemeralRoleID string) error {
+	err := session.GuildMemberRoleRemoveWithContext(ctx, guildID, userID, ephemeralRoleID)
 	if err != nil {
 		return fmt.Errorf("unable to revoke ephemeral role: %w", err)
 	}

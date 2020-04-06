@@ -9,8 +9,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
@@ -20,7 +18,7 @@ func TestNewClient(t *testing.T) {
 	testServer := httptest.NewServer(testServerHandler())
 	defer testServer.Close()
 
-	jaegerTracer, jaegerCloser, err := tracer.New(mock.NewLogger(), jaegerServiceName)
+	jaegerTracer, jaegerCloser, err := tracer.New(jaegerServiceName)
 	if err != nil {
 		t.Fatalf("Error setting up Jaeger tracer: %s", err)
 	}
@@ -52,11 +50,9 @@ func TestSetTransport(t *testing.T) {
 	testServer := httptest.NewServer(testServerHandler())
 	defer testServer.Close()
 
-	log := mock.NewLogger()
-
 	clientNilTransport := &http.Client{}
 
-	err := testSetTransport(log, clientNilTransport, testServer.URL)
+	err := testSetTransport(clientNilTransport, testServer.URL)
 	if err != nil {
 		t.Fatalf("Error testing nil http.RoundTripper: %s", err)
 	}
@@ -65,14 +61,14 @@ func TestSetTransport(t *testing.T) {
 		Transport: http.DefaultTransport,
 	}
 
-	err = testSetTransport(log, clientWithTransport, testServer.URL)
+	err = testSetTransport(clientWithTransport, testServer.URL)
 	if err != nil {
 		t.Fatalf("Error testing nil http.RoundTripper: %s", err)
 	}
 }
 
-func testSetTransport(log logging.Interface, client *http.Client, testServerURL string) (err error) {
-	jaegerTracer, jaegerCloser, err := tracer.New(log, jaegerServiceName)
+func testSetTransport(client *http.Client, testServerURL string) (err error) {
+	jaegerTracer, jaegerCloser, err := tracer.New(jaegerServiceName)
 	if err != nil {
 		return fmt.Errorf("error setting up Jaeger tracer: %w", err)
 	}
