@@ -92,6 +92,8 @@ func RoundTripper(jaegerTracer opentracing.Tracer, instanceName string, next htt
 		span, traceCtx := opentracing.StartSpanFromContextWithTracer(req.Context(), jaegerTracer, operationName)
 		defer span.Finish()
 
+		span.SetTag("method", req.Method)
+
 		resp, err := next.RoundTrip(req.Clone(traceCtx))
 		if err != nil {
 			span.SetTag("error", err.Error())
