@@ -19,6 +19,8 @@ import (
 const (
 	samplerProbability = 1
 	samplerType        = jaeger.SamplerTypeConst
+
+	operationName = "HTTP request"
 )
 
 // RoundTripperFunc allows functions to satisfy the http.RoundTripper
@@ -87,11 +89,11 @@ func RoundTripper(jaegerTracer opentracing.Tracer, instanceName string, next htt
 			return next.RoundTrip(req)
 		}
 
-		operationName := fmt.Sprintf("%s: %s", instanceName, req.URL.Path)
-
 		span, traceCtx := opentracing.StartSpanFromContextWithTracer(req.Context(), jaegerTracer, operationName)
 		defer span.Finish()
 
+		span.SetTag("instance", instanceName)
+		span.SetTag("url", req.URL.Path)
 		span.SetTag("method", req.Method)
 
 		resp, err := next.RoundTrip(req.Clone(traceCtx))
