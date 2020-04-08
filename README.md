@@ -1,6 +1,6 @@
 # ephemeral-roles
 
-| <a href="https://discordapp.com/api/oauth2/authorize?client_id=392419127626694676&permissions=268435456&scope=bot"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/Testa_Anatomica-Filippo_Balbi.jpg" width="100"></a><br/> [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go) ![Build Status](https://github.com/ewohltman/ephemeral-roles/workflows/build/badge.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles) [![Coverage Status](https://coveralls.io/repos/github/ewohltman/ephemeral-roles/badge.svg?branch=master)](https://coveralls.io/github/ewohltman/ephemeral-roles?branch=master) [![Dev Chat](https://img.shields.io/discord/393496906992713746?label=dev%20chat&logo=discord)](https://discord.gg/yrxaJb5) |
+| <a href="https://discordapp.com/api/oauth2/authorize?client_id=392419127626694676&permissions=268435456&scope=bot"><img src="https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/Testa_Anatomica-Filippo_Balbi.jpg" width="100"></a><br/> [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go) ![Build Status](https://github.com/ewohltman/ephemeral-roles/workflows/build/badge.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ewohltman/ephemeral-roles)](https://goreportcard.com/report/github.com/ewohltman/ephemeral-roles) [![Coverage Status](https://coveralls.io/repos/github/ewohltman/ephemeral-roles/badge.svg?branch=master)](https://coveralls.io/github/ewohltman/ephemeral-roles?branch=master) [![Dev Chat](https://img.shields.io/badge/discord-dev%20chat-blue)](https://discord.gg/yrxaJb5) |
 | :------: |
 
 ### A Discord bot for managing ephemeral roles based upon voice channel member presence
@@ -32,7 +32,7 @@ exist yet, `Ephemeral Roles` will create it.
 
 By having your members auto-sorted into *ephemeral roles* in your member list,
 it's clear to see who are available for chatting and the channels they are in.
-This is because `ephemeral-roles` leverages the Discord feature that the member
+This is because `Ephemeral Roles` leverages the Discord feature that the member
 list in servers will group together members by role right out of the box.
 
 When a member changes or disconnects from voice channels, even across Discord
