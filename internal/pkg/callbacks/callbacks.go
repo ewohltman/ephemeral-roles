@@ -13,7 +13,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
-const contextTimeout = 30 * time.Second
+const guildMembersPageLimit = 1000
 
 // Config contains fields for the callback methods.
 type Config struct {
@@ -23,6 +23,7 @@ type Config struct {
 	RolePrefix              string
 	RoleColor               int
 	JaegerTracer            opentracing.Tracer
+	ContextTimeout          time.Duration
 	ReadyCounter            prometheus.Counter
 	MessageCreateCounter    prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
@@ -43,79 +44,73 @@ func mapGuildRoleIDs(guildRoles discordgo.Roles) roleIDMap {
 }
 
 func lookupGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
-	guild, err := session.GuildWithContext(ctx, guildID)
+	guild, err := session.State.Guild(guildID)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", guildNotFoundMessage, err)
-	}
+		guild, err = queryGuild(ctx, session, guildID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to lookup guild: %w", err)
+		}
 
-	err = session.State.GuildAdd(guild)
-	if err != nil {
-		return nil, fmt.Errorf("unable to add guild to session cache: %w", err)
+		err = session.State.GuildAdd(guild)
+		if err != nil {
+			return nil, fmt.Errorf("unable to add guild to session cache: %w", err)
+		}
 	}
 
 	return guild, nil
 }
 
-func lookupGuildMember(ctx context.Context, session *discordgo.Session, guildID, userID string) (*discordgo.Member, error) {
-	guildMember, err := session.State.Member(guildID, userID)
+func queryGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
+	guild, err := session.GuildWithContext(ctx, guildID)
 	if err != nil {
-		return queryGuildMember(ctx, session, guildID, userID)
+		return nil, fmt.Errorf("unable to query guild: %w", err)
 	}
 
-	return guildMember, nil
+	members, err := recursiveGuildMembersWithContext(ctx, session, guildID, "", guildMembersPageLimit)
+	if err != nil {
+		return nil, fmt.Errorf("unable to query guild members: %w", err)
+	}
+
+	channels, err := session.GuildChannelsWithContext(ctx, guildID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to query guild channels: %w", err)
+	}
+
+	guild.Members = members
+	guild.Channels = channels
+
+	return guild, nil
 }
 
-func queryGuildMember(ctx context.Context, session *discordgo.Session, guildID, userID string) (*discordgo.Member, error) {
-	guildMember, err := session.GuildMemberWithContext(ctx, guildID, userID)
+func recursiveGuildMembersWithContext(
+	ctx context.Context,
+	session *discordgo.Session,
+	guildID, after string,
+	limit int,
+) ([]*discordgo.Member, error) {
+	guildMembers, err := session.GuildMembersWithContext(ctx, guildID, after, limit)
 	if err != nil {
-		return nil, fmt.Errorf("%w", &memberNotFound{err: err})
+		return nil, err
 	}
 
-	err = session.State.MemberAdd(guildMember)
+	if len(guildMembers) < guildMembersPageLimit {
+		return guildMembers, nil
+	}
+
+	nextGuildMembers, err := recursiveGuildMembersWithContext(
+		ctx,
+		session,
+		guildID,
+		guildMembers[len(guildMembers)-1].User.ID,
+		guildMembersPageLimit,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("unable to add guild member to session cache: %w", err)
+		return nil, err
 	}
 
-	return guildMember, nil
-}
+	guildMembers = append(guildMembers, nextGuildMembers...)
 
-func lookupGuildChannel(ctx context.Context, session *discordgo.Session, guildID, channelID string) (*discordgo.Channel, error) {
-	if channelID == "" {
-		return nil, nil
-	}
-
-	channel, err := session.State.Channel(channelID)
-	if err != nil {
-		return queryGuildChannel(ctx, session, guildID, channelID)
-	}
-
-	return channel, nil
-}
-
-func queryGuildChannel(ctx context.Context, session *discordgo.Session, guildID, channelID string) (*discordgo.Channel, error) {
-	guildChannels, err := session.GuildChannelsWithContext(ctx, guildID)
-	if err != nil {
-		return nil, fmt.Errorf("%w", &channelNotFound{err: err})
-	}
-
-	var channel *discordgo.Channel
-
-	for _, guildChannel := range guildChannels {
-		err = session.State.ChannelAdd(guildChannel)
-		if err != nil {
-			return nil, fmt.Errorf("unable to add channel to session cache: %w", err)
-		}
-
-		if guildChannel.ID == channelID {
-			channel = guildChannel
-		}
-	}
-
-	if channel == nil {
-		return nil, &channelNotFound{}
-	}
-
-	return channel, nil
+	return guildMembers, nil
 }
 
 func createGuildRole(ctx context.Context, session *discordgo.Session, guildID, roleName string, roleColor int) (*discordgo.Role, error) {

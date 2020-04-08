@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	testPort = "8080"
+	testPort = "8081"
 	testURL  = "http://localhost:" + testPort
 
 	serverStartupDelay = 50 * time.Millisecond

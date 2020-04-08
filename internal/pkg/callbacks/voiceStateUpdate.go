@@ -41,7 +41,7 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 	span := config.JaegerTracer.StartSpan(voiceStateUpdate)
 	defer span.Finish()
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), config.ContextTimeout)
 	defer cancelCtx()
 
 	ctx = opentracing.ContextWithSpan(ctx, span)
@@ -102,22 +102,34 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
 	guild, err := lookupGuild(ctx, session, vsu.GuildID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to determine guild: %w", err)
-	}
-
-	guildMember, err := lookupGuildMember(ctx, session, vsu.GuildID, vsu.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	channel, err := lookupGuildChannel(ctx, session, vsu.GuildID, vsu.ChannelID)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to parse event: %w", err)
 	}
 
 	guildRoleMap := mapGuildRoleIDs(guild.Roles)
 
-	if channel == nil {
+	var guildMember *discordgo.Member
+
+	for _, member := range guild.Members {
+		if member.User.ID == vsu.UserID {
+			guildMember = member
+			break
+		}
+	}
+
+	if guildMember == nil {
+		return nil, &memberNotFound{}
+	}
+
+	var guildChannel *discordgo.Channel
+
+	for _, channel := range guild.Channels {
+		if channel.ID == vsu.ChannelID {
+			guildChannel = channel
+			break
+		}
+	}
+
+	if guildChannel == nil {
 		return &vsuEvent{
 			Session:      session,
 			Guild:        guild,
@@ -126,13 +138,13 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 		}, nil
 	}
 
-	err = config.botHasChannelPermission(session, channel)
+	err = config.botHasChannelPermission(session, guildChannel)
 	if err != nil {
 		if errors.Is(err, &insufficientPermission{}) {
 			config.Log.WithError(err).WithFields(
 				logrus.Fields{
 					"guild":   guild.Name,
-					"channel": channel.Name,
+					"channel": guildChannel.Name,
 				},
 			).Debugf("")
 
@@ -147,14 +159,14 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 		return nil, err
 	}
 
-	ephemeralRole, ephemeralRoleName := config.lookupRole(channel, guildRoleMap)
+	ephemeralRole, ephemeralRoleName := config.lookupRole(guildChannel, guildRoleMap)
 
 	return &vsuEvent{
 		Session:           session,
 		Guild:             guild,
 		GuildMember:       guildMember,
 		GuildRoleMap:      guildRoleMap,
-		Channel:           channel,
+		Channel:           guildChannel,
 		EphemeralRole:     ephemeralRole,
 		EphemeralRoleName: ephemeralRoleName,
 	}, nil
@@ -209,7 +221,12 @@ func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent)
 		var err error
 
 		for _, revokeError := range revokeErrors {
-			err = fmt.Errorf("%s, %w", err, revokeError)
+			if err != nil {
+				err = fmt.Errorf("%s, %w", err, revokeError)
+				continue
+			}
+
+			err = revokeError
 		}
 
 		return err

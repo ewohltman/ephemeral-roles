@@ -23,9 +23,9 @@ import (
 )
 
 const (
-	ephemeralRoles         = "ephemeral-roles"
-	monitorInterval        = 1 * time.Minute
-	shutdownContextTimeout = 20 * time.Second
+	ephemeralRoles  = "ephemeral-roles"
+	monitorInterval = 1 * time.Minute
+	contextTimeout  = 30 * time.Second
 )
 
 func newLogger(variables *environment.Variables) *logging.Logger {
@@ -83,6 +83,7 @@ func configureSession(
 		RolePrefix:              variables.RolePrefix,
 		RoleColor:               variables.RoleColor,
 		JaegerTracer:            jaegerTracer,
+		ContextTimeout:          contextTimeout,
 		ReadyCounter:            callbackMetrics.ReadyCounter,
 		MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
 		VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
@@ -161,7 +162,7 @@ func main() {
 
 	<-stop // Block until the OS signal
 
-	shutdownCtx, cancelShutdownCtx := context.WithTimeout(context.Background(), shutdownContextTimeout)
+	shutdownCtx, cancelShutdownCtx := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancelShutdownCtx()
 
 	err = httpServer.Shutdown(shutdownCtx)
