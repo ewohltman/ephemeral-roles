@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,6 +33,7 @@ const (
 )
 
 const (
+	messagaeCreate   = "MessageCreate"
 	infoMessageColor = 0xffa500
 
 	logoURLBase = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles"
@@ -45,6 +47,14 @@ const (
 func (config *Config) MessageCreate(session *discordgo.Session, mc *discordgo.MessageCreate) {
 	// Increment the total number of MessageCreate events
 	config.MessageCreateCounter.Inc()
+
+	span := config.JaegerTracer.StartSpan(messagaeCreate)
+	defer span.Finish()
+
+	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+	defer cancelCtx()
+
+	ctx = opentracing.ContextWithSpan(ctx, span)
 
 	// Ignore all messages from bots
 	if mc.Author.Bot {
@@ -62,17 +72,17 @@ func (config *Config) MessageCreate(session *discordgo.Session, mc *discordgo.Me
 		return
 	}
 
-	// Find the channel
-	c, err := lookupGuildChannel(context.TODO(), session, mc.GuildID, mc.ChannelID)
+	// Find the guild
+	guild, err := lookupGuild(ctx, session, mc.GuildID)
 	if err != nil {
-		config.Log.WithError(err).Debugf("Unable to find channel")
+		config.Log.WithError(err).Debugf("Unable to find guild")
 		return
 	}
 
-	// Find the guild for that channel
-	g, err := lookupGuild(context.TODO(), session, c.GuildID)
+	// Find the channel
+	channel, err := session.State.Channel(mc.ChannelID)
 	if err != nil {
-		config.Log.WithError(err).Debugf("Unable to find guild")
+		config.Log.WithError(err).Debugf("Unable to find channel")
 		return
 	}
 
@@ -80,8 +90,8 @@ func (config *Config) MessageCreate(session *discordgo.Session, mc *discordgo.Me
 		"author":        mc.Author.Username,
 		"content":       mc.Content,
 		"contentTokens": contentTokens,
-		"channel":       c.Name,
-		"guild":         g.Name,
+		"channel":       channel.Name,
+		"guild":         guild.Name,
 	}).Debugf("New message")
 
 	config.parseMessage(session, mc.ChannelID, contentTokens)
