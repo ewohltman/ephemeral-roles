@@ -138,7 +138,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 		}, nil
 	}
 
-	err = config.botHasChannelPermission(session, guildChannel)
+	err = config.botHasChannelPermission(ctx, session, guildChannel)
 	if err != nil {
 		if errors.Is(err, &insufficientPermission{}) {
 			config.Log.WithError(err).WithFields(
@@ -172,8 +172,8 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 	}, nil
 }
 
-func (config *Config) botHasChannelPermission(session *discordgo.Session, channel *discordgo.Channel) error {
-	bot, err := session.User("@me")
+func (config *Config) botHasChannelPermission(ctx context.Context, session *discordgo.Session, channel *discordgo.Channel) error {
+	bot, err := session.UserWithContext(ctx, "@me")
 	if err != nil {
 		return fmt.Errorf("unable to determine bot user: %w", err)
 	}
