@@ -45,8 +45,31 @@ func usersResponse(r *http.Request) *http.Response {
 func membersResponse(r *http.Request) *http.Response {
 	pathTokens := strings.Split(r.URL.Path, "/")
 	userID := pathTokens[len(pathTokens)-1]
+	guildID := pathTokens[len(pathTokens)-2]
 
-	respBody, err := json.Marshal(mockMember(userID))
+	var (
+		respBody []byte
+		err      error
+	)
+
+	if userID == "members" {
+		if guildID == TestGuild {
+			respBody, err = json.Marshal(mockMembers())
+		}
+
+		if guildID == TestGuildLarge {
+			queryParamters := r.URL.Query()
+
+			if len(queryParamters["after"]) == 0 {
+				respBody, err = json.Marshal(mockLargeMembers())
+			} else {
+				respBody, err = json.Marshal(mockMembers())
+			}
+		}
+	} else {
+		respBody, err = json.Marshal(mockMember(userID))
+	}
+
 	if err != nil {
 		return newResponse(http.StatusInternalServerError, []byte(err.Error()))
 	}

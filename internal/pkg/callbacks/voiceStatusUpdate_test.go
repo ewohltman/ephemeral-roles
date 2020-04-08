@@ -1,7 +1,9 @@
 package callbacks
 
 import (
+	"os"
 	"testing"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 
@@ -38,6 +40,8 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	defer mock.SessionClose(t, session)
 
 	log := mock.NewLogger()
+	log.Out = os.Stdout
+	log.UpdateLevel("info")
 
 	monitorConfig := &monitor.Config{
 		Log: log,
@@ -49,27 +53,30 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 		BotKeyword:              "testKeyword",
 		RolePrefix:              "{eph}",
 		JaegerTracer:            jaegerTracer,
+		ContextTimeout:          time.Second,
 		ReadyCounter:            nil,
 		MessageCreateCounter:    nil,
 		VoiceStateUpdateCounter: monitorConfig.VoiceStateUpdateCounter(),
 	}
 
-	sendUpdate(session, config, "unknownUser", mock.TestChannel)
-	sendUpdate(session, config, mock.TestUser, mock.TestPrivateChannel)
-	sendUpdate(session, config, mock.TestUser, mock.TestChannel)
-	sendUpdate(session, config, mock.TestUser, "")
-	sendUpdate(session, config, mock.TestUser, mock.TestChannel+"x")
-	sendUpdate(session, config, mock.TestUser, mock.TestChannel)
-	sendUpdate(session, config, mock.TestUser, "")
+	sendUpdate(session, config, mock.TestGuild, "unknownUser", mock.TestChannel)
+	sendUpdate(session, config, mock.TestGuild, mock.TestUser, mock.TestPrivateChannel)
+	sendUpdate(session, config, mock.TestGuild, mock.TestUser, mock.TestChannel)
+	sendUpdate(session, config, mock.TestGuild, mock.TestUser, "")
+	sendUpdate(session, config, mock.TestGuild, mock.TestUser, mock.TestChannel2)
+	sendUpdate(session, config, mock.TestGuild, mock.TestUser, mock.TestChannel)
+	sendUpdate(session, config, mock.TestGuild, mock.TestUser, "")
+	sendUpdate(session, config, mock.TestGuildLarge, mock.TestUser, mock.TestChannel)
+	sendUpdate(session, config, mock.TestGuildLarge, mock.TestUser, "")
 }
 
-func sendUpdate(session *discordgo.Session, config *Config, userID, channelID string) {
+func sendUpdate(session *discordgo.Session, config *Config, guildID, userID, channelID string) {
 	config.VoiceStateUpdate(
 		session,
 		&discordgo.VoiceStateUpdate{
 			VoiceState: &discordgo.VoiceState{
 				UserID:    userID,
-				GuildID:   mock.TestGuild,
+				GuildID:   guildID,
 				ChannelID: channelID,
 			},
 		},

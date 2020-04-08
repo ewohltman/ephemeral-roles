@@ -33,7 +33,7 @@ const (
 )
 
 const (
-	messagaeCreate   = "MessageCreate"
+	messageCreate    = "MessageCreate"
 	infoMessageColor = 0xffa500
 
 	logoURLBase = "https://raw.githubusercontent.com/ewohltman/ephemeral-roles"
@@ -48,10 +48,10 @@ func (config *Config) MessageCreate(session *discordgo.Session, mc *discordgo.Me
 	// Increment the total number of MessageCreate events
 	config.MessageCreateCounter.Inc()
 
-	span := config.JaegerTracer.StartSpan(messagaeCreate)
+	span := config.JaegerTracer.StartSpan(messageCreate)
 	defer span.Finish()
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), config.ContextTimeout)
 	defer cancelCtx()
 
 	ctx = opentracing.ContextWithSpan(ctx, span)

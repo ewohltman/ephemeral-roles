@@ -41,7 +41,7 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 	span := config.JaegerTracer.StartSpan(voiceStateUpdate)
 	defer span.Finish()
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), config.ContextTimeout)
 	defer cancelCtx()
 
 	ctx = opentracing.ContextWithSpan(ctx, span)
@@ -102,7 +102,7 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
 	guild, err := lookupGuild(ctx, session, vsu.GuildID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to determine guild: %w", err)
+		return nil, fmt.Errorf("unable to parse event: %w", err)
 	}
 
 	guildRoleMap := mapGuildRoleIDs(guild.Roles)

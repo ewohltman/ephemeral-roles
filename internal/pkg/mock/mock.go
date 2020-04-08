@@ -17,14 +17,16 @@ import (
 const (
 	TestSession        = "testSession"
 	TestGuild          = "testGuild"
+	TestGuildLarge     = "testGuildLarge"
 	TestChannel        = "testChannel"
+	TestChannel2       = "testChannel2"
 	TestPrivateChannel = "testPrivateChannel"
 	TestRole           = "testRole"
 	TestUser           = "testUser"
 )
 
 const (
-	largeMemberCount = 100
+	memberCountLimit = 1000
 
 	sessionCreateErrMessage = "unable to create new session"
 	unsupportedMockRequest  = "unsupported mock request"
@@ -139,13 +141,17 @@ func SessionClose(testingInstance TestingInstance, session *discordgo.Session) {
 }
 
 func mockGuild(guildID string) *discordgo.Guild {
-	return &discordgo.Guild{
-		ID:       guildID,
-		Name:     guildID,
-		Roles:    mockRoles(),
-		Members:  mockMembers(),
-		Channels: mockChannels(),
+	guild := &discordgo.Guild{
+		ID:   guildID,
+		Name: guildID,
 	}
+
+	guild.Members = mockMembers()
+	guild.MemberCount = len(guild.Members)
+	guild.Roles = mockRoles()
+	guild.Channels = mockChannels()
+
+	return guild
 }
 
 func mockUser(userID string) *discordgo.User {
@@ -153,6 +159,16 @@ func mockUser(userID string) *discordgo.User {
 		ID:       userID,
 		Username: userID,
 	}
+}
+
+func mockLargeMembers() []*discordgo.Member {
+	members := make([]*discordgo.Member, memberCountLimit)
+
+	for i := 0; i < memberCountLimit; i++ {
+		members[i] = mockMember(fmt.Sprintf("%s-%d", TestUser, i))
+	}
+
+	return members
 }
 
 func mockMembers() []*discordgo.Member {
@@ -197,6 +213,7 @@ func mockRole(roleID string) *discordgo.Role {
 func mockChannels() []*discordgo.Channel {
 	return []*discordgo.Channel{
 		mockChannel(TestChannel),
+		mockChannel(TestChannel2),
 		mockChannel(TestPrivateChannel),
 	}
 }

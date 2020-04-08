@@ -13,11 +13,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
-const (
-	contextTimeout = 30 * time.Second
-
-	guildMembersPageLimit = 1000
-)
+const guildMembersPageLimit = 1000
 
 // Config contains fields for the callback methods.
 type Config struct {
@@ -27,6 +23,7 @@ type Config struct {
 	RolePrefix              string
 	RoleColor               int
 	JaegerTracer            opentracing.Tracer
+	ContextTimeout          time.Duration
 	ReadyCounter            prometheus.Counter
 	MessageCreateCounter    prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
