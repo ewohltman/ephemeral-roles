@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.6.0
 	github.com/prometheus/procfs v0.0.11 // indirect
 	github.com/sirupsen/logrus v1.5.0
-	github.com/uber/jaeger-client-go v2.23.0+incompatible
+	github.com/uber/jaeger-client-go v2.23.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
 	go.uber.org/atomic v1.6.0 // indirect
 	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
