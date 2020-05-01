@@ -18,21 +18,10 @@ func NewState() (*discordgo.State, error) {
 		Bot:      true,
 	}
 
-	err := addTestGuild(state)
+	err := state.GuildAdd(mockGuild(TestGuild))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", stateCreateErrMessage, err)
 	}
 
 	return state, nil
-}
-
-func addTestGuild(state *discordgo.State) error {
-	testGuild := mockGuild(TestGuild)
-
-	err := state.GuildAdd(testGuild)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

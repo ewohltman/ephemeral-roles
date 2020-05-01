@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
 )
@@ -39,6 +40,7 @@ type Interface interface {
 	logrus.FieldLogger
 	WrappedLogger() *logrus.Logger
 	UpdateLevel(level string)
+	DiscordGof(discordgoLevel, caller int, format string, arguments ...interface{})
 }
 
 // Logger wraps a *logrus.Logger instance and provides custom methods.
@@ -83,6 +85,20 @@ func (log *Logger) WrappedLogger() *logrus.Logger {
 func (log *Logger) UpdateLevel(level string) {
 	log.Logger.SetLevel(parseLevel(level))
 	log.discordrusIntegration()
+}
+
+// DiscordGof is an adaptor for plugging into DiscordGo's logging system.
+func (log *Logger) DiscordGof(discordgoLevel, caller int, format string, arguments ...interface{}) {
+	switch discordgoLevel {
+	case discordgo.LogError:
+		log.Errorf(format, arguments...)
+	case discordgo.LogWarning:
+		log.Warnf(format, arguments...)
+	case discordgo.LogInformational:
+		log.Infof(format, arguments...)
+	case discordgo.LogDebug:
+		log.Debugf(format, arguments...)
+	}
 }
 
 func (log *Logger) discordrusIntegration() {

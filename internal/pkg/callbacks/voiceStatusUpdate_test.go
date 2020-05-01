@@ -1,7 +1,6 @@
 package callbacks
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -40,8 +39,6 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	defer mock.SessionClose(t, session)
 
 	log := mock.NewLogger()
-	log.Out = os.Stdout
-	log.UpdateLevel("info")
 
 	monitorConfig := &monitor.Config{
 		Log: log,
@@ -54,8 +51,6 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 		RolePrefix:              "{eph}",
 		JaegerTracer:            jaegerTracer,
 		ContextTimeout:          time.Second,
-		ReadyCounter:            nil,
-		MessageCreateCounter:    nil,
 		VoiceStateUpdateCounter: monitorConfig.VoiceStateUpdateCounter(),
 	}
 

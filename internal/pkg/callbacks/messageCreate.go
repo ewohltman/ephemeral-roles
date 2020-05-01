@@ -1,11 +1,10 @@
 package callbacks
 
 import (
-	"context"
+	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,81 +40,64 @@ const (
 	logoURL     = logoURLBase + logoURLPath
 
 	logLevelChange = "Logging level changed"
+
+	messageCreateEventError = "Unable to process event: " + messageCreate
 )
 
-// MessageCreate is the callback function for the MessageCreate event from Discord
-func (config *Config) MessageCreate(session *discordgo.Session, mc *discordgo.MessageCreate) {
-	// Increment the total number of MessageCreate events
+// MessageCreate is the callback function for the MessageCreate event from Discord.
+func (config *Config) MessageCreate(session *discordgo.Session, message *discordgo.MessageCreate) {
 	config.MessageCreateCounter.Inc()
 
-	span := config.JaegerTracer.StartSpan(messageCreate)
-	defer span.Finish()
-
-	ctx, cancelCtx := context.WithTimeout(context.Background(), config.ContextTimeout)
-	defer cancelCtx()
-
-	ctx = opentracing.ContextWithSpan(ctx, span)
-
-	// Ignore all messages from bots
-	if mc.Author.Bot {
+	if message.Author.Bot {
 		return
 	}
 
 	// [BOT_KEYWORD] [command] [options] :: "!eph" "log_level" "debug"
-	contentTokens := strings.Split(strings.TrimSpace(mc.Content), " ")
+	contentTokens := strings.Split(strings.TrimSpace(message.Content), " ")
 	if len(contentTokens) < numTokensMinimum {
 		return
 	}
 
-	// Check if the message starts with our keyword
 	if contentTokens[0] != config.BotKeyword {
 		return
 	}
 
-	// Find the guild
-	guild, err := lookupGuild(ctx, session, mc.GuildID)
+	err := config.parseMessage(session, contentTokens, message.ChannelID)
 	if err != nil {
-		config.Log.WithError(err).Debugf("Unable to find guild")
-		return
+		config.Log.WithError(err).Error(messageCreateEventError)
 	}
-
-	// Find the channel
-	channel, err := session.State.Channel(mc.ChannelID)
-	if err != nil {
-		config.Log.WithError(err).Debugf("Unable to find channel")
-		return
-	}
-
-	config.Log.WithFields(logrus.Fields{
-		"author":        mc.Author.Username,
-		"content":       mc.Content,
-		"contentTokens": contentTokens,
-		"channel":       channel.Name,
-		"guild":         guild.Name,
-	}).Debugf("New message")
-
-	config.parseMessage(session, mc.ChannelID, contentTokens)
 }
 
-func (config *Config) parseMessage(s *discordgo.Session, channelID string, contentTokens []string) {
+func (config *Config) parseMessage(s *discordgo.Session, contentTokens []string, channelID string) error {
 	if len(contentTokens) < numTokensWithCommand {
-		config.handleInfo(s, channelID)
-		return
+		err := config.handleInfo(s, channelID)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	switch strings.ToLower(contentTokens[1]) {
 	case infoCommand:
-		config.handleInfo(s, channelID)
+		err := config.handleInfo(s, channelID)
+		if err != nil {
+			return err
+		}
 	case logLevelCommand:
 		config.handleLogLevel(contentTokens)
 	}
+
+	return nil
 }
 
-func (config *Config) handleInfo(s *discordgo.Session, channelID string) {
+func (config *Config) handleInfo(s *discordgo.Session, channelID string) error {
 	_, err := s.ChannelMessageSendEmbed(channelID, infoMessage())
 	if err != nil {
-		config.Log.WithError(err).Debugf("Unable to send info message")
+		return fmt.Errorf("error sending info message: %w", err)
 	}
+
+	return nil
 }
 
 func (config *Config) handleLogLevel(contentTokens []string) {
@@ -126,27 +108,23 @@ func (config *Config) handleLogLevel(contentTokens []string) {
 
 		switch level {
 		case logLevelParamDebug:
-			config.updateLogLevel(level)
+			config.Log.UpdateLevel(level)
 			config.Log.WithFields(logFields).Debugf(logLevelChange)
 		case logLevelParamInfo:
-			config.updateLogLevel(level)
+			config.Log.UpdateLevel(level)
 			config.Log.WithFields(logFields).Infof(logLevelChange)
 		case logLevelParamWarning:
-			config.updateLogLevel(level)
+			config.Log.UpdateLevel(level)
 			config.Log.WithFields(logFields).Warnf(logLevelChange)
 		case logLevelParamError:
-			config.updateLogLevel(level)
+			config.Log.UpdateLevel(level)
 			config.Log.WithFields(logFields).Errorf(logLevelChange)
 		case logLevelParamFatal:
-			config.updateLogLevel(level)
+			config.Log.UpdateLevel(level)
 		case logLevelParamPanic:
-			config.updateLogLevel(level)
+			config.Log.UpdateLevel(level)
 		}
 	}
-}
-
-func (config *Config) updateLogLevel(level string) {
-	config.Log.UpdateLevel(level)
 }
 
 func infoMessage() *discordgo.MessageEmbed {

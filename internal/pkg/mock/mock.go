@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/sirupsen/logrus"
 )
 
 // String values to be used in other tests corresponding to the objects created
@@ -29,7 +28,6 @@ const (
 	memberCountLimit = 1000
 
 	sessionCreateErrMessage = "unable to create new session"
-	unsupportedMockRequest  = "unsupported mock request"
 )
 
 // TestingInstance is an interface intended for testing.T and testing.B
@@ -45,35 +43,6 @@ type RoundTripperFunc func(req *http.Request) (*http.Response, error)
 // RoundTrip implements the http.RoundTripper interface.
 func (rt RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return rt(req)
-}
-
-// Logger is a mock logger to suppress printing any actual log messages.
-type Logger struct {
-	*logrus.Logger
-}
-
-// NewLogger provides mock *Logger instance.
-func NewLogger() *Logger {
-	log := &Logger{
-		&logrus.Logger{
-			Formatter: &logrus.TextFormatter{},
-			Out:       ioutil.Discard,
-			Level:     logrus.InfoLevel,
-			Hooks:     make(logrus.LevelHooks),
-		},
-	}
-
-	return log
-}
-
-// WrappedLogger returns the wrapped *logrus.Logger instance.
-func (log *Logger) WrappedLogger() *logrus.Logger {
-	return log.Logger
-}
-
-// UpdateLevel is a mock stub of the logging.Logger UpdateLevel method.
-func (log *Logger) UpdateLevel(level string) {
-	// Nop
 }
 
 // NewMirrorRoundTripper returns an http.RoundTripper that mirrors the request
@@ -111,33 +80,6 @@ func NewMirrorRoundTripper() http.RoundTripper {
 			return resp, nil
 		},
 	)
-}
-
-// NewSession provides a *discordgo.Session instance to be used in unit
-// testing.
-func NewSession() (*discordgo.Session, error) {
-	state, err := NewState()
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", sessionCreateErrMessage, err)
-	}
-
-	session := &discordgo.Session{
-		State:        state,
-		StateEnabled: true,
-		Ratelimiter:  discordgo.NewRatelimiter(),
-		Client:       restClient(),
-	}
-
-	return session, nil
-}
-
-// SessionClose closes a *discordgo.Session instance and if an error is encountered,
-// the provided testingInstance logs the error and marks the test as failed.
-func SessionClose(testingInstance TestingInstance, session *discordgo.Session) {
-	err := session.Close()
-	if err != nil {
-		testingInstance.Error(err)
-	}
 }
 
 func mockGuild(guildID string) *discordgo.Guild {
@@ -245,6 +187,7 @@ func mockChannel(channelID string) *discordgo.Channel {
 		ID:                   channelID,
 		Name:                 channelID,
 		GuildID:              TestGuild,
+		Type:                 discordgo.ChannelTypeGuildVoice,
 		PermissionOverwrites: permissionOverwrites,
 	}
 }

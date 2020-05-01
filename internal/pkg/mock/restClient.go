@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const unsupportedMockRequest = "unsupported mock request"
+
 func restClient() *http.Client {
 	return &http.Client{Transport: RoundTripperFunc(discordAPIResponse)}
 }
@@ -105,6 +107,8 @@ func rolesResponse(r *http.Request) *http.Response {
 		}
 
 		return newResponse(http.StatusOK, reqBody)
+	case http.MethodDelete:
+		return newResponse(http.StatusOK, nil)
 	}
 
 	return newResponse(http.StatusMethodNotAllowed, []byte{})

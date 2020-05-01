@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,6 +42,29 @@ func TestLogger_UpdateLevel(t *testing.T) {
 		if log.Logger.Level != testLevel {
 			t.Error(updateError)
 		}
+	}
+
+	log.DiscordrusWebHookURL = ""
+
+	log.UpdateLevel(logrus.DebugLevel.String())
+
+	if log.Logger.Level != logrus.DebugLevel {
+		t.Error(updateError)
+	}
+}
+
+func TestLogger_DiscordGof(t *testing.T) {
+	log := testLogger()
+
+	logLevels := []int{
+		discordgo.LogError,
+		discordgo.LogWarning,
+		discordgo.LogInformational,
+		discordgo.LogDebug,
+	}
+
+	for _, logLevel := range logLevels {
+		log.DiscordGof(logLevel, 0, "Test: %d", 123)
 	}
 }
 
