@@ -27,15 +27,21 @@ func (config *Config) ChannelDelete(session *discordgo.Session, channel *discord
 
 		config.Log.WithField("role", role.Name).Debug("Deleting Ephemeral Role")
 
-		err = session.GuildRoleDelete(channel.GuildID, role.ID)
+		err = session.State.RoleRemove(channel.GuildID, role.ID)
 		if err != nil {
 			config.Log.WithError(err).Error(channelDeleteEventError)
 			return
 		}
 
-		err = session.State.RoleRemove(channel.GuildID, role.ID)
+		err = session.GuildRoleDelete(channel.GuildID, role.ID)
 		if err != nil {
 			config.Log.WithError(err).Error(channelDeleteEventError)
+
+			err = session.State.RoleAdd(channel.GuildID, role)
+			if err != nil {
+				config.Log.WithError(err).Error(channelDeleteEventError)
+			}
+
 			return
 		}
 
