@@ -24,13 +24,11 @@ func TestConfig_Ready(t *testing.T) {
 	}
 
 	config := &Config{
-		Log:                     log,
-		BotName:                 "testBot",
-		BotKeyword:              "testKeyword",
-		RolePrefix:              "testRolePrefix",
-		ReadyCounter:            monitorConfig.ReadyCounter(),
-		MessageCreateCounter:    nil,
-		VoiceStateUpdateCounter: nil,
+		Log:          log,
+		BotName:      "testBot",
+		BotKeyword:   "testKeyword",
+		RolePrefix:   "testRolePrefix",
+		ReadyCounter: monitorConfig.ReadyCounter(),
 	}
 
 	config.Ready(

@@ -15,14 +15,10 @@ import (
 const (
 	voiceStateUpdate = "VoiceStateUpdate"
 
-	discordBotList = "Discord Bot List"
-
-	voiceStateUpdateError     = "Unable to process VoiceStateUpdate"
-	revokeEphemeralRolesError = "Unable to revoke ephemeral roles"
-	grantEphemeralRoleError   = "Unable to grant ephemeral role"
+	voiceStateUpdateEventError = "Unable to process event: " + voiceStateUpdate
 )
 
-type vsuEvent struct {
+type voiceStateUpdateMetadata struct {
 	Session           *discordgo.Session
 	Guild             *discordgo.Guild
 	GuildMember       *discordgo.Member
@@ -33,10 +29,8 @@ type vsuEvent struct {
 }
 
 // VoiceStateUpdate is the callback function for the VoiceStateUpdate event from Discord.
-func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordgo.VoiceStateUpdate) {
+func (config *Config) VoiceStateUpdate(session *discordgo.Session, voiceState *discordgo.VoiceStateUpdate) {
 	config.VoiceStateUpdateCounter.Inc()
-
-	config.Log.Debugf("Parsing %s event", voiceStateUpdate)
 
 	span := config.JaegerTracer.StartSpan(voiceStateUpdate)
 	defer span.Finish()
@@ -46,61 +40,60 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, vsu *discordg
 
 	ctx = opentracing.ContextWithSpan(ctx, span)
 
-	event, err := config.parseEvent(ctx, session, vsu)
+	metadata, err := config.parseEvent(ctx, session, voiceState)
 	if err != nil {
 		var memberNotFoundErr *memberNotFound
 
 		if errors.As(err, &memberNotFoundErr) {
-			config.Log.WithError(memberNotFoundErr).Debug(voiceStateUpdateError)
+			config.Log.WithError(memberNotFoundErr).Debug(voiceStateUpdateEventError)
 			return
 		}
 
-		config.Log.WithError(err).Error(voiceStateUpdateError)
+		config.Log.WithError(err).Error(voiceStateUpdateEventError)
 
 		return
 	}
 
 	log := config.Log.WithFields(
 		logrus.Fields{
-			"member": event.GuildMember.User.Username,
-			"guild":  event.Guild.Name,
+			"member": metadata.GuildMember.User.Username,
+			"guild":  metadata.Guild.Name,
 		},
 	)
 
-	if event.Guild.Name == discordBotList {
-		log.Debug("Ignoring VoiceStateUpdate event")
-		return
-	}
-
 	log.Debug("Revoking Ephemeral Roles")
 
-	err = config.revokeEphemeralRoles(ctx, event)
+	err = config.revokeEphemeralRoles(ctx, metadata)
 	if err != nil {
 		if forbiddenResponse(err) {
-			log.WithError(err).Debug(revokeEphemeralRolesError)
+			log.WithError(err).Debug(voiceStateUpdateEventError)
 		} else {
-			log.WithError(err).Error(revokeEphemeralRolesError)
+			log.WithError(err).Error(voiceStateUpdateEventError)
 		}
 	}
 
-	if event.Channel == nil {
+	if metadata.Channel == nil {
 		return
 	}
 
-	log.WithField("role", event.EphemeralRoleName).Debug("Granting Ephemeral Role")
+	log.WithField("role", metadata.EphemeralRoleName).Debug("Granting Ephemeral Role")
 
-	err = config.grantEphemeralRole(ctx, event)
+	err = config.grantEphemeralRole(ctx, metadata)
 	if err != nil {
 		if forbiddenResponse(err) {
-			log.WithError(err).Debug(grantEphemeralRoleError)
+			log.WithError(err).Debug(voiceStateUpdateEventError)
 		} else {
-			log.WithError(err).Error(grantEphemeralRoleError)
+			log.WithError(err).Error(voiceStateUpdateEventError)
 		}
 	}
 }
 
-func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session, vsu *discordgo.VoiceStateUpdate) (*vsuEvent, error) {
-	guild, err := lookupGuild(ctx, session, vsu.GuildID)
+func (config *Config) parseEvent(
+	ctx context.Context,
+	session *discordgo.Session,
+	voiceState *discordgo.VoiceStateUpdate,
+) (*voiceStateUpdateMetadata, error) {
+	guild, err := lookupGuild(ctx, session, voiceState.GuildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse event: %w", err)
 	}
@@ -110,7 +103,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 	var guildMember *discordgo.Member
 
 	for _, member := range guild.Members {
-		if member.User.ID == vsu.UserID {
+		if member.User.ID == voiceState.UserID {
 			guildMember = member
 			break
 		}
@@ -123,14 +116,14 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 	var guildChannel *discordgo.Channel
 
 	for _, channel := range guild.Channels {
-		if channel.ID == vsu.ChannelID {
+		if channel.ID == voiceState.ChannelID {
 			guildChannel = channel
 			break
 		}
 	}
 
 	if guildChannel == nil {
-		return &vsuEvent{
+		return &voiceStateUpdateMetadata{
 			Session:      session,
 			Guild:        guild,
 			GuildMember:  guildMember,
@@ -148,7 +141,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 				},
 			).Debugf("")
 
-			return &vsuEvent{
+			return &voiceStateUpdateMetadata{
 				Session:      session,
 				Guild:        guild,
 				GuildMember:  guildMember,
@@ -161,7 +154,7 @@ func (config *Config) parseEvent(ctx context.Context, session *discordgo.Session
 
 	ephemeralRole, ephemeralRoleName := config.lookupRole(guildChannel, guildRoleMap)
 
-	return &vsuEvent{
+	return &voiceStateUpdateMetadata{
 		Session:           session,
 		Guild:             guild,
 		GuildMember:       guildMember,
@@ -203,14 +196,14 @@ func (config *Config) lookupRole(channel *discordgo.Channel, roleMap roleIDMap) 
 	return
 }
 
-func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent) error {
+func (config *Config) revokeEphemeralRoles(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
 	var revokeErrors []error
 
-	for _, memberRoleID := range event.GuildMember.Roles {
-		role := event.GuildRoleMap[roleID(memberRoleID)]
+	for _, memberRoleID := range metadata.GuildMember.Roles {
+		role := metadata.GuildRoleMap[roleID(memberRoleID)]
 
 		if strings.HasPrefix(role.Name, config.RolePrefix) {
-			err := removeRoleFromMember(ctx, event.Session, event.Guild.ID, event.GuildMember.User.ID, role.ID)
+			err := removeRoleFromMember(ctx, metadata.Session, metadata.Guild.ID, metadata.GuildMember.User.ID, role.ID)
 			if err != nil {
 				revokeErrors = append(revokeErrors, fmt.Errorf("unable to revoke %s: %w", role.Name, err))
 			}
@@ -235,17 +228,17 @@ func (config *Config) revokeEphemeralRoles(ctx context.Context, event *vsuEvent)
 	return nil
 }
 
-func (config *Config) grantEphemeralRole(ctx context.Context, event *vsuEvent) error {
-	if event.EphemeralRole == nil {
-		newRole, err := createGuildRole(ctx, event.Session, event.Guild.ID, event.EphemeralRoleName, config.RoleColor)
+func (config *Config) grantEphemeralRole(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
+	if metadata.EphemeralRole == nil {
+		newRole, err := createGuildRole(ctx, metadata.Session, metadata.Guild.ID, metadata.EphemeralRoleName, config.RoleColor)
 		if err != nil {
 			return err
 		}
 
-		event.EphemeralRole = newRole
+		metadata.EphemeralRole = newRole
 	}
 
-	return addRoleToMember(ctx, event.Session, event.Guild.ID, event.GuildMember.User.ID, event.EphemeralRole.ID)
+	return addRoleToMember(ctx, metadata.Session, metadata.Guild.ID, metadata.GuildMember.User.ID, metadata.EphemeralRole.ID)
 }
 
 func forbiddenResponse(err error) bool {

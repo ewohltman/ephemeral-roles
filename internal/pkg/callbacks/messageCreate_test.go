@@ -46,20 +46,17 @@ func TestConfig_MessageCreate(t *testing.T) {
 	}
 
 	config := &Config{
-		Log:                     log,
-		BotName:                 "testBot",
-		BotKeyword:              "testKeyword",
-		RolePrefix:              "{eph}",
-		JaegerTracer:            jaegerTracer,
-		ContextTimeout:          time.Second,
-		ReadyCounter:            nil,
-		MessageCreateCounter:    monitorConfig.MessageCreateCounter(),
-		VoiceStateUpdateCounter: nil,
+		Log:                  log,
+		BotName:              "testBot",
+		BotKeyword:           "testKeyword",
+		RolePrefix:           "{eph}",
+		JaegerTracer:         jaegerTracer,
+		ContextTimeout:       time.Second,
+		MessageCreateCounter: monitorConfig.MessageCreateCounter(),
 	}
 
 	originalLogLevel := log.Level.String()
 
-	// message from a bot
 	sendBotMessage(session, config)
 
 	tests := []string{

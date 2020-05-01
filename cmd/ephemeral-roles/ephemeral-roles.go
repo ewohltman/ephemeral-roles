@@ -25,7 +25,7 @@ import (
 const (
 	ephemeralRoles  = "ephemeral-roles"
 	monitorInterval = 1 * time.Minute
-	contextTimeout  = 30 * time.Second
+	contextTimeout  = 1 * time.Minute
 )
 
 func newLogger(variables *environment.Variables) *logging.Logger {
@@ -44,12 +44,40 @@ func startSession(
 	client *http.Client,
 	jaegerTracer opentracing.Tracer,
 ) (*discordgo.Session, error) {
+	discordgo.Logger = log.DiscordGof
+
 	session, err := discordgo.New("Bot " + variables.BotToken)
 	if err != nil {
 		return nil, err
 	}
 
-	monitorConfig := configureSession(log, session, client, jaegerTracer, variables)
+	session.Client = client
+	session.ShardID = variables.ShardID
+	session.ShardCount = variables.ShardCount
+	session.LogLevel = discordgo.LogError
+
+	monitorConfig := &monitor.Config{
+		Log:      log,
+		Session:  session,
+		Interval: monitorInterval,
+	}
+
+	callbackMetrics := monitor.Metrics(monitorConfig)
+
+	setupCallbacks(session,
+		&callbacks.Config{
+			Log:                     log,
+			BotName:                 variables.BotName,
+			BotKeyword:              variables.BotKeyword,
+			RolePrefix:              variables.RolePrefix,
+			RoleColor:               variables.RoleColor,
+			JaegerTracer:            jaegerTracer,
+			ContextTimeout:          contextTimeout,
+			ReadyCounter:            callbackMetrics.ReadyCounter,
+			MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
+			VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
+		},
+	)
 
 	err = session.Open()
 	if err != nil {
@@ -61,47 +89,11 @@ func startSession(
 	return session, nil
 }
 
-func configureSession(
-	log logging.Interface,
-	session *discordgo.Session,
-	client *http.Client,
-	jaegerTracer opentracing.Tracer,
-	variables *environment.Variables,
-) *monitor.Config {
-	monitorConfig := &monitor.Config{
-		Log:      log,
-		Session:  session,
-		Interval: monitorInterval,
-	}
-
-	callbackMetrics := monitor.Metrics(monitorConfig)
-
-	callbackConfig := &callbacks.Config{
-		Log:                     log,
-		BotName:                 variables.BotName,
-		BotKeyword:              variables.BotKeyword,
-		RolePrefix:              variables.RolePrefix,
-		RoleColor:               variables.RoleColor,
-		JaegerTracer:            jaegerTracer,
-		ContextTimeout:          contextTimeout,
-		ReadyCounter:            callbackMetrics.ReadyCounter,
-		MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
-		VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
-	}
-
-	session.Client = client
-	session.ShardID = variables.ShardID
-	session.ShardCount = variables.ShardCount
-
-	setupCallbacks(session, callbackConfig)
-
-	return monitorConfig
-}
-
 func setupCallbacks(session *discordgo.Session, callbackConfig *callbacks.Config) {
-	session.AddHandler(callbackConfig.Ready)            // Connection established with Discord
-	session.AddHandler(callbackConfig.MessageCreate)    // Chat messages with BOT_KEYWORD
-	session.AddHandler(callbackConfig.VoiceStateUpdate) // Updates to voice channel state
+	session.AddHandler(callbackConfig.ChannelDelete)
+	session.AddHandler(callbackConfig.MessageCreate)
+	session.AddHandler(callbackConfig.Ready)
+	session.AddHandler(callbackConfig.VoiceStateUpdate)
 }
 
 func startHTTPServer(log logging.Interface, session *discordgo.Session, port string) (httpServer *http.Server, stop chan os.Signal) {
