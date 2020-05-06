@@ -7,7 +7,6 @@ replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.20.3-
 require (
 	github.com/bwmarrin/discordgo v0.20.3
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kz/discordrus v1.2.0
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.9.1 // indirect
