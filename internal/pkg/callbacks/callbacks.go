@@ -33,16 +33,6 @@ type roleID string
 
 type roleIDMap map[roleID]*discordgo.Role
 
-func mapGuildRoleIDs(guildRoles discordgo.Roles) roleIDMap {
-	guildRoleMap := make(roleIDMap)
-
-	for _, role := range guildRoles {
-		guildRoleMap[roleID(role.ID)] = role
-	}
-
-	return guildRoleMap
-}
-
 func lookupGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
 	guild, err := session.State.Guild(guildID)
 	if err != nil {
@@ -66,9 +56,9 @@ func queryGuild(ctx context.Context, session *discordgo.Session, guildID string)
 		return nil, fmt.Errorf("unable to query guild: %w", err)
 	}
 
-	members, err := recursiveGuildMembersWithContext(ctx, session, guildID, "", guildMembersPageLimit)
+	roles, err := session.GuildRolesWithContext(ctx, guildID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to query guild members: %w", err)
+		return nil, fmt.Errorf("unable to query guild channels: %w", err)
 	}
 
 	channels, err := session.GuildChannelsWithContext(ctx, guildID)
@@ -76,8 +66,14 @@ func queryGuild(ctx context.Context, session *discordgo.Session, guildID string)
 		return nil, fmt.Errorf("unable to query guild channels: %w", err)
 	}
 
-	guild.Members = members
+	members, err := recursiveGuildMembersWithContext(ctx, session, guildID, "", guildMembersPageLimit)
+	if err != nil {
+		return nil, fmt.Errorf("unable to query guild members: %w", err)
+	}
+
+	guild.Roles = roles
 	guild.Channels = channels
+	guild.Members = members
 
 	return guild, nil
 }
@@ -111,6 +107,16 @@ func recursiveGuildMembersWithContext(
 	guildMembers = append(guildMembers, nextGuildMembers...)
 
 	return guildMembers, nil
+}
+
+func mapGuildRoleIDs(guildRoles discordgo.Roles) roleIDMap {
+	guildRoleMap := make(roleIDMap)
+
+	for _, role := range guildRoles {
+		guildRoleMap[roleID(role.ID)] = role
+	}
+
+	return guildRoleMap
 }
 
 func createGuildRole(ctx context.Context, session *discordgo.Session, guildID, roleName string, roleColor int) (*discordgo.Role, error) {
