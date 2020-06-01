@@ -18,15 +18,8 @@ jobs:
       - name: Get dependencies
         run: go mod download
 
-      - name: Run linters
-        run: |
-          PATH="${PATH}:$(go env GOPATH)/bin"
-          INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh"
-
-          curl -sSfL "${INSTALL_SCRIPT_URL}" | \
-          sh -s -- -b $(go env GOPATH)/bin v1.23.6
-
-          make lint
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v1.2.1
 
       - name: Run tests
         run: make test
