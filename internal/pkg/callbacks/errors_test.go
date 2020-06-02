@@ -124,23 +124,23 @@ func TestChannelNotFound_Error(t *testing.T) {
 }
 
 func TestInsufficientPermission_Is(t *testing.T) {
-	inp := &insufficientPermission{}
+	inp := &insufficientPermissions{}
 
-	if errors.Is(nil, &insufficientPermission{}) {
+	if errors.Is(nil, &insufficientPermissions{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &insufficientPermission{}) {
+	if errors.Is(fmt.Errorf(wrapMsg), &insufficientPermissions{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if !errors.Is(inp, &insufficientPermission{}) {
+	if !errors.Is(inp, &insufficientPermissions{}) {
 		t.Errorf(invalidErrorAssertion)
 	}
 }
 
 func TestInsufficientPermission_Unwrap(t *testing.T) {
-	inp := &insufficientPermission{}
+	inp := &insufficientPermissions{}
 
 	unwrappedErr := inp.Unwrap()
 
@@ -153,7 +153,7 @@ func TestInsufficientPermission_Unwrap(t *testing.T) {
 }
 
 func TestInsufficientPermission_Error(t *testing.T) {
-	inp := &insufficientPermission{}
+	inp := &insufficientPermissions{}
 	expectedErrMsg := insufficientPermissionMessage
 
 	if inp.Error() != expectedErrMsg {

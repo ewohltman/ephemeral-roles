@@ -4,10 +4,12 @@ package callbacks
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
@@ -103,17 +105,23 @@ func recursiveGuildMembersWithContext(
 	return guildMembers, nil
 }
 
-func createGuildRole(ctx context.Context, session *discordgo.Session, guildID, roleName string, roleColor int) (*discordgo.Role, error) {
+func createGuildRole(
+	ctx context.Context,
+	session *discordgo.Session,
+	guild *discordgo.Guild,
+	roleName string,
+	roleColor int,
+) (*discordgo.Role, error) {
 	const hoist = true
 
-	role, err := session.GuildRoleCreateWithContext(ctx, guildID)
+	role, err := session.GuildRoleCreateWithContext(ctx, guild.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create ephemeral role: %w", err)
 	}
 
 	role, err = session.GuildRoleEditWithContext(
 		ctx,
-		guildID, role.ID,
+		guild.ID, role.ID,
 		roleName, roleColor,
 		hoist, role.Permissions, role.Mentionable,
 	)
@@ -121,7 +129,7 @@ func createGuildRole(ctx context.Context, session *discordgo.Session, guildID, r
 		return nil, fmt.Errorf("unable to edit ephemeral role: %w", err)
 	}
 
-	err = session.State.RoleAdd(guildID, role)
+	err = session.State.RoleAdd(guild.ID, role)
 	if err != nil {
 		return nil, fmt.Errorf("unable to add ephemeral role to session cache: %w", err)
 	}
@@ -145,4 +153,16 @@ func removeRoleFromMember(ctx context.Context, session *discordgo.Session, guild
 	}
 
 	return nil
+}
+
+func forbiddenResponse(err error) bool {
+	var restErr *discordgo.RESTError
+
+	if errors.As(err, &restErr) {
+		if restErr.Response.StatusCode == http.StatusForbidden {
+			return true
+		}
+	}
+
+	return false
 }

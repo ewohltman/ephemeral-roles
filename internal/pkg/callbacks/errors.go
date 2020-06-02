@@ -2,7 +2,6 @@ package callbacks
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -10,7 +9,7 @@ import (
 const (
 	memberNotFoundMessage         = "member not found"
 	channelNotFoundMessage        = "channel not found"
-	insufficientPermissionMessage = "insufficient channel permission"
+	insufficientPermissionMessage = "insufficient permissions"
 )
 
 type memberNotFound struct {
@@ -28,21 +27,11 @@ func (mnf *memberNotFound) Unwrap() error {
 }
 
 func (mnf *memberNotFound) Error() string {
-	var errMsg string
-
-	if mnf.guild != nil {
-		errMsg = mnf.guild.Name
-	}
-
-	errMsg = strings.TrimSpace(
-		fmt.Sprintf("%s %s", errMsg, memberNotFoundMessage),
-	)
-
 	if mnf.err != nil {
-		return fmt.Sprintf("%s: %s", errMsg, mnf.err)
+		return fmt.Sprintf("%s: %s", memberNotFoundMessage, mnf.err)
 	}
 
-	return errMsg
+	return memberNotFoundMessage
 }
 
 type channelNotFound struct {
@@ -61,40 +50,30 @@ func (cnf *channelNotFound) Unwrap() error {
 }
 
 func (cnf *channelNotFound) Error() string {
-	var errMsg string
-
-	if cnf.guild != nil {
-		errMsg = cnf.guild.Name
-	}
-
-	errMsg = strings.TrimSpace(
-		fmt.Sprintf("%s %s", errMsg, channelNotFoundMessage),
-	)
-
 	if cnf.err != nil {
-		return fmt.Sprintf("%s: %s", errMsg, cnf.err)
+		return fmt.Sprintf("%s: %s", channelNotFoundMessage, cnf.err)
 	}
 
-	return errMsg
+	return channelNotFoundMessage
 }
 
-type insufficientPermission struct {
+type insufficientPermissions struct {
 	guild   *discordgo.Guild
 	member  *discordgo.Member
 	channel *discordgo.Channel
 	err     error
 }
 
-func (inp *insufficientPermission) Is(target error) bool {
-	_, ok := target.(*insufficientPermission)
+func (inp *insufficientPermissions) Is(target error) bool {
+	_, ok := target.(*insufficientPermissions)
 	return ok
 }
 
-func (inp *insufficientPermission) Unwrap() error {
+func (inp *insufficientPermissions) Unwrap() error {
 	return inp.err
 }
 
-func (inp *insufficientPermission) Error() string {
+func (inp *insufficientPermissions) Error() string {
 	if inp.err != nil {
 		return fmt.Sprintf("%s: %s", insufficientPermissionMessage, inp.err)
 	}
