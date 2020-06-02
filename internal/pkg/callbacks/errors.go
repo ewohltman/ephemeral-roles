@@ -80,6 +80,7 @@ func (cnf *channelNotFound) Error() string {
 
 type insufficientPermission struct {
 	guild   *discordgo.Guild
+	member  *discordgo.Member
 	channel *discordgo.Channel
 	err     error
 }
