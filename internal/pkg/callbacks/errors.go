@@ -1,15 +1,21 @@
 package callbacks
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/bwmarrin/discordgo"
+)
 
 const (
-	memberNotFoundMessage         = "guild member not found"
+	memberNotFoundMessage         = "member not found"
 	channelNotFoundMessage        = "channel not found"
 	insufficientPermissionMessage = "insufficient channel permission"
 )
 
 type memberNotFound struct {
-	err error
+	guild *discordgo.Guild
+	err   error
 }
 
 func (mnf *memberNotFound) Is(target error) bool {
@@ -17,20 +23,32 @@ func (mnf *memberNotFound) Is(target error) bool {
 	return ok
 }
 
-func (mnf *memberNotFound) UnWrap() error {
+func (mnf *memberNotFound) Unwrap() error {
 	return mnf.err
 }
 
 func (mnf *memberNotFound) Error() string {
-	if mnf.err != nil {
-		return fmt.Sprintf("%s: %s", memberNotFoundMessage, mnf.err)
+	var errMsg string
+
+	if mnf.guild != nil {
+		errMsg = mnf.guild.Name
 	}
 
-	return memberNotFoundMessage
+	errMsg = strings.TrimSpace(
+		fmt.Sprintf("%s %s", errMsg, memberNotFoundMessage),
+	)
+
+	if mnf.err != nil {
+		return fmt.Sprintf("%s: %s", errMsg, mnf.err)
+	}
+
+	return errMsg
 }
 
 type channelNotFound struct {
-	err error
+	guild  *discordgo.Guild
+	member *discordgo.Member
+	err    error
 }
 
 func (cnf *channelNotFound) Is(target error) bool {
@@ -38,20 +56,33 @@ func (cnf *channelNotFound) Is(target error) bool {
 	return ok
 }
 
-func (cnf *channelNotFound) UnWrap() error {
+func (cnf *channelNotFound) Unwrap() error {
 	return cnf.err
 }
 
 func (cnf *channelNotFound) Error() string {
-	if cnf.err != nil {
-		return fmt.Sprintf("%s: %s", channelNotFoundMessage, cnf.err)
+	var errMsg string
+
+	if cnf.guild != nil {
+		errMsg = cnf.guild.Name
 	}
 
-	return channelNotFoundMessage
+	errMsg = strings.TrimSpace(
+		fmt.Sprintf("%s %s", errMsg, channelNotFoundMessage),
+	)
+
+	if cnf.err != nil {
+		return fmt.Sprintf("%s: %s", errMsg, cnf.err)
+	}
+
+	return errMsg
 }
 
 type insufficientPermission struct {
-	err error
+	guild   *discordgo.Guild
+	member  *discordgo.Member
+	channel *discordgo.Channel
+	err     error
 }
 
 func (inp *insufficientPermission) Is(target error) bool {
@@ -59,7 +90,7 @@ func (inp *insufficientPermission) Is(target error) bool {
 	return ok
 }
 
-func (inp *insufficientPermission) UnWrap() error {
+func (inp *insufficientPermission) Unwrap() error {
 	return inp.err
 }
 

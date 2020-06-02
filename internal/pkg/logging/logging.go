@@ -102,12 +102,13 @@ func (log *Logger) DiscordGof(discordgoLevel, caller int, format string, argumen
 }
 
 func (log *Logger) discordrusIntegration() {
-	if log.DiscordrusWebHookURL == "" {
-		return
-	}
-
 	log.Lock()
 	defer log.Unlock()
+
+	if log.DiscordrusWebHookURL == "" {
+		log.Logger.Hooks = make(logrus.LevelHooks)
+		return
+	}
 
 	log.Logger.Hooks = make(logrus.LevelHooks)
 

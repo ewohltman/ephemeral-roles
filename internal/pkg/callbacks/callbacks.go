@@ -29,22 +29,10 @@ type Config struct {
 	VoiceStateUpdateCounter prometheus.Counter
 }
 
-type roleID string
-
-type roleIDMap map[roleID]*discordgo.Role
-
 func lookupGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
 	guild, err := session.State.Guild(guildID)
 	if err != nil {
-		guild, err = queryGuild(ctx, session, guildID)
-		if err != nil {
-			return nil, fmt.Errorf("unable to lookup guild: %w", err)
-		}
-
-		err = session.State.GuildAdd(guild)
-		if err != nil {
-			return nil, fmt.Errorf("unable to add guild to session cache: %w", err)
-		}
+		return queryGuild(ctx, session, guildID)
 	}
 
 	return guild, nil
@@ -74,6 +62,12 @@ func queryGuild(ctx context.Context, session *discordgo.Session, guildID string)
 	guild.Roles = roles
 	guild.Channels = channels
 	guild.Members = members
+	guild.MemberCount = len(members)
+
+	err = session.State.GuildAdd(guild)
+	if err != nil {
+		return nil, fmt.Errorf("unable to add guild to session cache: %w", err)
+	}
 
 	return guild, nil
 }
@@ -107,16 +101,6 @@ func recursiveGuildMembersWithContext(
 	guildMembers = append(guildMembers, nextGuildMembers...)
 
 	return guildMembers, nil
-}
-
-func mapGuildRoleIDs(guildRoles discordgo.Roles) roleIDMap {
-	guildRoleMap := make(roleIDMap)
-
-	for _, role := range guildRoles {
-		guildRoleMap[roleID(role.ID)] = role
-	}
-
-	return guildRoleMap
 }
 
 func createGuildRole(ctx context.Context, session *discordgo.Session, guildID, roleName string, roleColor int) (*discordgo.Role, error) {
