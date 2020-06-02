@@ -25,8 +25,6 @@ func (config *Config) ChannelDelete(session *discordgo.Session, channel *discord
 			continue
 		}
 
-		config.Log.WithField("role", role.Name).Debug("Deleting Ephemeral Role")
-
 		err = session.State.RoleRemove(channel.GuildID, role.ID)
 		if err != nil {
 			config.Log.WithError(err).Error(channelDeleteEventError)
@@ -44,6 +42,8 @@ func (config *Config) ChannelDelete(session *discordgo.Session, channel *discord
 
 			return
 		}
+
+		config.Log.WithField("role", role.Name).Debug("Deleted Ephemeral Role")
 
 		return
 	}

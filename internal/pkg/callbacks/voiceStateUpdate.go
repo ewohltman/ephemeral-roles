@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 
@@ -52,21 +51,26 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, voiceState *d
 		},
 	)
 
-	log.Debug("Revoking Ephemeral Roles")
-
 	err = config.revokeEphemeralRoles(ctx, metadata)
 	if err != nil {
 		log.WithError(err).Error(voiceStateUpdateEventError)
 	}
 
-	log.WithField("role", metadata.EphemeralRole.Name).Debug("Granting Ephemeral Role")
+	log.Debug("Revoked Ephemeral Roles")
 
 	err = config.grantEphemeralRole(ctx, metadata)
 	if err != nil {
-		if !forbiddenResponse(err) {
-			log.WithError(err).Error(voiceStateUpdateEventError)
+		if forbiddenResponse(err) {
+			log.WithError(err).Debug(voiceStateUpdateEventError)
+			return
 		}
+
+		log.WithError(err).Error(voiceStateUpdateEventError)
+
+		return
 	}
+
+	log.WithField("role", metadata.EphemeralRole.Name).Debug("Granted Ephemeral Role")
 }
 
 func (config *Config) parseEvent(
@@ -76,7 +80,7 @@ func (config *Config) parseEvent(
 ) (*voiceStateUpdateMetadata, error) {
 	guild, err := lookupGuild(ctx, session, voiceState.GuildID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse event: %w", err)
+		return nil, fmt.Errorf("unable to lookup guild: %w", err)
 	}
 
 	member, err := session.State.Member(voiceState.GuildID, voiceState.UserID)
@@ -96,14 +100,28 @@ func (config *Config) parseEvent(
 		}
 	}
 
-	err = config.botHasChannelPermission(ctx, session, guild, member, channel)
+	err = config.botHasChannelPermission(ctx, session, channel)
 	if err != nil {
-		return nil, err
+		return nil, &insufficientPermissions{
+			guild:   guild,
+			member:  member,
+			channel: channel,
+			err:     err,
+		}
 	}
 
 	ephemeralRole, err := config.lookupRole(ctx, session, guild, channel)
 	if err != nil {
-		return nil, err
+		if !forbiddenResponse(err) {
+			return nil, err
+		}
+
+		return nil, &insufficientPermissions{
+			guild:   guild,
+			member:  member,
+			channel: channel,
+			err:     err,
+		}
 	}
 
 	return &voiceStateUpdateMetadata{
@@ -126,34 +144,14 @@ func (config *Config) handleParseEventError(ctx context.Context, session *discor
 	var channelNotFoundErr *channelNotFound
 
 	if errors.As(err, &channelNotFoundErr) {
-		log := config.Log.WithFields(
-			logrus.Fields{
-				"guild":  channelNotFoundErr.guild.Name,
-				"member": channelNotFoundErr.member.User.Username,
-			},
-		)
-
-		log.Debug("Revoking Ephemeral Roles")
-
-		config.handleChannelNotFoundError(ctx, log, session, channelNotFoundErr)
-
+		config.handleChannelNotFoundError(ctx, session, channelNotFoundErr)
 		return
 	}
 
-	var insufficientPermissionErr *insufficientPermission
+	var insufficientPermissionsErr *insufficientPermissions
 
-	if errors.As(err, &insufficientPermissionErr) {
-		log := config.Log.WithFields(
-			logrus.Fields{
-				"guild":  insufficientPermissionErr.guild.Name,
-				"member": insufficientPermissionErr.member.User.Username,
-			},
-		)
-
-		log.Debug("Revoking Ephemeral Roles")
-
-		config.handleInsufficientPermissionError(ctx, log, session, insufficientPermissionErr)
-
+	if errors.As(err, &insufficientPermissionsErr) {
+		config.handleInsufficientPermissionsError(ctx, session, insufficientPermissionsErr)
 		return
 	}
 
@@ -166,7 +164,6 @@ func (config *Config) handleMemberNotFoundError(memberNotFoundErr *memberNotFoun
 
 func (config *Config) handleChannelNotFoundError(
 	ctx context.Context,
-	log *logrus.Entry,
 	session *discordgo.Session,
 	channelNotFoundErr *channelNotFound,
 ) {
@@ -178,33 +175,35 @@ func (config *Config) handleChannelNotFoundError(
 
 	err := config.revokeEphemeralRoles(ctx, metadata)
 	if err != nil {
-		log.WithError(err).Error(voiceStateUpdateEventError)
+		config.Log.WithError(err).Error(voiceStateUpdateEventError)
 	}
 }
 
-func (config *Config) handleInsufficientPermissionError(
+func (config *Config) handleInsufficientPermissionsError(
 	ctx context.Context,
-	log *logrus.Entry,
 	session *discordgo.Session,
-	insufficientPermissionErr *insufficientPermission,
+	insufficientPermissionsErr *insufficientPermissions,
 ) {
+	config.Log.
+		WithError(insufficientPermissionsErr).
+		WithField("guild", insufficientPermissionsErr.guild.Name).
+		Debug(voiceStateUpdateEventError)
+
 	metadata := &voiceStateUpdateMetadata{
 		Session: session,
-		Guild:   insufficientPermissionErr.guild,
-		Member:  insufficientPermissionErr.member,
+		Guild:   insufficientPermissionsErr.guild,
+		Member:  insufficientPermissionsErr.member,
 	}
 
 	err := config.revokeEphemeralRoles(ctx, metadata)
 	if err != nil {
-		log.WithError(err).Error(voiceStateUpdateEventError)
+		config.Log.WithError(err).Error(voiceStateUpdateEventError)
 	}
 }
 
 func (config *Config) botHasChannelPermission(
 	ctx context.Context,
 	session *discordgo.Session,
-	guild *discordgo.Guild,
-	member *discordgo.Member,
 	channel *discordgo.Channel,
 ) error {
 	bot, err := session.UserWithContext(ctx, "@me")
@@ -218,11 +217,7 @@ func (config *Config) botHasChannelPermission(
 	}
 
 	if permissions&discordgo.PermissionViewChannel != discordgo.PermissionViewChannel {
-		return &insufficientPermission{
-			guild:   guild,
-			member:  member,
-			channel: channel,
-		}
+		return fmt.Errorf("insufficient channel permissions: channel: %s", channel.Name)
 	}
 
 	return nil
@@ -260,7 +255,7 @@ func (config *Config) lookupRole(
 		return guildRoles[index], nil
 	}
 
-	return createGuildRole(ctx, session, guild.ID, ephemeralRoleName, config.RoleColor)
+	return createGuildRole(ctx, session, guild, ephemeralRoleName, config.RoleColor)
 }
 
 func (config *Config) revokeEphemeralRoles(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
@@ -298,16 +293,4 @@ func (config *Config) revokeEphemeralRoles(ctx context.Context, metadata *voiceS
 
 func (config *Config) grantEphemeralRole(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
 	return addRoleToMember(ctx, metadata.Session, metadata.Guild.ID, metadata.Member.User.ID, metadata.EphemeralRole.ID)
-}
-
-func forbiddenResponse(err error) bool {
-	var restErr *discordgo.RESTError
-
-	if errors.As(err, &restErr) {
-		if restErr.Response.StatusCode == http.StatusForbidden {
-			return true
-		}
-	}
-
-	return false
 }
