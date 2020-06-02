@@ -55,6 +55,8 @@ func TestLogger_UpdateLevel(t *testing.T) {
 
 func TestLogger_DiscordGof(t *testing.T) {
 	log := testLogger()
+	log.DiscordrusWebHookURL = ""
+	log.UpdateLevel(logrus.InfoLevel.String())
 
 	logLevels := []int{
 		discordgo.LogError,

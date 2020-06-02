@@ -27,12 +27,12 @@ func TestMemberNotFound_Is(t *testing.T) {
 	}
 }
 
-func TestMemberNotFound_UnWrap(t *testing.T) {
+func TestMemberNotFound_Unwrap(t *testing.T) {
 	wrappedErr := fmt.Errorf(wrapMsg)
 
 	mnf := &memberNotFound{err: wrappedErr}
 
-	unwrappedErr := mnf.UnWrap()
+	unwrappedErr := mnf.Unwrap()
 
 	if unwrappedErr != wrappedErr {
 		t.Errorf(
@@ -83,12 +83,12 @@ func TestChannelNotFound_Is(t *testing.T) {
 	}
 }
 
-func TestChannelNotFound_UnWrap(t *testing.T) {
+func TestChannelNotFound_Unwrap(t *testing.T) {
 	wrappedErr := fmt.Errorf(wrapMsg)
 
 	cnf := &channelNotFound{err: wrappedErr}
 
-	unwrappedErr := cnf.UnWrap()
+	unwrappedErr := cnf.Unwrap()
 
 	if unwrappedErr != wrappedErr {
 		t.Errorf(
@@ -139,10 +139,10 @@ func TestInsufficientPermission_Is(t *testing.T) {
 	}
 }
 
-func TestInsufficientPermission_UnWrap(t *testing.T) {
+func TestInsufficientPermission_Unwrap(t *testing.T) {
 	inp := &insufficientPermission{}
 
-	unwrappedErr := inp.UnWrap()
+	unwrappedErr := inp.Unwrap()
 
 	if unwrappedErr != nil {
 		t.Errorf(
