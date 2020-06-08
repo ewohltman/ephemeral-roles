@@ -123,7 +123,7 @@ func createGuildRole(
 		ctx,
 		guild.ID, role.ID,
 		roleName, roleColor,
-		hoist, role.Permissions, role.Mentionable,
+		hoist, role.Permissions, true,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to edit ephemeral role: %w", err)
