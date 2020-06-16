@@ -131,6 +131,12 @@ func main() {
 
 	log.Infof("%s starting up", variables.BotName)
 
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("Panic! %v", r)
+		}
+	}()
+
 	jaegerTracer, jaegerCloser, err := tracer.New(ephemeralRoles)
 	if err != nil {
 		log.WithError(err).Fatal("Error setting up Jaeger tracer")
