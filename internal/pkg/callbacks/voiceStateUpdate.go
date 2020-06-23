@@ -265,6 +265,7 @@ func (config *Config) revokeEphemeralRoles(ctx context.Context, metadata *voiceS
 		role, err := metadata.Session.State.Role(metadata.Guild.ID, memberRoleID)
 		if err != nil {
 			revokeErrors = append(revokeErrors, fmt.Errorf("unable to revoke role: %w", err))
+			continue
 		}
 
 		if strings.HasPrefix(role.Name, config.RolePrefix) {
