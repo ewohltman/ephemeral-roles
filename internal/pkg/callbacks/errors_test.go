@@ -3,6 +3,7 @@ package callbacks
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
@@ -48,13 +49,8 @@ func TestMemberNotFound_Unwrap(t *testing.T) {
 }
 
 func TestMemberNotFound_Error(t *testing.T) {
-	mnf := &memberNotFound{guild: &discordgo.Guild{Name: mock.TestGuild}}
-
-	expectedErrMsg := fmt.Sprintf(
-		"%s in guild %q",
-		memberNotFoundMessage,
-		mnf.guild.Name,
-	)
+	mnf := &memberNotFound{}
+	expectedErrMsg := memberNotFoundMessage
 
 	if mnf.Error() != expectedErrMsg {
 		t.Errorf(
@@ -65,12 +61,7 @@ func TestMemberNotFound_Error(t *testing.T) {
 	}
 
 	mnf.err = fmt.Errorf(wrapMsg)
-	expectedErrMsg = fmt.Sprintf(
-		"%s in guild %q: %s",
-		memberNotFoundMessage,
-		mnf.guild.Name,
-		wrapMsg,
-	)
+	expectedErrMsg = fmt.Sprintf("%s: %s", memberNotFoundMessage, wrapMsg)
 
 	if mnf.Error() != expectedErrMsg {
 		t.Errorf(
@@ -78,6 +69,41 @@ func TestMemberNotFound_Error(t *testing.T) {
 			mnf.Error(),
 			expectedErrMsg,
 		)
+	}
+}
+
+func TestMemberNotFound_Guild(t *testing.T) {
+	expected := &discordgo.Guild{Name: mock.TestGuild}
+	inp := &memberNotFound{guild: expected}
+	actual := inp.Guild()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestMemberNotFound_Member(t *testing.T) {
+	var expected *discordgo.Member
+
+	inp := &memberNotFound{}
+	actual := inp.Member()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestMemberNotFound_Channel(t *testing.T) {
+	var expected *discordgo.Channel
+
+	inp := &memberNotFound{}
+	actual := inp.Channel()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -137,6 +163,40 @@ func TestChannelNotFound_Error(t *testing.T) {
 	}
 }
 
+func TestChannelNotFound_Guild(t *testing.T) {
+	expected := &discordgo.Guild{Name: mock.TestGuild}
+	inp := &channelNotFound{guild: expected}
+	actual := inp.Guild()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestChannelNotFound_Member(t *testing.T) {
+	expected := &discordgo.Member{User: &discordgo.User{Username: mock.TestUser}}
+	inp := &channelNotFound{member: expected}
+	actual := inp.Member()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestChannelNotFound_Channel(t *testing.T) {
+	var expected *discordgo.Channel
+
+	inp := &channelNotFound{}
+	actual := inp.Channel()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestInsufficientPermission_Is(t *testing.T) {
 	inp := &insufficientPermissions{}
 
@@ -188,4 +248,49 @@ func TestInsufficientPermission_Error(t *testing.T) {
 			expectedErrMsg,
 		)
 	}
+}
+
+func TestInsufficientPermissions_Guild(t *testing.T) {
+	expected := &discordgo.Guild{Name: mock.TestGuild}
+	inp := &insufficientPermissions{guild: expected}
+	actual := inp.Guild()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestInsufficientPermissions_Member(t *testing.T) {
+	expected := &discordgo.Member{User: &discordgo.User{Username: mock.TestUser}}
+	inp := &insufficientPermissions{member: expected}
+	actual := inp.Member()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestInsufficientPermissions_Channel(t *testing.T) {
+	expected := &discordgo.Channel{Name: mock.TestChannel}
+	inp := &insufficientPermissions{channel: expected}
+	actual := inp.Channel()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func deepEqual(actual, expected interface{}) error {
+	if !reflect.DeepEqual(actual, expected) {
+		return fmt.Errorf(
+			"unexpected result. Got: %+v, Expected: %+v",
+			actual,
+			expected,
+		)
+	}
+
+	return nil
 }

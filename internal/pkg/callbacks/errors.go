@@ -12,6 +12,13 @@ const (
 	insufficientPermissionMessage = "insufficient permissions"
 )
 
+type customError interface {
+	error
+	Guild() *discordgo.Guild
+	Member() *discordgo.Member
+	Channel() *discordgo.Channel
+}
+
 type memberNotFound struct {
 	guild *discordgo.Guild
 	err   error
@@ -27,17 +34,23 @@ func (mnf *memberNotFound) Unwrap() error {
 }
 
 func (mnf *memberNotFound) Error() string {
-	errMsg := memberNotFoundMessage
-
-	if mnf.guild != nil {
-		errMsg = fmt.Sprintf("%s in guild %q", errMsg, mnf.guild.Name)
-	}
-
 	if mnf.err != nil {
-		errMsg = fmt.Sprintf("%s: %s", errMsg, mnf.err)
+		return fmt.Sprintf("%s: %s", memberNotFoundMessage, mnf.err)
 	}
 
-	return errMsg
+	return memberNotFoundMessage
+}
+
+func (mnf *memberNotFound) Guild() *discordgo.Guild {
+	return mnf.guild
+}
+
+func (mnf *memberNotFound) Member() *discordgo.Member {
+	return nil
+}
+
+func (mnf *memberNotFound) Channel() *discordgo.Channel {
+	return nil
 }
 
 type channelNotFound struct {
@@ -63,6 +76,18 @@ func (cnf *channelNotFound) Error() string {
 	return channelNotFoundMessage
 }
 
+func (cnf *channelNotFound) Guild() *discordgo.Guild {
+	return cnf.guild
+}
+
+func (cnf *channelNotFound) Member() *discordgo.Member {
+	return cnf.member
+}
+
+func (cnf *channelNotFound) Channel() *discordgo.Channel {
+	return nil
+}
+
 type insufficientPermissions struct {
 	guild   *discordgo.Guild
 	member  *discordgo.Member
@@ -85,4 +110,16 @@ func (inp *insufficientPermissions) Error() string {
 	}
 
 	return insufficientPermissionMessage
+}
+
+func (inp *insufficientPermissions) Guild() *discordgo.Guild {
+	return inp.guild
+}
+
+func (inp *insufficientPermissions) Member() *discordgo.Member {
+	return inp.member
+}
+
+func (inp *insufficientPermissions) Channel() *discordgo.Channel {
+	return inp.channel
 }
