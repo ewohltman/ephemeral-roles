@@ -83,7 +83,7 @@ func (config *Config) parseEvent(
 		return nil, fmt.Errorf("unable to lookup guild: %w", err)
 	}
 
-	member, err := session.State.Member(voiceState.GuildID, voiceState.UserID)
+	member, err := session.State.Member(guild.ID, voiceState.UserID)
 	if err != nil {
 		return nil, &memberNotFound{
 			guild: guild,

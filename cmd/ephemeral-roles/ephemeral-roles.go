@@ -55,6 +55,7 @@ func startSession(
 	session.ShardID = variables.ShardID
 	session.ShardCount = variables.ShardCount
 	session.LogLevel = discordgo.LogError
+	session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
 
 	monitorConfig := &monitor.Config{
 		Log:      log,

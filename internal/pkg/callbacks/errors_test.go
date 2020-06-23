@@ -4,6 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+
+	"github.com/bwmarrin/discordgo"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
 const (
@@ -44,8 +48,13 @@ func TestMemberNotFound_Unwrap(t *testing.T) {
 }
 
 func TestMemberNotFound_Error(t *testing.T) {
-	mnf := &memberNotFound{}
-	expectedErrMsg := memberNotFoundMessage
+	mnf := &memberNotFound{guild: &discordgo.Guild{Name: mock.TestGuild}}
+
+	expectedErrMsg := fmt.Sprintf(
+		"%s in guild %q",
+		memberNotFoundMessage,
+		mnf.guild.Name,
+	)
 
 	if mnf.Error() != expectedErrMsg {
 		t.Errorf(
@@ -56,7 +65,12 @@ func TestMemberNotFound_Error(t *testing.T) {
 	}
 
 	mnf.err = fmt.Errorf(wrapMsg)
-	expectedErrMsg = fmt.Sprintf("%s: %s", memberNotFoundMessage, wrapMsg)
+	expectedErrMsg = fmt.Sprintf(
+		"%s in guild %q: %s",
+		memberNotFoundMessage,
+		mnf.guild.Name,
+		wrapMsg,
+	)
 
 	if mnf.Error() != expectedErrMsg {
 		t.Errorf(
