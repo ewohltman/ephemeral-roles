@@ -27,11 +27,17 @@ func (mnf *memberNotFound) Unwrap() error {
 }
 
 func (mnf *memberNotFound) Error() string {
-	if mnf.err != nil {
-		return fmt.Sprintf("%s: %s", memberNotFoundMessage, mnf.err)
+	errMsg := memberNotFoundMessage
+
+	if mnf.guild != nil {
+		errMsg = fmt.Sprintf("%s in guild %q", errMsg, mnf.guild.Name)
 	}
 
-	return memberNotFoundMessage
+	if mnf.err != nil {
+		errMsg = fmt.Sprintf("%s: %s", errMsg, mnf.err)
+	}
+
+	return errMsg
 }
 
 type channelNotFound struct {
