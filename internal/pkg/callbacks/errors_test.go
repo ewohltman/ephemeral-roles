@@ -74,8 +74,8 @@ func TestMemberNotFound_Error(t *testing.T) {
 
 func TestMemberNotFound_Guild(t *testing.T) {
 	expected := &discordgo.Guild{Name: mock.TestGuild}
-	inp := &memberNotFound{guild: expected}
-	actual := inp.Guild()
+	mnf := &memberNotFound{guild: expected}
+	actual := mnf.Guild()
 
 	err := deepEqual(actual, expected)
 	if err != nil {
@@ -86,8 +86,8 @@ func TestMemberNotFound_Guild(t *testing.T) {
 func TestMemberNotFound_Member(t *testing.T) {
 	var expected *discordgo.Member
 
-	inp := &memberNotFound{}
-	actual := inp.Member()
+	mnf := &memberNotFound{}
+	actual := mnf.Member()
 
 	err := deepEqual(actual, expected)
 	if err != nil {
@@ -98,8 +98,8 @@ func TestMemberNotFound_Member(t *testing.T) {
 func TestMemberNotFound_Channel(t *testing.T) {
 	var expected *discordgo.Channel
 
-	inp := &memberNotFound{}
-	actual := inp.Channel()
+	mnf := &memberNotFound{}
+	actual := mnf.Channel()
 
 	err := deepEqual(actual, expected)
 	if err != nil {
@@ -165,8 +165,8 @@ func TestChannelNotFound_Error(t *testing.T) {
 
 func TestChannelNotFound_Guild(t *testing.T) {
 	expected := &discordgo.Guild{Name: mock.TestGuild}
-	inp := &channelNotFound{guild: expected}
-	actual := inp.Guild()
+	cnf := &channelNotFound{guild: expected}
+	actual := cnf.Guild()
 
 	err := deepEqual(actual, expected)
 	if err != nil {
@@ -176,8 +176,8 @@ func TestChannelNotFound_Guild(t *testing.T) {
 
 func TestChannelNotFound_Member(t *testing.T) {
 	expected := &discordgo.Member{User: &discordgo.User{Username: mock.TestUser}}
-	inp := &channelNotFound{member: expected}
-	actual := inp.Member()
+	cnf := &channelNotFound{member: expected}
+	actual := cnf.Member()
 
 	err := deepEqual(actual, expected)
 	if err != nil {
@@ -188,8 +188,8 @@ func TestChannelNotFound_Member(t *testing.T) {
 func TestChannelNotFound_Channel(t *testing.T) {
 	var expected *discordgo.Channel
 
-	inp := &channelNotFound{}
-	actual := inp.Channel()
+	cnf := &channelNotFound{}
+	actual := cnf.Channel()
 
 	err := deepEqual(actual, expected)
 	if err != nil {
