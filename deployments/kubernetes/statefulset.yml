@@ -32,7 +32,7 @@ spec:
               memory: "256Mi"
           env:
             - name: LOG_LEVEL
-              value: "info"
+              value: "debug"
             - name: LOG_TIMEZONE_LOCATION
               value: "America/New_York"
             - name: BOT_TOKEN
