@@ -184,7 +184,7 @@ func (config *Config) logRevoke(ctx context.Context, session *discordgo.Session,
 
 	err := config.revokeEphemeralRoles(ctx, metadata)
 	if err != nil {
-		log.WithError(err).Error(voiceStateUpdateEventError)
+		log.WithError(err).Debug(voiceStateUpdateEventError)
 	}
 }
 

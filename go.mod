@@ -2,10 +2,10 @@ module github.com/ewohltman/ephemeral-roles
 
 go 1.14
 
-replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.20.3-0.20200623015501-2f2885befc97
+replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.20.3-0.20200727142320-c7fd9cb9e111
 
 require (
-	github.com/bwmarrin/discordgo v0.21.1
+	github.com/bwmarrin/discordgo v0.22.0
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/kz/discordrus v1.2.0
 	github.com/opentracing/opentracing-go v1.2.0
