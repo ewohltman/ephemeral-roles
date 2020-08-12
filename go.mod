@@ -1,6 +1,6 @@
 module github.com/ewohltman/ephemeral-roles
 
-go 1.14
+go 1.15
 
 replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.20.3-0.20200727142320-c7fd9cb9e111
 
