@@ -1,4 +1,4 @@
-FROM golang:1.14.1-alpine3.11
+FROM golang:1.15.0-alpine3.12
 
 COPY ephemeral-roles-debug .
 
