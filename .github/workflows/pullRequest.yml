@@ -12,6 +12,11 @@ jobs:
           go-version: 1.15
         id: go
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: go
+
       - name: Check out code
         uses: actions/checkout@v1
 
@@ -32,6 +37,9 @@ jobs:
           GO111MODULE=off go get -u github.com/mattn/goveralls
 
           goveralls -coverprofile=coverage.out -service=github
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
 
       - name: Build binary
         run: make build
