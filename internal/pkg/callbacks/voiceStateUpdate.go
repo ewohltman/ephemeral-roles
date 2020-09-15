@@ -270,6 +270,10 @@ func (config *Config) revokeEphemeralRoles(ctx context.Context, metadata *voiceS
 func (config *Config) revokeEphemeralRole(ctx context.Context, metadata *voiceStateUpdateMetadata, memberRoleID string) error {
 	role, err := metadata.Session.State.Role(metadata.Guild.ID, memberRoleID)
 	if err != nil {
+		if errors.Is(err, discordgo.ErrStateNotFound) {
+			return nil
+		}
+
 		return fmt.Errorf("unable to revoke ephemeral role: %w", err)
 	}
 
