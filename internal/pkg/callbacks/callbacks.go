@@ -3,13 +3,13 @@ package callbacks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
