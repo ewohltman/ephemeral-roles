@@ -1,5 +1,13 @@
 [
   {
+    "name": "testGuild3",
+    "memberCount": 4
+  },
+  {
+    "name": "testGuild2",
+    "memberCount": 3
+  },
+  {
     "name": "testGuild",
     "memberCount": 2
   }

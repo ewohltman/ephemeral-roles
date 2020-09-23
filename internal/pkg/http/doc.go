@@ -1,2 +1,2 @@
-// Package http provides HTTP client and server custom functionality.
+// Package http provides custom HTTP client and server functionality.
 package http

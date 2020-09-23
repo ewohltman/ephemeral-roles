@@ -20,32 +20,23 @@ func (rt roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) 
 
 // NewClient returns a new preconfigured *http.Client.
 func NewClient(transport http.RoundTripper, jaegerTracer opentracing.Tracer, instanceName string) *http.Client {
-	client := &http.Client{
-		Transport: transport,
-	}
+	client := &http.Client{Transport: transport}
 
-	SetTransport(client, jaegerTracer, instanceName)
+	setTransport(client, jaegerTracer, instanceName)
 
 	return client
 }
 
-// SetTransport takes an *http.Client and wraps its Transport with RoundTripper
-// middleware. If the *http.Client does not have an initial Transport, a new
-// *http.Transport will be allocated for it.
-func SetTransport(client *http.Client, jaegerTracer opentracing.Tracer, instanceName string) {
-	transport := client.Transport
-
-	if transport == nil {
-		transport = &http.Transport{}
+func setTransport(client *http.Client, jaegerTracer opentracing.Tracer, instanceName string) {
+	if client.Transport == nil {
+		client.Transport = &http.Transport{}
 	}
 
-	client.Transport = roundTripperWithTracer(jaegerTracer, instanceName,
-		roundTripperWithContext(transport),
+	client.Transport = roundTripperWithTracer(
+		jaegerTracer,
+		instanceName,
+		roundTripperWithContext(client.Transport),
 	)
-}
-
-func roundTripperWithTracer(jaegerTracer opentracing.Tracer, instanceName string, next http.RoundTripper) http.RoundTripper {
-	return tracer.RoundTripper(jaegerTracer, instanceName, next)
 }
 
 func roundTripperWithContext(next http.RoundTripper) http.RoundTripper {
@@ -61,4 +52,8 @@ func roundTripperWithContext(next http.RoundTripper) http.RoundTripper {
 			return next.RoundTrip(req.Clone(ctx))
 		},
 	)
+}
+
+func roundTripperWithTracer(jaegerTracer opentracing.Tracer, instanceName string, next http.RoundTripper) http.RoundTripper {
+	return tracer.RoundTripper(jaegerTracer, instanceName, next)
 }

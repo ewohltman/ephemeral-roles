@@ -1,4 +1,4 @@
-package environment
+package environment_test
 
 import (
 	"encoding/json"
@@ -6,6 +6,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/environment"
 )
 
 const testVariablesFile = "testdata/variables.json"
@@ -13,7 +15,7 @@ const testVariablesFile = "testdata/variables.json"
 func TestLookup(t *testing.T) {
 	const testVal = "testVal"
 
-	_, err := Lookup()
+	_, err := environment.Lookup()
 	if err == nil {
 		t.Errorf("Expected error, but got nil")
 	}
@@ -24,14 +26,14 @@ func TestLookup(t *testing.T) {
 	}
 
 	preset := []string{
-		BotToken,
-		LogLevel,
+		environment.BotToken,
+		environment.LogLevel,
 	}
 
 	setTestEnvironmentVariables(t, preset, testVal)
 	defer unSetTestEnvironmentVariables(t, preset)
 
-	actual, err := Lookup()
+	actual, err := environment.Lookup()
 	if err != nil {
 		t.Fatalf("Error looking up environment variables: %s", err)
 	}
@@ -45,13 +47,13 @@ func TestLookup(t *testing.T) {
 	}
 }
 
-func expectedResults() (*Variables, error) {
+func expectedResults() (*environment.Variables, error) {
 	jsonBytes, err := ioutil.ReadFile(testVariablesFile)
 	if err != nil {
 		return nil, err
 	}
 
-	variables := &Variables{}
+	variables := &environment.Variables{}
 
 	err = json.Unmarshal(jsonBytes, variables)
 	if err != nil {

@@ -1,13 +1,15 @@
-package mock
+package mock_test
 
 import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
 func TestNewLogger(t *testing.T) {
-	log := NewLogger()
+	log := mock.NewLogger()
 
 	if log == nil {
 		t.Fatal("unexpected nil Logger")
@@ -15,7 +17,7 @@ func TestNewLogger(t *testing.T) {
 }
 
 func TestLogger_WrappedLogger(t *testing.T) {
-	log := NewLogger().WrappedLogger()
+	log := mock.NewLogger().WrappedLogger()
 
 	if log == nil {
 		t.Fatal("unexpected nil wrapped *logrus.Logger")
@@ -23,9 +25,9 @@ func TestLogger_WrappedLogger(t *testing.T) {
 }
 
 func TestLogger_UpdateLevel(t *testing.T) {
-	NewLogger().UpdateLevel("info")
+	mock.NewLogger().UpdateLevel("info")
 }
 
-func TestLogger_DiscordGof(t *testing.T) {
-	NewLogger().DiscordGof(discordgo.LogDebug, 0, "Test: %d", 123)
+func TestLogger_DiscordGoLogf(t *testing.T) {
+	mock.NewLogger().DiscordGoLogf(discordgo.LogDebug, 0, "Test: %d", 123)
 }

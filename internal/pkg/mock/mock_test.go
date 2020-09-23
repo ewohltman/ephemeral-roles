@@ -1,4 +1,4 @@
-package mock
+package mock_test
 
 import (
 	"bytes"
@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
 func TestNewMirrorRoundTripper(t *testing.T) {
-	mirror := NewMirrorRoundTripper()
+	mirror := mock.NewMirrorRoundTripper()
 
 	reqBodyContent := []byte("Test message")
 	reqBody := bytes.NewReader(reqBodyContent)

@@ -17,40 +17,45 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
+// Supported endpoints.
 const (
-	metricsEndpoint = "/metrics"
+	RootEndpoint   = "/"
+	GuildsEndpoint = "/guilds"
+)
 
+const (
+	metricsEndpoint      = "/metrics"
 	pprofIndexEndpoint   = "/debug/pprof/"
 	pprofCmdlineEndpoint = "/debug/pprof/cmdline"
 	pprofProfileEndpoint = "/debug/pprof/profile"
 	pprofSymbolEndpoint  = "/debug/pprof/symbol"
 	pprofTraceEndpoint   = "/debug/pprof/trace"
-
-	guildsEndpoint = "/guilds"
-	rootEndpoint   = "/"
 )
 
-type sortableGuild struct {
+// SortableGuild is a representation of a guild that can be sorted by member
+// count.
+type SortableGuild struct {
 	Name        string `json:"name"`
 	MemberCount int    `json:"memberCount"`
 }
 
-type sortableGuilds []sortableGuild
+// SortableGuilds is a slice of SortableGuild structs.
+type SortableGuilds []SortableGuild
 
 // Len returns the length of guilds to satisfy the sort.Interface interface.
-func (guilds sortableGuilds) Len() int {
+func (guilds SortableGuilds) Len() int {
 	return len(guilds)
 }
 
 // Less returns whether the element i is less than element j to satisfy the
 // sort.Interface interface.
-func (guilds sortableGuilds) Less(i, j int) bool {
+func (guilds SortableGuilds) Less(i, j int) bool {
 	return guilds[i].MemberCount < guilds[j].MemberCount
 }
 
 // Swap swaps the elements i and j in the slice to satisfy the sort.Interface
 // interface.
-func (guilds sortableGuilds) Swap(i, j int) {
+func (guilds SortableGuilds) Swap(i, j int) {
 	guilds[i], guilds[j] = guilds[j], guilds[i]
 }
 
@@ -58,16 +63,15 @@ func (guilds sortableGuilds) Swap(i, j int) {
 func NewServer(log logging.Interface, session *discordgo.Session, port string) *http.Server {
 	mux := http.NewServeMux()
 
-	mux.Handle(metricsEndpoint, promhttp.Handler())
+	mux.HandleFunc(RootEndpoint, rootHandler(log))
+	mux.HandleFunc(GuildsEndpoint, guildsHandler(log, session))
 
+	mux.Handle(metricsEndpoint, promhttp.Handler())
 	mux.HandleFunc(pprofIndexEndpoint, pprof.Index)
 	mux.HandleFunc(pprofCmdlineEndpoint, pprof.Cmdline)
 	mux.HandleFunc(pprofProfileEndpoint, pprof.Profile)
 	mux.HandleFunc(pprofSymbolEndpoint, pprof.Symbol)
 	mux.HandleFunc(pprofTraceEndpoint, pprof.Trace)
-
-	mux.HandleFunc(guildsEndpoint, guildsHandler(log, session))
-	mux.HandleFunc(rootEndpoint, rootHandler(log))
 
 	errorLog := stdLog.New(log.WrappedLogger().WriterLevel(logrus.ErrorLevel), "", 0)
 
@@ -82,10 +86,10 @@ func guildsHandler(log logging.Interface, session *discordgo.Session) http.Handl
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer drainCloseRequest(log, r)
 
-		sortedGuilds := make(sortableGuilds, len(session.State.Guilds))
+		sortedGuilds := make(SortableGuilds, len(session.State.Guilds))
 
 		for i, guild := range session.State.Guilds {
-			sortedGuilds[i] = sortableGuild{
+			sortedGuilds[i] = SortableGuild{
 				Name:        guild.Name,
 				MemberCount: guild.MemberCount,
 			}

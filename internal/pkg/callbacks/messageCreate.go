@@ -8,27 +8,27 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Supported commands
+const (
+	InfoCommand     = "info"
+	LogLevelCommand = "log_level"
+)
+
+// Supported command parameters
+const (
+	LogLevelParamDebug   = "debug"
+	LogLevelParamInfo    = "info"
+	LogLevelParamWarning = "warning"
+	LogLevelParamError   = "error"
+	LogLevelParamFatal   = "fatal"
+	LogLevelParamPanic   = "panic"
+)
+
 // Content token parsing
 const (
 	numTokensMinimum               = 1
 	numTokensWithCommand           = 2
 	numTokensWithCommandParameters = 3
-)
-
-// Supported commands
-const (
-	infoCommand     = "info"
-	logLevelCommand = "log_level"
-)
-
-// Supported command parameters
-const (
-	logLevelParamDebug   = "debug"
-	logLevelParamInfo    = "info"
-	logLevelParamWarning = "warning"
-	logLevelParamError   = "error"
-	logLevelParamFatal   = "fatal"
-	logLevelParamPanic   = "panic"
 )
 
 const (
@@ -79,12 +79,12 @@ func (config *Config) parseMessage(s *discordgo.Session, contentTokens []string,
 	}
 
 	switch strings.ToLower(contentTokens[1]) {
-	case infoCommand:
+	case InfoCommand:
 		err := config.handleInfo(s, channelID)
 		if err != nil {
 			return err
 		}
-	case logLevelCommand:
+	case LogLevelCommand:
 		config.handleLogLevel(contentTokens)
 	}
 
@@ -102,29 +102,28 @@ func (config *Config) handleInfo(s *discordgo.Session, channelID string) error {
 
 func (config *Config) handleLogLevel(contentTokens []string) {
 	if len(contentTokens) >= numTokensWithCommandParameters {
-		level := strings.ToLower(contentTokens[2])
+		logLevel := strings.ToLower(contentTokens[2])
 
-		logFields := logrus.Fields{logLevelCommand: level}
+		logFields := logrus.Fields{LogLevelCommand: logLevel}
 
-		switch level {
-		case logLevelParamDebug:
-			config.Log.UpdateLevel(level)
+		config.updateLogLevel(logLevel)
+
+		switch logLevel {
+		case LogLevelParamDebug:
 			config.Log.WithFields(logFields).Debugf(logLevelChange)
-		case logLevelParamInfo:
-			config.Log.UpdateLevel(level)
+		case LogLevelParamInfo:
 			config.Log.WithFields(logFields).Infof(logLevelChange)
-		case logLevelParamWarning:
-			config.Log.UpdateLevel(level)
+		case LogLevelParamWarning:
 			config.Log.WithFields(logFields).Warnf(logLevelChange)
-		case logLevelParamError:
-			config.Log.UpdateLevel(level)
+		case LogLevelParamError:
 			config.Log.WithFields(logFields).Errorf(logLevelChange)
-		case logLevelParamFatal:
-			config.Log.UpdateLevel(level)
-		case logLevelParamPanic:
-			config.Log.UpdateLevel(level)
 		}
 	}
+}
+
+func (config *Config) updateLogLevel(logLevel string) {
+	config.Log.UpdateLevel(logLevel)
+	config.Log.UpdateDiscordrus()
 }
 
 func infoMessage() *discordgo.MessageEmbed {

@@ -1,4 +1,4 @@
-package callbacks
+package callbacks_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
@@ -44,14 +45,14 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 		Log: log,
 	}
 
-	config := &Config{
+	config := &callbacks.Config{
 		Log:                     log,
 		BotName:                 "testBot",
 		BotKeyword:              "testKeyword",
 		RolePrefix:              "{eph}",
 		JaegerTracer:            jaegerTracer,
 		ContextTimeout:          time.Second,
-		VoiceStateUpdateCounter: monitorConfig.VoiceStateUpdateCounter(),
+		VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(monitorConfig),
 	}
 
 	sendUpdate(session, config, mock.TestGuild, "unknownUser", mock.TestChannel)
@@ -65,7 +66,7 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	sendUpdate(session, config, mock.TestGuildLarge, mock.TestUser, "")
 }
 
-func sendUpdate(session *discordgo.Session, config *Config, guildID, userID, channelID string) {
+func sendUpdate(session *discordgo.Session, config *callbacks.Config, guildID, userID, channelID string) {
 	config.VoiceStateUpdate(
 		session,
 		&discordgo.VoiceStateUpdate{
