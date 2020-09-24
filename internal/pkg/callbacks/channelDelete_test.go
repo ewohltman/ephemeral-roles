@@ -1,4 +1,4 @@
-package callbacks
+package callbacks_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
@@ -19,7 +20,7 @@ func TestConfig_ChannelDelete(t *testing.T) {
 
 	log := mock.NewLogger()
 
-	config := &Config{
+	config := &callbacks.Config{
 		Log:            log,
 		BotName:        "testBot",
 		BotKeyword:     "testKeyword",
@@ -41,7 +42,7 @@ func TestConfig_ChannelDelete(t *testing.T) {
 	}
 }
 
-func foundRole(config *Config, guild *discordgo.Guild, channel *discordgo.Channel) bool {
+func foundRole(config *callbacks.Config, guild *discordgo.Guild, channel *discordgo.Channel) bool {
 	for _, guildRole := range guild.Roles {
 		if guildRole.Name == config.RolePrefix+" "+channel.Name {
 			return true

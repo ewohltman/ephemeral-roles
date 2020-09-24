@@ -12,8 +12,6 @@ import (
 	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-lib/metrics"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 const (
@@ -30,30 +28,6 @@ type RoundTripperFunc func(req *http.Request) (*http.Response, error)
 // RoundTrip implements the http.RoundTripper interface.
 func (rt RoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return rt(req)
-}
-
-type jaegerLogger struct {
-	log logging.Interface
-}
-
-// Infof satisfies the jaeger.Logger interface by delegating to the wrapped
-// logging.Interface Error method.
-func (jaegerLog *jaegerLogger) Infof(msg string, args ...interface{}) {
-	if jaegerLog.log == nil {
-		return
-	}
-
-	jaegerLog.log.Debugf(msg, args...)
-}
-
-// Error satisfies the jaeger.Logger interface by delegating to the wrapped
-// logging.Interface Error method.
-func (jaegerLog *jaegerLogger) Error(msg string) {
-	if jaegerLog.log == nil {
-		return
-	}
-
-	jaegerLog.log.WithError(fmt.Errorf("%s", msg)).Debug()
 }
 
 // New returns a new opentracing.Tracer and io.Closer to be used for

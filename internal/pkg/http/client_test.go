@@ -1,4 +1,4 @@
-package http
+package http_test
 
 import (
 	"context"
@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
@@ -30,7 +32,17 @@ func TestNewClient(t *testing.T) {
 		}
 	}()
 
-	client := NewClient(nil, jaegerTracer, "")
+	client := internalHTTP.NewClient(nil, jaegerTracer, "")
+
+	if client == nil {
+		t.Fatal("Unexpected nil *http.Client")
+	}
+
+	if client.Transport == nil {
+		t.Fatal("Unexpected nil http.RoundTripper")
+	}
+
+	client = internalHTTP.NewClient(http.DefaultTransport, jaegerTracer, "")
 
 	if client == nil {
 		t.Fatal("Unexpected nil *http.Client")
@@ -44,59 +56,6 @@ func TestNewClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error doing test request: %s", err)
 	}
-}
-
-func TestSetTransport(t *testing.T) {
-	testServer := httptest.NewServer(testServerHandler())
-	defer testServer.Close()
-
-	clientNilTransport := &http.Client{}
-
-	err := testSetTransport(clientNilTransport, testServer.URL)
-	if err != nil {
-		t.Fatalf("Error testing nil http.RoundTripper: %s", err)
-	}
-
-	clientWithTransport := &http.Client{
-		Transport: http.DefaultTransport,
-	}
-
-	err = testSetTransport(clientWithTransport, testServer.URL)
-	if err != nil {
-		t.Fatalf("Error testing nil http.RoundTripper: %s", err)
-	}
-}
-
-func testSetTransport(client *http.Client, testServerURL string) (err error) {
-	jaegerTracer, jaegerCloser, err := tracer.New(jaegerServiceName)
-	if err != nil {
-		return fmt.Errorf("error setting up Jaeger tracer: %w", err)
-	}
-
-	defer func() {
-		closeErr := jaegerCloser.Close()
-		if closeErr != nil {
-			if err != nil {
-				err = fmt.Errorf("%s: error closing Jaeger tracer: %w", err, closeErr)
-				return
-			}
-
-			err = fmt.Errorf("error closing Jaeger tracer: %w", closeErr)
-		}
-	}()
-
-	SetTransport(client, jaegerTracer, "")
-
-	if client.Transport == nil {
-		return fmt.Errorf("unexpected nil http.RoundTripper")
-	}
-
-	err = doTestRequests(client, testServerURL)
-	if err != nil {
-		return fmt.Errorf("error doing test request: %s", err)
-	}
-
-	return nil
 }
 
 func testServerHandler() http.HandlerFunc {
@@ -135,7 +94,7 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 		return fmt.Errorf("request context was not set")
 	}
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second)
 	defer cancelCtx()
 
 	resp, err = doRequest(ctx, client, testServerURL)

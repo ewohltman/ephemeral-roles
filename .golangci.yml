@@ -81,6 +81,7 @@ run:
   skip-dirs:
     - .github
     - build
+    - distributed/api
     - web
 
 issues:

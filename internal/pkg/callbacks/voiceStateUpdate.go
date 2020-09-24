@@ -46,7 +46,7 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, voiceState *d
 
 	log := config.Log.WithFields(
 		logrus.Fields{
-			"guild":  metadata.Guild.Name,
+			"Guild":  metadata.Guild.Name,
 			"member": metadata.Member.User.Username,
 		},
 	)
@@ -80,33 +80,33 @@ func (config *Config) parseEvent(
 ) (*voiceStateUpdateMetadata, error) {
 	guild, err := lookupGuild(ctx, session, voiceState.GuildID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to lookup guild: %w", err)
+		return nil, fmt.Errorf("unable to lookup Guild: %w", err)
 	}
 
 	member, err := session.State.Member(voiceState.GuildID, voiceState.UserID)
 	if err != nil {
-		return nil, &memberNotFound{
-			guild: guild,
-			err:   err,
+		return nil, &MemberNotFound{
+			Guild: guild,
+			Err:   err,
 		}
 	}
 
 	channel, err := session.State.GuildChannel(voiceState.GuildID, voiceState.ChannelID)
 	if err != nil {
-		return nil, &channelNotFound{
-			guild:  guild,
-			member: member,
-			err:    err,
+		return nil, &ChannelNotFound{
+			Guild:  guild,
+			Member: member,
+			Err:    err,
 		}
 	}
 
 	err = config.botHasChannelPermission(ctx, session, channel)
 	if err != nil {
-		return nil, &insufficientPermissions{
-			guild:   guild,
-			member:  member,
-			channel: channel,
-			err:     err,
+		return nil, &InsufficientPermissions{
+			Guild:   guild,
+			Member:  member,
+			Channel: channel,
+			Err:     err,
 		}
 	}
 
@@ -116,11 +116,11 @@ func (config *Config) parseEvent(
 			return nil, err
 		}
 
-		return nil, &insufficientPermissions{
-			guild:   guild,
-			member:  member,
-			channel: channel,
-			err:     err,
+		return nil, &InsufficientPermissions{
+			Guild:   guild,
+			Member:  member,
+			Channel: channel,
+			Err:     err,
 		}
 	}
 
@@ -135,9 +135,9 @@ func (config *Config) parseEvent(
 
 func (config *Config) handleParseEventError(ctx context.Context, session *discordgo.Session, err error) {
 	var (
-		memberNotFoundErr          *memberNotFound
-		channelNotFoundErr         *channelNotFound
-		insufficientPermissionsErr *insufficientPermissions
+		memberNotFoundErr          *MemberNotFound
+		channelNotFoundErr         *ChannelNotFound
+		insufficientPermissionsErr *InsufficientPermissions
 	)
 
 	switch {
@@ -152,25 +152,25 @@ func (config *Config) handleParseEventError(ctx context.Context, session *discor
 	}
 }
 
-func (config *Config) logRevoke(ctx context.Context, session *discordgo.Session, customErr customError) {
+func (config *Config) logRevoke(ctx context.Context, session *discordgo.Session, callbackError CallbackError) {
 	log := logrus.NewEntry(config.Log.WrappedLogger())
 
-	guild := customErr.Guild()
+	guild := callbackError.InGuild()
 	if guild != nil {
-		log = log.WithField("guild", guild.Name)
+		log = log.WithField("Guild", guild.Name)
 	}
 
-	member := customErr.Member()
+	member := callbackError.ForMember()
 	if member != nil {
 		log = log.WithField("member", member.User.Username)
 	}
 
-	channel := customErr.Channel()
+	channel := callbackError.InChannel()
 	if channel != nil {
 		log = log.WithField("channel", channel.Name)
 	}
 
-	log.WithError(customErr).Debug(voiceStateUpdateEventError)
+	log.WithError(callbackError).Debug(voiceStateUpdateEventError)
 
 	if member == nil {
 		return
@@ -178,8 +178,8 @@ func (config *Config) logRevoke(ctx context.Context, session *discordgo.Session,
 
 	metadata := &voiceStateUpdateMetadata{
 		Session: session,
-		Guild:   customErr.Guild(),
-		Member:  customErr.Member(),
+		Guild:   callbackError.InGuild(),
+		Member:  callbackError.ForMember(),
 	}
 
 	err := config.revokeEphemeralRoles(ctx, metadata)

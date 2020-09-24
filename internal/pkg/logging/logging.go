@@ -40,85 +40,120 @@ type Interface interface {
 	logrus.FieldLogger
 	WrappedLogger() *logrus.Logger
 	UpdateLevel(level string)
-	DiscordGof(discordgoLevel, caller int, format string, arguments ...interface{})
+	UpdateDiscordrus()
+	DiscordGoLogf(discordgoLevel, caller int, format string, arguments ...interface{})
 }
+
+// OptionFunc is used to configure options for a *Logger.
+type OptionFunc func(*Logger)
 
 // Logger wraps a *logrus.Logger instance and provides custom methods.
 type Logger struct {
 	sync.Mutex
-	*logrus.Entry
 	Location             *time.Location
 	DiscordrusWebHookURL string
+	*logrus.Entry
 }
 
-// New returns a new *Logger instance.
-func New(shardID int, logLevel, timezoneLocation, discordrusWebHookURL string) *Logger {
-	location := parseTimezoneLocation(timezoneLocation)
-
-	logrusLogger := &logrus.Logger{
-		Formatter: &locale{
-			&logrus.TextFormatter{},
-			location,
-		},
-		Out:   os.Stdout,
-		Level: logrus.InfoLevel,
-		Hooks: make(logrus.LevelHooks),
+// New returns a new *Logger instance configured with the OptionFunc arguments
+// provided.
+func New(options ...OptionFunc) *Logger {
+	localeFormatter := &locale{
+		Location:  time.UTC,
+		Formatter: &logrus.TextFormatter{},
 	}
 
-	log := &Logger{
-		Entry:                logrus.NewEntry(logrusLogger).WithField("shardID", shardID),
-		Location:             location,
-		DiscordrusWebHookURL: discordrusWebHookURL,
+	logger := &Logger{
+		Location: localeFormatter.Location,
+		Entry: logrus.NewEntry(&logrus.Logger{
+			Out:       os.Stdout,
+			Hooks:     make(logrus.LevelHooks),
+			Formatter: localeFormatter,
+			Level:     logrus.InfoLevel,
+		}),
 	}
 
-	log.UpdateLevel(logLevel)
+	for _, option := range options {
+		option(logger)
+	}
 
-	return log
+	return logger
+}
+
+// OptionalShardID returns an OptionFunc to configure a *Logger to include a
+// shardID field.
+func OptionalShardID(shardID int) OptionFunc {
+	return func(logger *Logger) {
+		logger.Entry = logger.Entry.WithField("shardID", shardID)
+	}
+}
+
+// OptionalLogLevel returns an OptionFunc to configure a *Logger log level.
+func OptionalLogLevel(logLevel string) OptionFunc {
+	return func(logger *Logger) {
+		logger.UpdateLevel(logLevel)
+		logger.UpdateDiscordrus()
+	}
+}
+
+// OptionalTimezoneLocation returns an OptionFunc to configure a *Logger
+// timezone location.
+func OptionalTimezoneLocation(timezoneLocation string) OptionFunc {
+	return func(logger *Logger) {
+		logger.Location = parseTimezoneLocation(timezoneLocation)
+
+		logger.Entry.Logger.Formatter = &locale{
+			Location:  logger.Location,
+			Formatter: &logrus.TextFormatter{},
+		}
+	}
+}
+
+// OptionalDiscordrus returns an OptionFunc to configure a *Logger to use a
+// Discordrus webhook URL.
+func OptionalDiscordrus(webhookURL string) OptionFunc {
+	return func(logger *Logger) {
+		logger.DiscordrusWebHookURL = webhookURL
+		logger.UpdateDiscordrus()
+	}
 }
 
 // WrappedLogger returns the wrapped *logrus.Logger instance.
-func (log *Logger) WrappedLogger() *logrus.Logger {
-	return log.Logger
+func (logger *Logger) WrappedLogger() *logrus.Logger {
+	logger.Mutex.Lock()
+	defer logger.Mutex.Unlock()
+
+	return logger.Logger
 }
 
 // UpdateLevel allows for runtime updates of the logging level.
-func (log *Logger) UpdateLevel(level string) {
-	log.Logger.SetLevel(parseLevel(level))
-	log.discordrusIntegration()
+func (logger *Logger) UpdateLevel(level string) {
+	logger.Mutex.Lock()
+	defer logger.Mutex.Unlock()
+
+	logger.Logger.SetLevel(parseLevel(level))
 }
 
-// DiscordGof is an adaptor for plugging into DiscordGo's logging system.
-func (log *Logger) DiscordGof(discordgoLevel, caller int, format string, arguments ...interface{}) {
-	switch discordgoLevel {
-	case discordgo.LogError:
-		log.Errorf(format, arguments...)
-	case discordgo.LogWarning:
-		log.Warnf(format, arguments...)
-	case discordgo.LogInformational:
-		log.Infof(format, arguments...)
-	case discordgo.LogDebug:
-		log.Debugf(format, arguments...)
-	}
-}
+// UpdateDiscordrus updates the Discordrus integration to use the *Logger
+// configuration.
+func (logger *Logger) UpdateDiscordrus() {
+	logger.Mutex.Lock()
+	defer logger.Mutex.Unlock()
 
-func (log *Logger) discordrusIntegration() {
-	log.Lock()
-	defer log.Unlock()
-
-	if log.DiscordrusWebHookURL == "" {
-		log.Logger.Hooks = make(logrus.LevelHooks)
+	if logger.DiscordrusWebHookURL == "" {
+		logger.Logger.Hooks = make(logrus.LevelHooks)
 		return
 	}
 
-	log.Logger.Hooks = make(logrus.LevelHooks)
+	logger.Logger.Hooks = make(logrus.LevelHooks)
 
-	timeString := time.Now().In(log.Location).String()
+	timeString := time.Now().In(logger.Location).String()
 	timeZoneToken := strings.Split(timeString, " ")[3]
 
-	log.Logger.AddHook(
+	logger.Logger.AddHook(
 		discordrus.NewHook(
-			log.DiscordrusWebHookURL,
-			log.Logger.Level,
+			logger.DiscordrusWebHookURL,
+			logger.Logger.Level,
 			&discordrus.Opts{
 				Username:           "",
 				Author:             "",
@@ -132,19 +167,40 @@ func (log *Logger) discordrusIntegration() {
 					Fatal: FatalColor,
 				},
 				TimestampFormat: "Jan 2 15:04:05.00000 " + timeZoneToken,
-				TimestampLocale: log.Location,
+				TimestampLocale: logger.Location,
 			},
 		),
 	)
 }
 
+// DiscordGoLogf is an adapter for plugging into DiscordGo's logging system.
+func (logger *Logger) DiscordGoLogf(discordgoLevel, caller int, format string, arguments ...interface{}) {
+	logger.Mutex.Lock()
+	defer logger.Mutex.Unlock()
+
+	switch discordgoLevel {
+	case discordgo.LogError:
+		logger.Errorf(format, arguments...)
+	case discordgo.LogWarning:
+		logger.Warnf(format, arguments...)
+	case discordgo.LogInformational:
+		logger.Infof(format, arguments...)
+	case discordgo.LogDebug:
+		logger.Debugf(format, arguments...)
+	}
+}
+
 type locale struct {
-	logrus.Formatter
 	*time.Location
+	logrus.Formatter
 }
 
 // Format satisfies the logrus.Formatter interface.
 func (locale *locale) Format(log *logrus.Entry) ([]byte, error) {
+	if locale.Location == nil {
+		return locale.Formatter.Format(log)
+	}
+
 	log.Time = log.Time.In(locale.Location)
 
 	return locale.Formatter.Format(log)

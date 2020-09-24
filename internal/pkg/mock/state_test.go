@@ -1,9 +1,13 @@
-package mock
+package mock_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
+)
 
 func TestNewState(t *testing.T) {
-	state, err := NewState()
+	state, err := mock.NewState()
 	if err != nil {
 		t.Fatalf("%s", err)
 	}

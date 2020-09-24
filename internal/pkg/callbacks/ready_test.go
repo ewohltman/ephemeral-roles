@@ -1,10 +1,11 @@
-package callbacks
+package callbacks_test
 
 import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
 
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 )
@@ -23,12 +24,12 @@ func TestConfig_Ready(t *testing.T) {
 		Log: log,
 	}
 
-	config := &Config{
+	config := &callbacks.Config{
 		Log:          log,
 		BotName:      "testBot",
 		BotKeyword:   "testKeyword",
 		RolePrefix:   "testRolePrefix",
-		ReadyCounter: monitorConfig.ReadyCounter(),
+		ReadyCounter: monitor.ReadyCounter(monitorConfig),
 	}
 
 	config.Ready(

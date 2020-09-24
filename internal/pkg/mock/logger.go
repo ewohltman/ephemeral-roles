@@ -14,11 +14,11 @@ type Logger struct {
 // NewLogger provides mock *Logger instance.
 func NewLogger() *Logger {
 	log := &Logger{
-		&logrus.Logger{
-			Formatter: &logrus.TextFormatter{},
+		Logger: &logrus.Logger{
 			Out:       ioutil.Discard,
-			Level:     logrus.InfoLevel,
 			Hooks:     make(logrus.LevelHooks),
+			Formatter: &logrus.TextFormatter{},
+			Level:     logrus.InfoLevel,
 		},
 	}
 
@@ -26,16 +26,22 @@ func NewLogger() *Logger {
 }
 
 // WrappedLogger returns the wrapped *logrus.Logger instance.
-func (log *Logger) WrappedLogger() *logrus.Logger {
-	return log.Logger
+func (logger *Logger) WrappedLogger() *logrus.Logger {
+	return logger.Logger
 }
 
-// UpdateLevel is a mock stub of the logging.Logger UpdateLevel method.
-func (log *Logger) UpdateLevel(level string) {
+// UpdateLevel is a mock stub of the *logging.Logger UpdateLevel method.
+func (logger *Logger) UpdateLevel(level string) {
 	// Nop
 }
 
-// DiscordGof is an adaptor for plugging into DiscordGo's logging system.
-func (log *Logger) DiscordGof(discordgoLevel, caller int, format string, arguments ...interface{}) {
+// UpdateDiscordrus is a mock stub of the *logging.Logger UpdateDiscordrus
+// method.
+func (logger *Logger) UpdateDiscordrus() {
+	// Nop
+}
+
+// DiscordGoLogf is a mock stub of the *logging.Logger DiscordGoLogf method.
+func (logger *Logger) DiscordGoLogf(discordgoLevel, caller int, format string, arguments ...interface{}) {
 	// Nop
 }

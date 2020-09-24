@@ -1,4 +1,4 @@
-package http
+package http_test
 
 import (
 	"context"
@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bwmarrin/discordgo"
+
+	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
@@ -32,7 +35,13 @@ func TestNewServer(t *testing.T) {
 
 	defer mock.SessionClose(t, session)
 
-	testServer := NewServer(log, session, testPort)
+	session.State.Guilds = append(
+		session.State.Guilds,
+		&discordgo.Guild{Name: "testGuild2", MemberCount: 3},
+		&discordgo.Guild{Name: "testGuild3", MemberCount: 4},
+	)
+
+	testServer := internalHTTP.NewServer(log, session, testPort)
 
 	go func() {
 		serverErr := testServer.ListenAndServe()
@@ -43,12 +52,12 @@ func TestNewServer(t *testing.T) {
 
 	time.Sleep(serverStartupDelay)
 
-	client := NewClient(nil, nil, "")
+	client := internalHTTP.NewClient(nil, nil, "")
 
 	testRootEndpoint(t, client)
 	testGuildsEndpoint(t, client)
 
-	ctx, cancelContext := context.WithTimeout(context.Background(), contextTimeout)
+	ctx, cancelContext := context.WithTimeout(context.Background(), time.Second)
 	defer cancelContext()
 
 	err = testServer.Shutdown(ctx)
@@ -58,7 +67,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func testRootEndpoint(t *testing.T, client *http.Client) {
-	resp, err := doRequest(context.TODO(), client, testURL+rootEndpoint)
+	resp, err := doRequest(context.Background(), client, testURL+internalHTTP.RootEndpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,14 +84,14 @@ func testGuildsEndpoint(t *testing.T, client *http.Client) {
 		t.Fatal(err)
 	}
 
-	expectedGuilds := make(sortableGuilds, 0)
+	expectedGuilds := make(internalHTTP.SortableGuilds, 0)
 
 	err = json.Unmarshal(expectedGuildsBytes, &expectedGuilds)
 	if err != nil {
 		t.Fatalf("Error unmarshaling expected guild data: %s", err)
 	}
 
-	resp, err := doRequest(context.TODO(), client, testURL+guildsEndpoint)
+	resp, err := doRequest(context.Background(), client, testURL+internalHTTP.GuildsEndpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +101,7 @@ func testGuildsEndpoint(t *testing.T, client *http.Client) {
 		t.Fatal(err)
 	}
 
-	actualGuilds := make(sortableGuilds, 0)
+	actualGuilds := make(internalHTTP.SortableGuilds, 0)
 
 	err = json.Unmarshal(actualGuildsBytes, &actualGuilds)
 	if err != nil {
