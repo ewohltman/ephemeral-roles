@@ -50,9 +50,9 @@ type OptionFunc func(*Logger)
 // Logger wraps a *logrus.Logger instance and provides custom methods.
 type Logger struct {
 	sync.Mutex
+	*logrus.Entry
 	Location             *time.Location
 	DiscordrusWebHookURL string
-	*logrus.Entry
 }
 
 // New returns a new *Logger instance configured with the OptionFunc arguments
@@ -64,13 +64,13 @@ func New(options ...OptionFunc) *Logger {
 	}
 
 	logger := &Logger{
-		Location: localeFormatter.Location,
 		Entry: logrus.NewEntry(&logrus.Logger{
 			Out:       os.Stdout,
 			Hooks:     make(logrus.LevelHooks),
 			Formatter: localeFormatter,
 			Level:     logrus.InfoLevel,
 		}),
+		Location: localeFormatter.Location,
 	}
 
 	for _, option := range options {
@@ -100,7 +100,7 @@ func OptionalLogLevel(logLevel string) OptionFunc {
 // timezone location.
 func OptionalTimezoneLocation(timezoneLocation string) OptionFunc {
 	return func(logger *Logger) {
-		logger.Location = parseTimezoneLocation(timezoneLocation)
+		logger.Location = parseTimezoneLocation(logger, timezoneLocation)
 
 		logger.Entry.Logger.Formatter = &locale{
 			Location:  logger.Location,
@@ -147,16 +147,11 @@ func (logger *Logger) UpdateDiscordrus() {
 
 	logger.Logger.Hooks = make(logrus.LevelHooks)
 
-	timeString := time.Now().In(logger.Location).String()
-	timeZoneToken := strings.Split(timeString, " ")[3]
-
 	logger.Logger.AddHook(
 		discordrus.NewHook(
 			logger.DiscordrusWebHookURL,
 			logger.Logger.Level,
 			&discordrus.Opts{
-				Username:           "",
-				Author:             "",
 				EnableCustomColors: true,
 				CustomLevelColors: &discordrus.LevelColors{
 					Debug: DebugColor,
@@ -166,7 +161,7 @@ func (logger *Logger) UpdateDiscordrus() {
 					Panic: PanicColor,
 					Fatal: FatalColor,
 				},
-				TimestampFormat: "Jan 2 15:04:05.00000 " + timeZoneToken,
+				TimestampFormat: "Jan 2 15:04:05.00000 MST",
 				TimestampLocale: logger.Location,
 			},
 		),
@@ -206,9 +201,10 @@ func (locale *locale) Format(log *logrus.Entry) ([]byte, error) {
 	return locale.Formatter.Format(log)
 }
 
-func parseTimezoneLocation(location string) *time.Location {
+func parseTimezoneLocation(logger *Logger, location string) *time.Location {
 	timezoneLocation, err := time.LoadLocation(location)
 	if err != nil {
+		logger.WithError(err).Warnf("Error parsing timezone location: %s", location)
 		return time.UTC
 	}
 
