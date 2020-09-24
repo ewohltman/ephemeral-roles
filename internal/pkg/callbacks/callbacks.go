@@ -43,22 +43,22 @@ func lookupGuild(ctx context.Context, session *discordgo.Session, guildID string
 func queryGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
 	guild, err := session.GuildWithContext(ctx, guildID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to query Guild: %w", err)
+		return nil, fmt.Errorf("unable to query guild: %w", err)
 	}
 
 	roles, err := session.GuildRolesWithContext(ctx, guildID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to query Guild channels: %w", err)
+		return nil, fmt.Errorf("unable to query guild channels: %w", err)
 	}
 
 	channels, err := session.GuildChannelsWithContext(ctx, guildID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to query Guild channels: %w", err)
+		return nil, fmt.Errorf("unable to query guild channels: %w", err)
 	}
 
 	members, err := recursiveGuildMembersWithContext(ctx, session, guildID, "", guildMembersPageLimit)
 	if err != nil {
-		return nil, fmt.Errorf("unable to query Guild members: %w", err)
+		return nil, fmt.Errorf("unable to query guild members: %w", err)
 	}
 
 	guild.Roles = roles
@@ -68,7 +68,7 @@ func queryGuild(ctx context.Context, session *discordgo.Session, guildID string)
 
 	err = session.State.GuildAdd(guild)
 	if err != nil {
-		return nil, fmt.Errorf("unable to add Guild to session cache: %w", err)
+		return nil, fmt.Errorf("unable to add guild to session cache: %w", err)
 	}
 
 	return guild, nil
