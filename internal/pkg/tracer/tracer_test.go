@@ -1,4 +1,4 @@
-package tracer
+package tracer_test
 
 import (
 	"bytes"
@@ -13,11 +13,10 @@ import (
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
-const (
-	jaegerServiceName = "ephemeral-roles"
-)
+const jaegerServiceName = "ephemeral-roles"
 
 func TestRoundTripperFunc_RoundTrip(t *testing.T) {
 	reqBodyContent := []byte("Test message")
@@ -39,18 +38,8 @@ func TestRoundTripperFunc_RoundTrip(t *testing.T) {
 	}
 }
 
-func TestJaegerLogger_Infof(t *testing.T) {
-	log := jaegerLogger{log: mock.NewLogger()}
-	log.Infof("Test %s", "message")
-}
-
-func TestJaegerLogger_Error(t *testing.T) {
-	log := jaegerLogger{log: mock.NewLogger()}
-	log.Error("Test message")
-}
-
 func TestNew(t *testing.T) {
-	tracer, closer, err := newTestTracer()
+	testTracer, closer, err := newTestTracer()
 	if err != nil {
 		t.Fatalf("Error creating test tracer: %s", err)
 	}
@@ -62,7 +51,7 @@ func TestNew(t *testing.T) {
 		}
 	}()
 
-	if tracer == nil {
+	if testTracer == nil {
 		t.Fatal("Unexpected nil tracer")
 	}
 }
@@ -80,7 +69,7 @@ func TestRoundTripper(t *testing.T) {
 		}
 	}()
 
-	_, err = doRoundTrip(RoundTripper(jaegerTracer, "", mock.NewMirrorRoundTripper()), nil)
+	_, err = doRoundTrip(tracer.RoundTripper(jaegerTracer, "", mock.NewMirrorRoundTripper()), nil)
 	if err != nil {
 		t.Fatalf("Error performing round trip: %s", err)
 	}
@@ -111,5 +100,5 @@ func doRoundTrip(roundTripper http.RoundTripper, reqBody io.Reader) ([]byte, err
 }
 
 func newTestTracer() (opentracing.Tracer, io.Closer, error) {
-	return New(jaegerServiceName)
+	return tracer.New(jaegerServiceName)
 }

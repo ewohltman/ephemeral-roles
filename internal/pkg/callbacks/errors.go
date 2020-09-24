@@ -6,120 +6,145 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Error messages.
 const (
-	memberNotFoundMessage         = "member not found"
-	channelNotFoundMessage        = "channel not found"
-	insufficientPermissionMessage = "insufficient permissions"
+	MemberNotFoundMessage         = "member not found"
+	ChannelNotFoundMessage        = "channel not found"
+	InsufficientPermissionMessage = "insufficient permissions"
 )
 
-type customError interface {
+// CallbackError embeds the error interface with additional methods to provide
+// metadata for the error.
+type CallbackError interface {
 	error
-	Guild() *discordgo.Guild
-	Member() *discordgo.Member
-	Channel() *discordgo.Channel
+	InGuild() *discordgo.Guild
+	ForMember() *discordgo.Member
+	InChannel() *discordgo.Channel
 }
 
-type memberNotFound struct {
-	guild *discordgo.Guild
-	err   error
+// MemberNotFound represents an error when a member is not found.
+type MemberNotFound struct {
+	Guild *discordgo.Guild
+	Err   error
 }
 
-func (mnf *memberNotFound) Is(target error) bool {
-	_, ok := target.(*memberNotFound)
+// Is allows MemberNotFound to be compared with errors.Is.
+func (mnf *MemberNotFound) Is(target error) bool {
+	_, ok := target.(*MemberNotFound)
 	return ok
 }
 
-func (mnf *memberNotFound) Unwrap() error {
-	return mnf.err
+// Unwrap returns an error wrapped by MemberNotFound.
+func (mnf *MemberNotFound) Unwrap() error {
+	return mnf.Err
 }
 
-func (mnf *memberNotFound) Error() string {
-	if mnf.err != nil {
-		return fmt.Sprintf("%s: %s", memberNotFoundMessage, mnf.err)
+// Error satisfies the errors interface for MemberNotFound.
+func (mnf *MemberNotFound) Error() string {
+	if mnf.Err != nil {
+		return fmt.Sprintf("%s: %s", MemberNotFoundMessage, mnf.Err)
 	}
 
-	return memberNotFoundMessage
+	return MemberNotFoundMessage
 }
 
-func (mnf *memberNotFound) Guild() *discordgo.Guild {
-	return mnf.guild
+// InGuild returns guild metadata for MemberNotFound.
+func (mnf *MemberNotFound) InGuild() *discordgo.Guild {
+	return mnf.Guild
 }
 
-func (mnf *memberNotFound) Member() *discordgo.Member {
+// ForMember satisfies the CallbackError interface for MemberNotFound.
+func (mnf *MemberNotFound) ForMember() *discordgo.Member {
 	return nil
 }
 
-func (mnf *memberNotFound) Channel() *discordgo.Channel {
+// InChannel satisfies the CallbackError interface for MemberNotFound.
+func (mnf *MemberNotFound) InChannel() *discordgo.Channel {
 	return nil
 }
 
-type channelNotFound struct {
-	guild  *discordgo.Guild
-	member *discordgo.Member
-	err    error
+// ChannelNotFound represents an error when a channel is not found.
+type ChannelNotFound struct {
+	Guild  *discordgo.Guild
+	Member *discordgo.Member
+	Err    error
 }
 
-func (cnf *channelNotFound) Is(target error) bool {
-	_, ok := target.(*channelNotFound)
+// Is allows ChannelNotFound to be compared with errors.Is.
+func (cnf *ChannelNotFound) Is(target error) bool {
+	_, ok := target.(*ChannelNotFound)
 	return ok
 }
 
-func (cnf *channelNotFound) Unwrap() error {
-	return cnf.err
+// Unwrap returns an error wrapped by ChannelNotFound.
+func (cnf *ChannelNotFound) Unwrap() error {
+	return cnf.Err
 }
 
-func (cnf *channelNotFound) Error() string {
-	if cnf.err != nil {
-		return fmt.Sprintf("%s: %s", channelNotFoundMessage, cnf.err)
+// Error satisfies the errors interface for ChannelNotFound.
+func (cnf *ChannelNotFound) Error() string {
+	if cnf.Err != nil {
+		return fmt.Sprintf("%s: %s", ChannelNotFoundMessage, cnf.Err)
 	}
 
-	return channelNotFoundMessage
+	return ChannelNotFoundMessage
 }
 
-func (cnf *channelNotFound) Guild() *discordgo.Guild {
-	return cnf.guild
+// InGuild returns guild metadata for ChannelNotFound.
+func (cnf *ChannelNotFound) InGuild() *discordgo.Guild {
+	return cnf.Guild
 }
 
-func (cnf *channelNotFound) Member() *discordgo.Member {
-	return cnf.member
+// ForMember returns member metadata for ChannelNotFound.
+func (cnf *ChannelNotFound) ForMember() *discordgo.Member {
+	return cnf.Member
 }
 
-func (cnf *channelNotFound) Channel() *discordgo.Channel {
+// InChannel satisfies the CallbackError interface for ChannelNotFound.
+func (cnf *ChannelNotFound) InChannel() *discordgo.Channel {
 	return nil
 }
 
-type insufficientPermissions struct {
-	guild   *discordgo.Guild
-	member  *discordgo.Member
-	channel *discordgo.Channel
-	err     error
+// InsufficientPermissions represents an error for when the bot lacks role
+// privileges to perform an operation.
+type InsufficientPermissions struct {
+	Guild   *discordgo.Guild
+	Member  *discordgo.Member
+	Channel *discordgo.Channel
+	Err     error
 }
 
-func (inp *insufficientPermissions) Is(target error) bool {
-	_, ok := target.(*insufficientPermissions)
+// Is allows InsufficientPermissions to be compared with errors.Is.
+func (inp *InsufficientPermissions) Is(target error) bool {
+	_, ok := target.(*InsufficientPermissions)
 	return ok
 }
 
-func (inp *insufficientPermissions) Unwrap() error {
-	return inp.err
+// Unwrap returns an error wrapped by InsufficientPermissions.
+func (inp *InsufficientPermissions) Unwrap() error {
+	return inp.Err
 }
 
-func (inp *insufficientPermissions) Error() string {
-	if inp.err != nil {
-		return fmt.Sprintf("%s: %s", insufficientPermissionMessage, inp.err)
+// Error satisfies the errors interface for InsufficientPermissions.
+func (inp *InsufficientPermissions) Error() string {
+	if inp.Err != nil {
+		return fmt.Sprintf("%s: %s", InsufficientPermissionMessage, inp.Err)
 	}
 
-	return insufficientPermissionMessage
+	return InsufficientPermissionMessage
 }
 
-func (inp *insufficientPermissions) Guild() *discordgo.Guild {
-	return inp.guild
+// InGuild returns guild metadata for InsufficientPermissions.
+func (inp *InsufficientPermissions) InGuild() *discordgo.Guild {
+	return inp.Guild
 }
 
-func (inp *insufficientPermissions) Member() *discordgo.Member {
-	return inp.member
+// ForMember returns member metadata for InsufficientPermissions.
+func (inp *InsufficientPermissions) ForMember() *discordgo.Member {
+	return inp.Member
 }
 
-func (inp *insufficientPermissions) Channel() *discordgo.Channel {
-	return inp.channel
+// InChannel returns channel metadata for InsufficientPermissions.
+func (inp *InsufficientPermissions) InChannel() *discordgo.Channel {
+	return inp.Channel
 }

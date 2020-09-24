@@ -24,18 +24,9 @@ import (
 
 const (
 	ephemeralRoles  = "ephemeral-roles"
-	monitorInterval = 1 * time.Minute
+	monitorInterval = 10 * time.Second
 	contextTimeout  = 1 * time.Minute
 )
-
-func newLogger(variables *environment.Variables) *logging.Logger {
-	return logging.New(
-		variables.ShardID,
-		variables.LogLevel,
-		variables.LogTimezoneLocation,
-		variables.DiscordrusWebHookURL,
-	)
-}
 
 func startSession(
 	ctx context.Context,
@@ -44,7 +35,7 @@ func startSession(
 	client *http.Client,
 	jaegerTracer opentracing.Tracer,
 ) (*discordgo.Session, error) {
-	discordgo.Logger = log.DiscordGof
+	discordgo.Logger = log.DiscordGoLogf
 
 	session, err := discordgo.New("Bot " + variables.BotToken)
 	if err != nil {
@@ -57,13 +48,11 @@ func startSession(
 	session.LogLevel = discordgo.LogError
 	session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
 
-	monitorConfig := &monitor.Config{
+	callbackMetrics := monitor.NewMetrics(&monitor.Config{
 		Log:      log,
 		Session:  session,
 		Interval: monitorInterval,
-	}
-
-	callbackMetrics := monitor.Metrics(monitorConfig)
+	})
 
 	setupCallbacks(session,
 		&callbacks.Config{
@@ -85,7 +74,7 @@ func startSession(
 		return nil, err
 	}
 
-	monitor.Start(ctx, monitorConfig)
+	callbackMetrics.Monitor(ctx)
 
 	return session, nil
 }
@@ -128,7 +117,12 @@ func main() {
 		stdLog.Fatalf("Error looking up environment variables: %s", err)
 	}
 
-	log := newLogger(variables)
+	log := logging.New(
+		logging.OptionalShardID(variables.ShardID),
+		logging.OptionalLogLevel(variables.LogLevel),
+		logging.OptionalTimezoneLocation(variables.LogTimezoneLocation),
+		logging.OptionalDiscordrus(variables.DiscordrusWebHookURL),
+	)
 
 	log.Infof("%s starting up", variables.BotName)
 

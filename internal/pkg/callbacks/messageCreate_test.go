@@ -1,4 +1,4 @@
-package callbacks
+package callbacks_test
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
@@ -45,14 +46,14 @@ func TestConfig_MessageCreate(t *testing.T) {
 		Log: log,
 	}
 
-	config := &Config{
+	config := &callbacks.Config{
 		Log:                  log,
 		BotName:              "testBot",
 		BotKeyword:           "testKeyword",
 		RolePrefix:           "{eph}",
 		JaegerTracer:         jaegerTracer,
 		ContextTimeout:       time.Second,
-		MessageCreateCounter: monitorConfig.MessageCreateCounter(),
+		MessageCreateCounter: monitor.MessageCreateCounter(monitorConfig),
 	}
 
 	originalLogLevel := log.Level.String()
@@ -63,14 +64,14 @@ func TestConfig_MessageCreate(t *testing.T) {
 		"ixnay",           // no keyword
 		config.BotKeyword, // only keyword
 		fmt.Sprintf("%s %s", config.BotKeyword, "ixnay"), // keyword, unrecognized command
-		fmt.Sprintf("%s %s", config.BotKeyword, infoCommand),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamDebug),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamInfo),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamWarning),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamError),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamFatal),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, logLevelParamPanic),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, logLevelCommand, originalLogLevel),
+		fmt.Sprintf("%s %s", config.BotKeyword, callbacks.InfoCommand),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamDebug),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamInfo),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamWarning),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamError),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamFatal),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamPanic),
+		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, originalLogLevel),
 	}
 
 	for _, test := range tests {
@@ -78,7 +79,7 @@ func TestConfig_MessageCreate(t *testing.T) {
 	}
 }
 
-func sendBotMessage(session *discordgo.Session, config *Config) {
+func sendBotMessage(session *discordgo.Session, config *callbacks.Config) {
 	config.MessageCreate(
 		session,
 		&discordgo.MessageCreate{
@@ -95,7 +96,7 @@ func sendBotMessage(session *discordgo.Session, config *Config) {
 	)
 }
 
-func sendMessage(s *discordgo.Session, config *Config, message string) {
+func sendMessage(s *discordgo.Session, config *callbacks.Config, message string) {
 	config.MessageCreate(
 		s,
 		&discordgo.MessageCreate{

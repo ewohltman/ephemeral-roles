@@ -11,51 +11,50 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
-type members struct {
+// Members contains fields for monitoring the number of members in the guilds
+// the bot belongs to.
+type Members struct {
 	Log             logging.Interface
 	Session         *discordgo.Session
-	PrometheusGauge prometheus.Gauge
 	Interval        time.Duration
-	cache           *membersCache
+	PrometheusGauge prometheus.Gauge
+	Cache           *MembersCache
 }
 
-type membersCache struct {
-	mutex      sync.Mutex
+// MembersCache is an in-memory cache of the number of members in the guilds
+// the bot belongs to.
+type MembersCache struct {
+	Mutex      *sync.Mutex
 	numMembers int
 }
 
-// Monitor sets up an infinite loop checking member changes
-func (m *members) Monitor(ctx context.Context) (done chan struct{}) {
-	done = make(chan struct{})
-	defer close(done)
-
-	m.cache = &membersCache{}
-
-	updateTicker := time.NewTicker(m.Interval)
+// Monitor sets up an infinite loop checking member changes.
+func (members *Members) Monitor(ctx context.Context) {
+	updateTicker := time.NewTicker(members.Interval)
 	defer updateTicker.Stop()
 
 	for {
 		select {
 		case <-updateTicker.C:
-			m.update()
+			members.update()
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (m *members) update() {
-	m.cache.mutex.Lock()
-	defer m.cache.mutex.Unlock()
+func (members *Members) update() {
+	members.Cache.Mutex.Lock()
+	defer members.Cache.Mutex.Unlock()
 
 	numMembers := 0
 
-	for _, guild := range m.Session.State.Guilds {
+	for _, guild := range members.Session.State.Guilds {
 		numMembers += guild.MemberCount
 	}
 
-	if numMembers != m.cache.numMembers {
-		m.cache.numMembers = numMembers
-		m.PrometheusGauge.Set(float64(m.cache.numMembers))
+	if numMembers != members.Cache.numMembers {
+		members.Cache.numMembers = numMembers
+		members.PrometheusGauge.Set(float64(members.Cache.numMembers))
 	}
 }
