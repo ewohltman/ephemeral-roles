@@ -19,6 +19,6 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
-	google.golang.org/grpc v1.27.0
+	google.golang.org/grpc v1.32.0
 	google.golang.org/protobuf v1.25.0
 )
