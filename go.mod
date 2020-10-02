@@ -14,7 +14,7 @@ require (
 	github.com/prometheus/common v0.13.0 // indirect
 	github.com/sirupsen/logrus v1.7.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
-	github.com/uber/jaeger-lib v2.3.0+incompatible
+	github.com/uber/jaeger-lib v2.4.0+incompatible
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
