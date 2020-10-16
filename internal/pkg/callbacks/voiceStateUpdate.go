@@ -91,7 +91,7 @@ func (config *Config) parseEvent(
 		}
 	}
 
-	channel, err := session.State.GuildChannel(voiceState.GuildID, voiceState.ChannelID)
+	channel, err := session.State.Channel(voiceState.ChannelID)
 	if err != nil {
 		return nil, &ChannelNotFound{
 			Guild:  guild,
@@ -157,7 +157,7 @@ func (config *Config) logRevoke(ctx context.Context, session *discordgo.Session,
 
 	guild := callbackError.InGuild()
 	if guild != nil {
-		log = log.WithField("Guild", guild.Name)
+		log = log.WithField("guild", guild.Name)
 	}
 
 	member := callbackError.ForMember()
