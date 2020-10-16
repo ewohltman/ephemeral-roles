@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.15
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
           go-version: 1.15
         id: go
@@ -21,12 +21,12 @@ jobs:
           languages: go
 
       - name: Check out code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v1.2.1
+        uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.27
+          version: v1.31
 
       - name: Run tests
         run: make test
