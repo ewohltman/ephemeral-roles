@@ -83,6 +83,7 @@ func TestLogger_UpdateDiscordrus(t *testing.T) {
 func TestLogger_DiscordGoLogf(t *testing.T) {
 	log := testLogger()
 	log.DiscordrusWebHookURL = ""
+	log.UpdateDiscordrus()
 	log.UpdateLevel(logrus.InfoLevel.String())
 
 	logLevels := []int{
@@ -132,14 +133,13 @@ func TestLocale_Format(t *testing.T) {
 
 func testLogger() *Logger {
 	log := New(
+		OptionalOutput(ioutil.Discard),
 		OptionalShardID(0),
 		OptionalLogLevel("info"),
 		OptionalTimezoneLocation("xyz"),
 		OptionalTimezoneLocation("America/New_York"),
 		OptionalDiscordrus("test"),
 	)
-
-	log.Logger.SetOutput(ioutil.Discard)
 
 	return log
 }

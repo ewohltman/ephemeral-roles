@@ -4,6 +4,7 @@
 package logging
 
 import (
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -78,6 +79,14 @@ func New(options ...OptionFunc) *Logger {
 	}
 
 	return logger
+}
+
+// OptionalOutput returns an OptionFunc to configure a *Logger to set where log
+// messages should output to.
+func OptionalOutput(output io.Writer) OptionFunc {
+	return func(logger *Logger) {
+		logger.Logger.SetOutput(output)
+	}
 }
 
 // OptionalShardID returns an OptionFunc to configure a *Logger to include a
