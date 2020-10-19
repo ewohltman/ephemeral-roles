@@ -28,8 +28,9 @@ import (
 
 const (
 	ephemeralRoles  = "ephemeral-roles"
-	monitorInterval = 10 * time.Second
 	contextTimeout  = 1 * time.Minute
+	monitorInterval = 10 * time.Second
+	discordIntents  = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
 )
 
 type environmentVariables struct {
@@ -48,7 +49,7 @@ type environmentVariables struct {
 }
 
 func (envVars *environmentVariables) parseShardID() error {
-	shardIDRegEx := regexp.MustCompile(`-[0-9].*$`)
+	shardIDRegEx := regexp.MustCompile(`-\d.*$`)
 
 	shardIDString := shardIDRegEx.FindString(envVars.InstanceName)
 	shardIDString = strings.TrimPrefix(shardIDString, "-")
@@ -81,7 +82,7 @@ func startSession(
 	session.ShardID = envVars.shardID
 	session.ShardCount = envVars.ShardCount
 	session.LogLevel = discordgo.LogError
-	session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAllWithoutPrivileged)
+	session.Identify.Intents = discordgo.MakeIntent(discordIntents)
 
 	callbackMetrics := monitor.NewMetrics(&monitor.Config{
 		Log:      log,
