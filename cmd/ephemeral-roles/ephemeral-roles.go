@@ -30,7 +30,6 @@ const (
 	ephemeralRoles  = "ephemeral-roles"
 	contextTimeout  = 1 * time.Minute
 	monitorInterval = 10 * time.Second
-	discordIntents  = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
 )
 
 type environmentVariables struct {
@@ -82,7 +81,7 @@ func startSession(
 	session.ShardID = envVars.shardID
 	session.ShardCount = envVars.ShardCount
 	session.LogLevel = discordgo.LogError
-	session.Identify.Intents = discordgo.MakeIntent(discordIntents)
+	session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
 
 	callbackMetrics := monitor.NewMetrics(&monitor.Config{
 		Log:      log,
