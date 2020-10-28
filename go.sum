@@ -58,8 +58,8 @@ github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaB
 github.com/envoyproxy/go-control-plane v0.6.9/go.mod h1:SBwIajubJHhxtWwsL9s8ss4safvEdbitLhGGK48rN6g=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/ewohltman/discordgo v0.20.3-0.20201016153228-9042d383c330 h1:kmrvwMX7beo0XDV4NZniB8v4fokl5zys+srpE94wT20=
-github.com/ewohltman/discordgo v0.20.3-0.20201016153228-9042d383c330/go.mod h1:phiR86AY7EEYiDst9ocktQmUDsBGhl96BCtWj+u2s64=
+github.com/ewohltman/discordgo v0.20.3-0.20201028134144-cd014f4eaccf h1:cABIK+CXjgxdJKlabSXxfqvHYg6+QOhF2ucagcTy7rI=
+github.com/ewohltman/discordgo v0.20.3-0.20201028134144-cd014f4eaccf/go.mod h1:phiR86AY7EEYiDst9ocktQmUDsBGhl96BCtWj+u2s64=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=

@@ -1,7 +1,9 @@
-.PHONY: lint test build docker push deploy
+.PHONY: generate fmt lint test build build-debug pull-parent-image image push deploy
 
 MAKEFILE_PATH=$(shell readlink -f "${0}")
 MAKEFILE_DIR=$(shell dirname "${MAKEFILE_PATH}")
+
+version=$(shell grep ' .*version: .*' deployments/kubernetes/statefulset.yml | awk '{print $$2}')
 
 parentImage=alpine:latest
 
@@ -13,6 +15,9 @@ protocArguments=${protocArgumentsIncludes} ${protocArgumentsGo} ${protocArgument
 
 generate:
 	protoc ${protocArguments} ${protocDirectory}/api.proto
+
+fmt:
+	gofmt -s -w . && goimports -w .
 
 lint:
 	golangci-lint run ./...
@@ -30,11 +35,13 @@ pull-parent-image:
 	docker pull ${parentImage}
 
 image: pull-parent-image
-	docker image build -t ewohltman/ephemeral-roles:latest build/package/ephemeral-roles
+	@echo "Build image: ${version}"
+	docker image build -t ewohltman/ephemeral-roles:${version} build/package/ephemeral-roles
 
 push:
 	docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-	docker push ewohltman/ephemeral-roles:latest
+	docker push ewohltman/ephemeral-roles:${version}
+	docker tag ewohltman/ephemeral-roles:${version} ewohltman/ephemeral-roles:latest
 	docker logout
 
 deploy:
