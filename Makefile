@@ -3,7 +3,7 @@
 MAKEFILE_PATH=$(shell readlink -f "${0}")
 MAKEFILE_DIR=$(shell dirname "${MAKEFILE_PATH}")
 
-version=$(shell grep ' .*version: .*' deployments/kubernetes/statefulset.yml | awk '{print $$2}')
+version=$(shell grep ' .*version: .*' deployments/kubernetes/statefulset.yml | awk '{print $$3}')
 
 parentImage=alpine:latest
 
