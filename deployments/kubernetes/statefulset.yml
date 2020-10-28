@@ -16,12 +16,13 @@ spec:
     metadata:
       labels:
         app: ephemeral-roles
-        version: v1.0.0
+        version: &VERSION v1.0.0
     spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ephemeral-roles
-          image: ewohltman/ephemeral-roles:latest
+          image:
+            << : ["ewohltman/ephemeral-roles:",*VERSION]
           imagePullPolicy: Always
           resources:
             limits:
