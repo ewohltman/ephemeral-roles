@@ -16,7 +16,6 @@ spec:
     metadata:
       labels:
         app: ephemeral-roles
-        shardCount: "10"
     spec:
       terminationGracePeriodSeconds: 30
       containers:
@@ -31,6 +30,8 @@ spec:
               cpu: "100m"
               memory: "256Mi"
           env:
+            - name: SHARD_COUNT
+              value: "10"
             - name: LOG_LEVEL
               value: "info"
             - name: LOG_TIMEZONE_LOCATION
@@ -45,10 +46,6 @@ spec:
                 secretKeyRef:
                   name: ephemeral-roles
                   key: discordrusWebhookURL
-            - name: SHARD_COUNT
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.shardCount
             - name: INSTANCE_NAME
               valueFrom:
                 fieldRef:
