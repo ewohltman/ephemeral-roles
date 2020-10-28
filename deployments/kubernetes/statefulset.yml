@@ -16,6 +16,7 @@ spec:
     metadata:
       labels:
         app: ephemeral-roles
+        shardCount: "10"
     spec:
       terminationGracePeriodSeconds: 30
       containers:
@@ -47,7 +48,7 @@ spec:
             - name: SHARD_COUNT
               valueFrom:
                 fieldRef:
-                  fieldPath: spec.replicas
+                  fieldPath: metadata.shardCount
             - name: INSTANCE_NAME
               valueFrom:
                 fieldRef:
