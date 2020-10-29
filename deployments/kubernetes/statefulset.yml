@@ -36,24 +36,24 @@ spec:
               value: "info"
             - name: LOG_TIMEZONE_LOCATION
               value: "America/New_York"
-            - name: BOT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: ephemeral-roles
-                  key: botToken
-            - name: DISCORDRUS_WEBHOOK_URL
-              valueFrom:
-                secretKeyRef:
-                  name: ephemeral-roles
-                  key: discordrusWebhookURL
-            - name: INSTANCE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             - name: JAEGER_SERVICE_NAME
               value: ephemeral-roles.ephemeral-roles
             - name: JAEGER_PROPAGATION
               value: jaeger,b3
+            - name: INSTANCE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ephemeral-roles
+                  key: bot-token
+            - name: DISCORDRUS_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ephemeral-roles
+                  key: discordrus-webhook-url
           ports:
             - name: http
               containerPort: 8080

@@ -4,6 +4,9 @@
 # Test results
 coverage.out
 
+# Deployment config
+deployments/kubernetes/secret.yml
+
 # Binary
 build/package/ephemeral-roles/ephemeral-roles
 build/package/ephemeral-roles-debug/ephemeral-roles-debug

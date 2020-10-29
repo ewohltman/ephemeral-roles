@@ -35,7 +35,6 @@ pull-parent-image:
 	docker pull ${parentImage}
 
 image: pull-parent-image
-	@echo "Build image: ${version}"
 	docker image build -t ewohltman/ephemeral-roles:${version} build/package/ephemeral-roles
 
 push:
