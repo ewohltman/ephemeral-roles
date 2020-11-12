@@ -13,7 +13,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
-func TestConfig_VoiceStateUpdate(t *testing.T) {
+func TestHandler_VoiceStateUpdate(t *testing.T) {
 	jaegerTracer, jaegerCloser, err := tracer.New("test")
 	if err != nil {
 		t.Fatalf("Error creating Jaeger tracer: %s", err)
@@ -45,7 +45,7 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 		Log: log,
 	}
 
-	config := &callbacks.Config{
+	config := &callbacks.Handler{
 		Log:                     log,
 		BotName:                 "testBot",
 		BotKeyword:              "testKeyword",
@@ -66,7 +66,7 @@ func TestConfig_VoiceStateUpdate(t *testing.T) {
 	sendUpdate(session, config, mock.TestGuildLarge, mock.TestUser, "")
 }
 
-func sendUpdate(session *discordgo.Session, config *callbacks.Config, guildID, userID, channelID string) {
+func sendUpdate(session *discordgo.Session, config *callbacks.Handler, guildID, userID, channelID string) {
 	config.VoiceStateUpdate(
 		session,
 		&discordgo.VoiceStateUpdate{

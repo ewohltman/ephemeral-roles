@@ -10,11 +10,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
 
 const (
-	voiceStateUpdate = "VoiceStateUpdate"
-
+	voiceStateUpdate           = "VoiceStateUpdate"
 	voiceStateUpdateEventError = "Unable to process event: " + voiceStateUpdate
 )
 
@@ -27,40 +28,40 @@ type voiceStateUpdateMetadata struct {
 }
 
 // VoiceStateUpdate is the callback function for the VoiceStateUpdate event from Discord.
-func (config *Config) VoiceStateUpdate(session *discordgo.Session, voiceState *discordgo.VoiceStateUpdate) {
-	config.VoiceStateUpdateCounter.Inc()
+func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState *discordgo.VoiceStateUpdate) {
+	handler.VoiceStateUpdateCounter.Inc()
 
-	span := config.JaegerTracer.StartSpan(voiceStateUpdate)
+	span := handler.JaegerTracer.StartSpan(voiceStateUpdate)
 	defer span.Finish()
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), config.ContextTimeout)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), handler.ContextTimeout)
 	defer cancelCtx()
 
 	ctx = opentracing.ContextWithSpan(ctx, span)
 
-	metadata, err := config.parseEvent(ctx, session, voiceState)
+	metadata, err := handler.parseEvent(ctx, session, voiceState)
 	if err != nil {
-		config.handleParseEventError(ctx, session, err)
+		handler.handleParseEventError(ctx, session, err)
 		return
 	}
 
-	log := config.Log.WithFields(
+	log := handler.Log.WithFields(
 		logrus.Fields{
 			"Guild":  metadata.Guild.Name,
 			"member": metadata.Member.User.Username,
 		},
 	)
 
-	err = config.revokeEphemeralRoles(ctx, metadata)
+	err = handler.removeEphemeralRoles(ctx, metadata)
 	if err != nil {
 		log.WithError(err).Error(voiceStateUpdateEventError)
 	}
 
-	log.Debug("Revoked Ephemeral Roles")
+	log.Debug("Removed Ephemeral Roles")
 
-	err = config.grantEphemeralRole(ctx, metadata)
+	err = handler.addEphemeralRole(ctx, metadata)
 	if err != nil {
-		if forbiddenResponse(err) {
+		if operations.IsForbiddenResponse(err) {
 			log.WithError(err).Debug(voiceStateUpdateEventError)
 			return
 		}
@@ -70,15 +71,15 @@ func (config *Config) VoiceStateUpdate(session *discordgo.Session, voiceState *d
 		return
 	}
 
-	log.WithField("role", metadata.EphemeralRole.Name).Debug("Granted Ephemeral Role")
+	log.WithField("role", metadata.EphemeralRole.Name).Debug("Added Ephemeral Role")
 }
 
-func (config *Config) parseEvent(
+func (handler *Handler) parseEvent(
 	ctx context.Context,
 	session *discordgo.Session,
 	voiceState *discordgo.VoiceStateUpdate,
 ) (*voiceStateUpdateMetadata, error) {
-	guild, err := lookupGuild(ctx, session, voiceState.GuildID)
+	guild, err := operations.LookupGuild(ctx, session, voiceState.GuildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup Guild: %w", err)
 	}
@@ -100,7 +101,7 @@ func (config *Config) parseEvent(
 		}
 	}
 
-	err = config.botHasChannelPermission(ctx, session, channel)
+	err = operations.BotHasChannelPermission(ctx, session, channel)
 	if err != nil {
 		return nil, &InsufficientPermissions{
 			Guild:   guild,
@@ -110,9 +111,9 @@ func (config *Config) parseEvent(
 		}
 	}
 
-	ephemeralRole, err := config.lookupRole(ctx, session, guild, channel)
+	ephemeralRole, err := handler.lookupOrCreateRole(ctx, session, guild, channel)
 	if err != nil {
-		if !forbiddenResponse(err) {
+		if !operations.IsForbiddenResponse(err) {
 			return nil, err
 		}
 
@@ -133,7 +134,7 @@ func (config *Config) parseEvent(
 	}, nil
 }
 
-func (config *Config) handleParseEventError(ctx context.Context, session *discordgo.Session, err error) {
+func (handler *Handler) handleParseEventError(ctx context.Context, session *discordgo.Session, err error) {
 	var (
 		memberNotFoundErr          *MemberNotFound
 		channelNotFoundErr         *ChannelNotFound
@@ -142,18 +143,18 @@ func (config *Config) handleParseEventError(ctx context.Context, session *discor
 
 	switch {
 	case errors.As(err, &memberNotFoundErr):
-		config.logRevoke(ctx, session, memberNotFoundErr)
+		handler.logRemove(ctx, session, memberNotFoundErr)
 	case errors.As(err, &channelNotFoundErr):
-		config.logRevoke(ctx, session, channelNotFoundErr)
+		handler.logRemove(ctx, session, channelNotFoundErr)
 	case errors.As(err, &insufficientPermissionsErr):
-		config.logRevoke(ctx, session, insufficientPermissionsErr)
+		handler.logRemove(ctx, session, insufficientPermissionsErr)
 	default:
-		config.Log.WithError(err).Error(voiceStateUpdateEventError)
+		handler.Log.WithError(err).Error(voiceStateUpdateEventError)
 	}
 }
 
-func (config *Config) logRevoke(ctx context.Context, session *discordgo.Session, callbackError CallbackError) {
-	log := logrus.NewEntry(config.Log.WrappedLogger())
+func (handler *Handler) logRemove(ctx context.Context, session *discordgo.Session, callbackError CallbackError) {
+	log := logrus.NewEntry(handler.Log.WrappedLogger())
 
 	guild := callbackError.InGuild()
 	if guild != nil {
@@ -182,37 +183,15 @@ func (config *Config) logRevoke(ctx context.Context, session *discordgo.Session,
 		Member:  callbackError.ForMember(),
 	}
 
-	err := config.revokeEphemeralRoles(ctx, metadata)
+	err := handler.removeEphemeralRoles(ctx, metadata)
 	if err != nil {
 		log.WithError(err).Debug(voiceStateUpdateEventError)
 	}
 }
 
-func (config *Config) botHasChannelPermission(
-	ctx context.Context,
-	session *discordgo.Session,
-	channel *discordgo.Channel,
-) error {
-	bot, err := session.UserWithContext(ctx, "@me")
-	if err != nil {
-		return fmt.Errorf("unable to determine bot user: %w", err)
-	}
-
-	permissions, err := session.UserChannelPermissions(bot.ID, channel.ID)
-	if err != nil {
-		return fmt.Errorf("unable to determine channel permissions: %w", err)
-	}
-
-	if permissions&discordgo.PermissionViewChannel != discordgo.PermissionViewChannel {
-		return fmt.Errorf("insufficient channel permissions: channel: %s", channel.Name)
-	}
-
-	return nil
-}
-
-// lookupRole sorts roles in O(n*log(n)) time and does a binary search for the
-// associated ephemeral role.
-func (config *Config) lookupRole(
+// lookupOrCreateRole sorts roles in O(n*log(n)) time and does a binary search
+// for the associated ephemeral role.
+func (handler *Handler) lookupOrCreateRole(
 	ctx context.Context,
 	session *discordgo.Session,
 	guild *discordgo.Guild,
@@ -229,7 +208,7 @@ func (config *Config) lookupRole(
 		},
 	)
 
-	ephemeralRoleName := config.RolePrefix + " " + channel.Name
+	ephemeralRoleName := handler.RolePrefix + " " + channel.Name
 
 	index := sort.Search(
 		len(guildRoles),
@@ -242,48 +221,48 @@ func (config *Config) lookupRole(
 		return guildRoles[index], nil
 	}
 
-	return createGuildRole(ctx, session, guild, ephemeralRoleName, config.RoleColor)
+	return operations.CreateRole(ctx, session, guild, ephemeralRoleName, handler.RoleColor)
 }
 
-func (config *Config) grantEphemeralRole(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
-	return addRoleToMember(ctx, metadata.Session, metadata.Guild.ID, metadata.Member.User.ID, metadata.EphemeralRole.ID)
+func (handler *Handler) addEphemeralRole(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
+	return operations.AddRoleToMember(ctx, metadata.Session, metadata.Guild.ID, metadata.Member.User.ID, metadata.EphemeralRole.ID)
 }
 
-func (config *Config) revokeEphemeralRoles(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
+func (handler *Handler) removeEphemeralRoles(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
 	var err error
 
 	for _, memberRoleID := range metadata.Member.Roles {
-		revokeError := config.revokeEphemeralRole(ctx, metadata, memberRoleID)
-		if revokeError != nil {
+		removeError := handler.removeEphemeralRole(ctx, metadata, memberRoleID)
+		if removeError != nil {
 			if err == nil {
-				err = revokeError
+				err = removeError
 				continue
 			}
 
-			err = fmt.Errorf("%s: %w", err, revokeError)
+			err = fmt.Errorf("%s: %w", err, removeError)
 		}
 	}
 
 	return err
 }
 
-func (config *Config) revokeEphemeralRole(ctx context.Context, metadata *voiceStateUpdateMetadata, memberRoleID string) error {
+func (handler *Handler) removeEphemeralRole(ctx context.Context, metadata *voiceStateUpdateMetadata, memberRoleID string) error {
 	role, err := metadata.Session.State.Role(metadata.Guild.ID, memberRoleID)
 	if err != nil {
 		if errors.Is(err, discordgo.ErrStateNotFound) {
 			return nil
 		}
 
-		return fmt.Errorf("unable to revoke ephemeral role: %w", err)
+		return fmt.Errorf("unable to remove ephemeral role: %w", err)
 	}
 
-	if !strings.HasPrefix(role.Name, config.RolePrefix) {
+	if !strings.HasPrefix(role.Name, handler.RolePrefix) {
 		return nil
 	}
 
-	err = removeRoleFromMember(ctx, metadata.Session, metadata.Guild.ID, metadata.Member.User.ID, role.ID)
+	err = operations.RemoveRoleFromMember(ctx, metadata.Session, metadata.Guild.ID, metadata.Member.User.ID, role.ID)
 	if err != nil {
-		if !forbiddenResponse(err) {
+		if !operations.IsForbiddenResponse(err) {
 			return err
 		}
 	}
