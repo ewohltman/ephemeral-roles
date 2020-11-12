@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	stdLog "log"
 	"net/http"
 	"net/http/pprof"
 	"sort"
-
-	stdLog "log"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -65,13 +64,12 @@ func NewServer(log logging.Interface, session *discordgo.Session, port string) *
 
 	mux.HandleFunc(RootEndpoint, rootHandler(log))
 	mux.HandleFunc(GuildsEndpoint, guildsHandler(log, session))
-
-	mux.Handle(metricsEndpoint, promhttp.Handler())
 	mux.HandleFunc(pprofIndexEndpoint, pprof.Index)
 	mux.HandleFunc(pprofCmdlineEndpoint, pprof.Cmdline)
 	mux.HandleFunc(pprofProfileEndpoint, pprof.Profile)
 	mux.HandleFunc(pprofSymbolEndpoint, pprof.Symbol)
 	mux.HandleFunc(pprofTraceEndpoint, pprof.Trace)
+	mux.Handle(metricsEndpoint, promhttp.Handler())
 
 	errorLog := stdLog.New(log.WrappedLogger().WriterLevel(logrus.ErrorLevel), "", 0)
 
