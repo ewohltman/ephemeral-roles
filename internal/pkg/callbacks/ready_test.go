@@ -10,7 +10,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 )
 
-func TestConfig_Ready(t *testing.T) {
+func TestHandler_Ready(t *testing.T) {
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -24,7 +24,7 @@ func TestConfig_Ready(t *testing.T) {
 		Log: log,
 	}
 
-	config := &callbacks.Config{
+	config := &callbacks.Handler{
 		Log:          log,
 		BotName:      "testBot",
 		BotKeyword:   "testKeyword",

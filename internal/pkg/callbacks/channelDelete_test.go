@@ -10,7 +10,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
-func TestConfig_ChannelDelete(t *testing.T) {
+func TestHandler_ChannelDelete(t *testing.T) {
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -20,7 +20,7 @@ func TestConfig_ChannelDelete(t *testing.T) {
 
 	log := mock.NewLogger()
 
-	config := &callbacks.Config{
+	config := &callbacks.Handler{
 		Log:            log,
 		BotName:        "testBot",
 		BotKeyword:     "testKeyword",
@@ -42,7 +42,7 @@ func TestConfig_ChannelDelete(t *testing.T) {
 	}
 }
 
-func foundRole(config *callbacks.Config, guild *discordgo.Guild, channel *discordgo.Channel) bool {
+func foundRole(config *callbacks.Handler, guild *discordgo.Guild, channel *discordgo.Channel) bool {
 	for _, guildRole := range guild.Roles {
 		if guildRole.Name == config.RolePrefix+" "+channel.Name {
 			return true

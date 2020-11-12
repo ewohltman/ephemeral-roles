@@ -14,7 +14,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
-func TestConfig_MessageCreate(t *testing.T) {
+func TestHandler_MessageCreate(t *testing.T) {
 	jaegerTracer, jaegerCloser, err := tracer.New("test")
 	if err != nil {
 		t.Fatalf("Error creating Jaeger tracer: %s", err)
@@ -46,7 +46,7 @@ func TestConfig_MessageCreate(t *testing.T) {
 		Log: log,
 	}
 
-	config := &callbacks.Config{
+	config := &callbacks.Handler{
 		Log:                  log,
 		BotName:              "testBot",
 		BotKeyword:           "testKeyword",
@@ -61,6 +61,7 @@ func TestConfig_MessageCreate(t *testing.T) {
 	sendBotMessage(session, config)
 
 	tests := []string{
+		"",                // no words
 		"ixnay",           // no keyword
 		config.BotKeyword, // only keyword
 		fmt.Sprintf("%s %s", config.BotKeyword, "ixnay"), // keyword, unrecognized command
@@ -79,7 +80,7 @@ func TestConfig_MessageCreate(t *testing.T) {
 	}
 }
 
-func sendBotMessage(session *discordgo.Session, config *callbacks.Config) {
+func sendBotMessage(session *discordgo.Session, config *callbacks.Handler) {
 	config.MessageCreate(
 		session,
 		&discordgo.MessageCreate{
@@ -96,7 +97,7 @@ func sendBotMessage(session *discordgo.Session, config *callbacks.Config) {
 	)
 }
 
-func sendMessage(s *discordgo.Session, config *callbacks.Config, message string) {
+func sendMessage(s *discordgo.Session, config *callbacks.Handler, message string) {
 	config.MessageCreate(
 		s,
 		&discordgo.MessageCreate{
