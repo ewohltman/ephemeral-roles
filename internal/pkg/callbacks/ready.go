@@ -4,18 +4,21 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const updateBotStatusError = "Unable to update bot status"
+const (
+	ready           = "Ready"
+	readyEventError = "Unable to process event: " + ready
+)
 
 // Ready is the callback function for the Ready event from Discord.
-func (config *Config) Ready(s *discordgo.Session, event *discordgo.Ready) {
-	config.ReadyCounter.Inc()
+func (handler *Handler) Ready(s *discordgo.Session, event *discordgo.Ready) {
+	handler.ReadyCounter.Inc()
 
 	idleSince := 0
 
 	usd := discordgo.UpdateStatusData{
 		IdleSince: &idleSince,
 		Game: &discordgo.Game{
-			Name: config.BotKeyword,
+			Name: handler.BotKeyword,
 			Type: discordgo.GameTypeWatching,
 		},
 		AFK:    false,
@@ -24,6 +27,6 @@ func (config *Config) Ready(s *discordgo.Session, event *discordgo.Ready) {
 
 	err := s.UpdateStatusComplex(usd)
 	if err != nil {
-		config.Log.WithError(err).Error(updateBotStatusError)
+		handler.Log.WithError(err).Error(readyEventError)
 	}
 }

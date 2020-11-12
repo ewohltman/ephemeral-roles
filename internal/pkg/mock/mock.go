@@ -25,7 +25,7 @@ const (
 )
 
 const (
-	memberCountLimit = 1000
+	memberCountLimit = 3000
 
 	sessionCreateErrMessage = "unable to create new session"
 )

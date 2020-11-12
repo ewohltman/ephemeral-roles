@@ -17,7 +17,7 @@ generate:
 	protoc ${protocArguments} ${protocDirectory}/api.proto
 
 fmt:
-	gofmt -s -w . && goimports -w .
+	gofmt -s -w . && goimports -w . && go mod tidy
 
 lint:
 	golangci-lint run ./...

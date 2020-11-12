@@ -90,7 +90,7 @@ func startSession(
 	})
 
 	setupCallbacks(session,
-		&callbacks.Config{
+		&callbacks.Handler{
 			Log:                     log,
 			BotName:                 envVars.BotName,
 			BotKeyword:              envVars.BotKeyword,
@@ -114,7 +114,7 @@ func startSession(
 	return session, nil
 }
 
-func setupCallbacks(session *discordgo.Session, callbackConfig *callbacks.Config) {
+func setupCallbacks(session *discordgo.Session, callbackConfig *callbacks.Handler) {
 	session.AddHandler(callbackConfig.ChannelDelete)
 	session.AddHandler(callbackConfig.MessageCreate)
 	session.AddHandler(callbackConfig.Ready)

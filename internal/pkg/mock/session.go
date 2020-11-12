@@ -7,7 +7,7 @@ import (
 )
 
 // NewSession provides a *discordgo.Session instance to be used in unit
-// testing.
+// testing with pre-populated initial state.
 func NewSession() (*discordgo.Session, error) {
 	state, err := NewState()
 	if err != nil {
@@ -16,6 +16,19 @@ func NewSession() (*discordgo.Session, error) {
 
 	session := &discordgo.Session{
 		State:        state,
+		StateEnabled: true,
+		Ratelimiter:  discordgo.NewRatelimiter(),
+		Client:       restClient(),
+	}
+
+	return session, nil
+}
+
+// NewSessionEmptyState provides a *discordgo.Session instance to be used in
+// unit testing with an empty initial state.
+func NewSessionEmptyState() (*discordgo.Session, error) {
+	session := &discordgo.Session{
+		State:        discordgo.NewState(),
 		StateEnabled: true,
 		Ratelimiter:  discordgo.NewRatelimiter(),
 		Client:       restClient(),
