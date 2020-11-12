@@ -37,7 +37,7 @@ type environmentVariables struct {
 	LogLevel             string `env:"LOG_LEVEL" envDefault:"info"`
 	LogTimezoneLocation  string `env:"LOG_TIMEZONE_LOCATION" envDefault:"UTC"`
 	DiscordrusWebHookURL string `env:"DISCORDRUS_WEBHOOK_URL"`
-	Port                 string `env:"PORT" envDefault:"8080"`
+	Port                 string `env:"PORT" envDefault:"8081"`
 	BotName              string `env:"BOT_NAME" envDefault:"Ephemeral Roles"`
 	BotKeyword           string `env:"BOT_KEYWORD" envDefault:"!eph"`
 	RolePrefix           string `env:"ROLE_PREFIX" envDefault:"{eph}"`
