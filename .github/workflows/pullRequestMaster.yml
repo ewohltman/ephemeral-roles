@@ -1,7 +1,7 @@
 ---
-name: build
-"on":
-  push:
+name: pull_request_master
+on:
+  pull_request:
     branches:
       - master
 jobs:

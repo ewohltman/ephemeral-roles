@@ -80,7 +80,7 @@ func startSession(
 	session.Client = client
 	session.ShardID = envVars.shardID
 	session.ShardCount = envVars.ShardCount
-	session.LogLevel = discordgo.LogError
+	session.LogLevel = discordgo.LogInformational
 	session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
 
 	callbackMetrics := monitor.NewMetrics(&monitor.Config{
