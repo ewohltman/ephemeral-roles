@@ -61,6 +61,33 @@ A **[Prometheus](https://prometheus.io/)** and **[Grafana](https://grafana.com/)
 
 ----
 
+## Architecture
+
+| Architectural Diagram |
+| :------: |
+| ![Architecture](https://raw.githubusercontent.com/ewohltman/ephemeral-roles/master/web/static/architecture.png) |
+
+`Ephemeral Roles` runs in a Kubernetes cluster as a StatefulSet of 10
+Pods. Each Pod contains a running instance of the bot. A StatefulSet is
+used so that each Pod has a predictable name so that the bot instance can
+inform the Discord API which one of the 10 Pods it is. The Discord
+API will assign a number of the total guilds (servers) to each of the bot
+instances to balance the load of managing the guild events. If any of the
+Pods stop running for whatever reason, the StatefulSet will automatically
+restart them.
+
+Another application, [pod-bouncer](https://github.com/ewohltman/pod-bouncer),
+runs in a Pod and is responsible for receiving alerts from
+`Prometheus`/`AlertManager` and to act upon them by automatically causing
+unhealthy Pods for `Ephemeral Roles` to restart.
+
+Additionally, [ephemeral-roles-informer](https://github.com/ewohltman/ephemeral-roles-informer)
+runs in another Pod and is responsible for collecting metrics from the
+`Ephemeral Roles` instances to update search services such as
+[discord.bots.gg](https://discord.bots.gg/) and [top.gg](https://top.gg/).
+
+----
+
 ## Contributing to the project
 
 Contributions are very welcome! Please follow the guidelines below:
