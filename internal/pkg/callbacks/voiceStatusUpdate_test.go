@@ -10,6 +10,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
@@ -53,6 +54,7 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 		JaegerTracer:            jaegerTracer,
 		ContextTimeout:          time.Second,
 		VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(monitorConfig),
+		OperationsNexus:         operations.NewNexus(session),
 	}
 
 	sendUpdate(session, config, mock.TestGuild, "unknownUser", mock.TestChannel)

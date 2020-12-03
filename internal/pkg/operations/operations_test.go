@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 
@@ -29,6 +31,48 @@ type roleForMemberTestCase struct {
 		getSession sessionFunc,
 		guildID, userID, roleName string,
 	)
+}
+
+const duplicateRequests = 5
+
+func TestNewNexus(t *testing.T) {
+	if operations.NewNexus(nil) == nil {
+		t.Error("unexpected nil queue")
+	}
+}
+
+func TestNexus_Process(t *testing.T) {
+	roleNames := []string{mock.TestRole, mock.TestRole + "2"}
+
+	session, err := mock.NewSession()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer mock.SessionClose(t, session)
+
+	nexus := operations.NewNexus(session)
+	waitGroup := &sync.WaitGroup{}
+
+	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second)
+	defer cancelCtx()
+
+	runTestRequestUnknown(ctx, t, nexus)
+
+	for _, roleName := range roleNames {
+		roleName := roleName
+
+		for i := 0; i < duplicateRequests; i++ {
+			waitGroup.Add(1)
+
+			go func() {
+				defer waitGroup.Done()
+				runTestRequestCreateRole(ctx, t, nexus, roleName)
+			}()
+		}
+	}
+
+	waitGroup.Wait()
 }
 
 func TestLookupGuild(t *testing.T) {
@@ -77,55 +121,6 @@ func TestLookupGuild(t *testing.T) {
 
 		t.Run(testCase.name, func(t *testing.T) {
 			testCase.testFunc(t, testCase.getSession, testCase.guildID)
-		})
-	}
-}
-
-func TestCreateRole(t *testing.T) {
-	type testCase struct {
-		name       string
-		guildID    string
-		roleName   string
-		getSession sessionFunc
-		testFunc   func(
-			ctx context.Context,
-			t *testing.T,
-			getSession sessionFunc,
-			guildID, roleName string,
-		)
-	}
-
-	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer mock.SessionClose(t, session)
-
-	testCases := []*testCase{
-		{
-			name:       "create new role",
-			guildID:    mock.TestGuild,
-			roleName:   newRoleID,
-			getSession: func() (*discordgo.Session, error) { return session, nil },
-			testFunc:   createNewRole,
-		},
-		{
-			name:       "create existing role",
-			guildID:    mock.TestGuild,
-			roleName:   newRoleID,
-			getSession: func() (*discordgo.Session, error) { return session, nil },
-			testFunc:   createNewRole,
-		},
-	}
-
-	ctx := context.Background()
-
-	for _, testCase := range testCases {
-		testCase := testCase
-
-		t.Run(testCase.name, func(t *testing.T) {
-			testCase.testFunc(ctx, t, testCase.getSession, testCase.guildID, testCase.roleName)
 		})
 	}
 }
@@ -231,6 +226,40 @@ func TestBotHasChannelPermission(t *testing.T) {
 	}
 }
 
+func runTestRequestUnknown(ctx context.Context, t *testing.T, nexus *operations.Nexus) {
+	runTest(ctx, t, nexus, true, &operations.Request{
+		Type: operations.RequestType(-1),
+	})
+}
+
+func runTestRequestCreateRole(ctx context.Context, t *testing.T, nexus *operations.Nexus, roleName string) {
+	runTest(ctx, t, nexus, false, &operations.Request{
+		Type: operations.CreateRole,
+		CreateRole: &operations.CreateRoleRequest{
+			Guild:    &discordgo.Guild{ID: mock.TestGuild},
+			RoleName: roleName,
+		},
+	})
+}
+
+func runTest(ctx context.Context, t *testing.T, nexus *operations.Nexus, expectError bool, request *operations.Request) {
+	resultChannel := operations.NewResultChannel()
+
+	nexus.Process(ctx, resultChannel, request)
+
+	result := <-resultChannel
+
+	_, resultError := result.(error)
+	if resultError != expectError {
+		if resultError {
+			t.Error(result)
+			return
+		}
+
+		t.Errorf("unexpected success for request type %q", request.Type)
+	}
+}
+
 func lookupGuild(t *testing.T, getSession sessionFunc, guildID string) {
 	session, err := getSession()
 	if err != nil {
@@ -244,23 +273,6 @@ func lookupGuild(t *testing.T, getSession sessionFunc, guildID string) {
 
 	if guild.ID != guildID {
 		t.Errorf("unexpected guild ID: %s (expected: %q)", guild.ID, guildID)
-	}
-}
-
-func createNewRole(ctx context.Context, t *testing.T, getSession sessionFunc, guildID, roleID string) {
-	session, err := getSession()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	guild, err := operations.LookupGuild(ctx, session, guildID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = operations.CreateRole(ctx, session, guild, roleID, 0)
-	if err != nil {
-		t.Errorf("unexpected error creating role: %s", err)
 	}
 }
 

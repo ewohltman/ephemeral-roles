@@ -23,6 +23,7 @@ import (
 	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
@@ -101,6 +102,7 @@ func startSession(
 			ReadyCounter:            callbackMetrics.ReadyCounter,
 			MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
 			VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
+			OperationsNexus:         operations.NewNexus(session),
 		},
 	)
 

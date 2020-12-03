@@ -111,7 +111,7 @@ func (handler *Handler) parseEvent(
 		}
 	}
 
-	ephemeralRole, err := handler.lookupOrCreateRole(ctx, session, guild, channel)
+	ephemeralRole, err := handler.lookupOrCreateRole(ctx, guild, channel)
 	if err != nil {
 		if !operations.IsForbiddenResponse(err) {
 			return nil, err
@@ -193,7 +193,6 @@ func (handler *Handler) logRemove(ctx context.Context, session *discordgo.Sessio
 // for the associated ephemeral role.
 func (handler *Handler) lookupOrCreateRole(
 	ctx context.Context,
-	session *discordgo.Session,
 	guild *discordgo.Guild,
 	channel *discordgo.Channel,
 ) (*discordgo.Role, error) {
@@ -201,27 +200,41 @@ func (handler *Handler) lookupOrCreateRole(
 
 	copy(guildRoles, guild.Roles)
 
-	sort.Slice(
-		guildRoles,
-		func(i, j int) bool {
-			return guildRoles[i].Name < guildRoles[j].Name
-		},
-	)
+	sort.Slice(guildRoles, func(i, j int) bool {
+		return guildRoles[i].Name < guildRoles[j].Name
+	})
 
 	ephemeralRoleName := handler.RolePrefix + " " + channel.Name
 
-	index := sort.Search(
-		len(guildRoles),
-		func(i int) bool {
-			return guildRoles[i].Name >= ephemeralRoleName
-		},
-	)
+	index := sort.Search(len(guildRoles), func(i int) bool {
+		return guildRoles[i].Name >= ephemeralRoleName
+	})
 
 	if index < len(guildRoles) && guildRoles[index].Name == ephemeralRoleName {
 		return guildRoles[index], nil
 	}
 
-	return operations.CreateRole(ctx, session, guild, ephemeralRoleName, handler.RoleColor)
+	resultChannel := operations.NewResultChannel()
+
+	handler.OperationsNexus.Process(ctx, resultChannel, &operations.Request{
+		Type: operations.CreateRole,
+		CreateRole: &operations.CreateRoleRequest{
+			Guild:     guild,
+			RoleName:  ephemeralRoleName,
+			RoleColor: handler.RoleColor,
+		},
+	})
+
+	result := <-resultChannel
+
+	switch typedResult := result.(type) {
+	case *discordgo.Role:
+		return typedResult, nil
+	case error:
+		return nil, typedResult
+	default:
+		return nil, fmt.Errorf("unrecognized operations result type: %T", typedResult)
+	}
 }
 
 func (handler *Handler) addEphemeralRole(ctx context.Context, metadata *voiceStateUpdateMetadata) error {
