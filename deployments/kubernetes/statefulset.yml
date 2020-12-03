@@ -24,10 +24,10 @@ spec:
           imagePullPolicy: Always
           resources:
             limits:
-              cpu: "100m"
+              cpu: "1"
               memory: "256Mi"
             requests:
-              cpu: "100m"
+              cpu: "1"
               memory: "256Mi"
           env:
             - name: SHARD_COUNT
