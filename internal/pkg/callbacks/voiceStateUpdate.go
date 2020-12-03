@@ -47,10 +47,14 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 
 	log := handler.Log.WithFields(
 		logrus.Fields{
-			"Guild":  metadata.Guild.Name,
+			"guild":  metadata.Guild.Name,
 			"member": metadata.Member.User.Username,
 		},
 	)
+
+	if handler.memberHasRole(metadata.Member, metadata.EphemeralRole) {
+		return
+	}
 
 	err = handler.removeEphemeralRoles(ctx, metadata)
 	if err != nil {
@@ -78,7 +82,10 @@ func (handler *Handler) parseEvent(
 	ctx context.Context,
 	session *discordgo.Session,
 	voiceState *discordgo.VoiceStateUpdate,
-) (*voiceStateUpdateMetadata, error) {
+) (
+	*voiceStateUpdateMetadata,
+	error,
+) {
 	guild, err := operations.LookupGuild(ctx, session, voiceState.GuildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup Guild: %w", err)
@@ -111,17 +118,33 @@ func (handler *Handler) parseEvent(
 		}
 	}
 
-	ephemeralRole, err := handler.lookupOrCreateRole(ctx, guild, channel)
+	ephemeralRole, err := handler.lookupGuildRole(guild, channel)
 	if err != nil {
-		if !operations.IsForbiddenResponse(err) {
+		if !errors.Is(err, &RoleNotFound{}) {
+			if operations.IsForbiddenResponse(err) {
+				return nil, &InsufficientPermissions{
+					Guild:   guild,
+					Member:  member,
+					Channel: channel,
+					Err:     err,
+				}
+			}
+
 			return nil, err
 		}
 
-		return nil, &InsufficientPermissions{
-			Guild:   guild,
-			Member:  member,
-			Channel: channel,
-			Err:     err,
+		ephemeralRole, err = handler.createRole(ctx, guild, handler.RoleNameFromChannel(channel.Name))
+		if err != nil {
+			if operations.IsForbiddenResponse(err) {
+				return nil, &InsufficientPermissions{
+					Guild:   guild,
+					Member:  member,
+					Channel: channel,
+					Err:     err,
+				}
+			}
+
+			return nil, err
 		}
 	}
 
@@ -189,14 +212,25 @@ func (handler *Handler) logRemove(ctx context.Context, session *discordgo.Sessio
 	}
 }
 
-// lookupOrCreateRole sorts roles in O(n*log(n)) time and does a binary search
-// for the associated ephemeral role.
-func (handler *Handler) lookupOrCreateRole(
-	ctx context.Context,
-	guild *discordgo.Guild,
-	channel *discordgo.Channel,
-) (*discordgo.Role, error) {
-	guildRoles := make(discordgo.Roles, len(guild.Roles))
+func (handler *Handler) memberHasRole(member *discordgo.Member, role *discordgo.Role) bool {
+	memberRoles := make([]string, len(member.Roles))
+
+	copy(memberRoles, member.Roles)
+
+	sort.Slice(memberRoles, func(i, j int) bool {
+		return memberRoles[i] < memberRoles[j]
+	})
+
+	index := sort.Search(len(memberRoles), func(i int) bool {
+		return memberRoles[i] >= role.ID
+	})
+
+	return index != len(memberRoles)
+}
+
+func (handler *Handler) lookupGuildRole(guild *discordgo.Guild, channel *discordgo.Channel) (*discordgo.Role, error) {
+	guildRoles := make([]*discordgo.Role, len(guild.Roles))
+	ephemeralRoleName := handler.RoleNameFromChannel(channel.Name)
 
 	copy(guildRoles, guild.Roles)
 
@@ -204,23 +238,25 @@ func (handler *Handler) lookupOrCreateRole(
 		return guildRoles[i].Name < guildRoles[j].Name
 	})
 
-	ephemeralRoleName := handler.RolePrefix + " " + channel.Name
-
 	index := sort.Search(len(guildRoles), func(i int) bool {
 		return guildRoles[i].Name >= ephemeralRoleName
 	})
 
-	if index < len(guildRoles) && guildRoles[index].Name == ephemeralRoleName {
+	if index != len(guildRoles) {
 		return guildRoles[index], nil
 	}
 
+	return nil, &RoleNotFound{}
+}
+
+func (handler *Handler) createRole(ctx context.Context, guild *discordgo.Guild, roleName string) (*discordgo.Role, error) {
 	resultChannel := operations.NewResultChannel()
 
 	handler.OperationsNexus.Process(ctx, resultChannel, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:     guild,
-			RoleName:  ephemeralRoleName,
+			RoleName:  roleName,
 			RoleColor: handler.RoleColor,
 		},
 	})

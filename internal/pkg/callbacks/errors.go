@@ -10,6 +10,7 @@ import (
 const (
 	MemberNotFoundMessage         = "member not found"
 	ChannelNotFoundMessage        = "channel not found"
+	RoleNotFoundMessage           = "role not found"
 	InsufficientPermissionMessage = "insufficient permissions"
 )
 
@@ -103,6 +104,14 @@ func (cnf *ChannelNotFound) ForMember() *discordgo.Member {
 // InChannel satisfies the CallbackError interface for ChannelNotFound.
 func (cnf *ChannelNotFound) InChannel() *discordgo.Channel {
 	return nil
+}
+
+// RoleNotFound represents an error for when the bot fails to find a role.
+type RoleNotFound struct{}
+
+// Error satisfies the errors interface for RoleNotFound.
+func (rnf *RoleNotFound) Error() string {
+	return RoleNotFoundMessage
 }
 
 // InsufficientPermissions represents an error for when the bot lacks role

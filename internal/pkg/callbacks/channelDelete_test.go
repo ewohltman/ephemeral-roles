@@ -20,7 +20,7 @@ func TestHandler_ChannelDelete(t *testing.T) {
 
 	log := mock.NewLogger()
 
-	config := &callbacks.Handler{
+	handler := &callbacks.Handler{
 		Log:            log,
 		BotName:        "testBot",
 		BotKeyword:     "testKeyword",
@@ -31,20 +31,20 @@ func TestHandler_ChannelDelete(t *testing.T) {
 	guild := session.State.Guilds[0]
 	channel := guild.Channels[0]
 
-	if !foundRole(config, guild, channel) {
+	if !foundRole(handler, guild, channel) {
 		t.Fatalf("Unable to find ephemeral role for channel %s", channel.Name)
 	}
 
-	config.ChannelDelete(session, &discordgo.ChannelDelete{Channel: channel})
+	handler.ChannelDelete(session, &discordgo.ChannelDelete{Channel: channel})
 
-	if foundRole(config, guild, channel) {
+	if foundRole(handler, guild, channel) {
 		t.Fatalf("Ephemeral role remains for channel %s", channel.Name)
 	}
 }
 
-func foundRole(config *callbacks.Handler, guild *discordgo.Guild, channel *discordgo.Channel) bool {
+func foundRole(handler *callbacks.Handler, guild *discordgo.Guild, channel *discordgo.Channel) bool {
 	for _, guildRole := range guild.Roles {
-		if guildRole.Name == config.RolePrefix+" "+channel.Name {
+		if guildRole.Name == handler.RoleNameFromChannel(channel.Name) {
 			return true
 		}
 	}

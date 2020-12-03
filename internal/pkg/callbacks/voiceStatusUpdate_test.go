@@ -42,41 +42,34 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 
 	log := mock.NewLogger()
 
-	monitorConfig := &monitor.Config{
-		Log: log,
-	}
-
-	config := &callbacks.Handler{
+	handler := &callbacks.Handler{
 		Log:                     log,
 		BotName:                 "testBot",
 		BotKeyword:              "testKeyword",
 		RolePrefix:              "{eph}",
 		JaegerTracer:            jaegerTracer,
 		ContextTimeout:          time.Second,
-		VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(monitorConfig),
+		VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(&monitor.Config{Log: log}),
 		OperationsNexus:         operations.NewNexus(session),
 	}
 
-	sendUpdate(session, config, mock.TestGuild, "unknownUser", mock.TestChannel)
-	sendUpdate(session, config, mock.TestGuild, mock.TestUser, mock.TestPrivateChannel)
-	sendUpdate(session, config, mock.TestGuild, mock.TestUser, mock.TestChannel)
-	sendUpdate(session, config, mock.TestGuild, mock.TestUser, "")
-	sendUpdate(session, config, mock.TestGuild, mock.TestUser, mock.TestChannel2)
-	sendUpdate(session, config, mock.TestGuild, mock.TestUser, mock.TestChannel)
-	sendUpdate(session, config, mock.TestGuild, mock.TestUser, "")
-	sendUpdate(session, config, mock.TestGuildLarge, mock.TestUser, mock.TestChannel)
-	sendUpdate(session, config, mock.TestGuildLarge, mock.TestUser, "")
+	sendUpdate(session, handler, mock.TestGuild, "unknownUser", mock.TestChannel)
+	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, mock.TestPrivateChannel)
+	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, mock.TestChannel)
+	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, "")
+	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, mock.TestChannel2)
+	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, mock.TestChannel)
+	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, "")
+	sendUpdate(session, handler, mock.TestGuildLarge, mock.TestUser, mock.TestChannel)
+	sendUpdate(session, handler, mock.TestGuildLarge, mock.TestUser, "")
 }
 
-func sendUpdate(session *discordgo.Session, config *callbacks.Handler, guildID, userID, channelID string) {
-	config.VoiceStateUpdate(
-		session,
-		&discordgo.VoiceStateUpdate{
-			VoiceState: &discordgo.VoiceState{
-				UserID:    userID,
-				GuildID:   guildID,
-				ChannelID: channelID,
-			},
+func sendUpdate(session *discordgo.Session, handler *callbacks.Handler, guildID, userID, channelID string) {
+	handler.VoiceStateUpdate(session, &discordgo.VoiceStateUpdate{
+		VoiceState: &discordgo.VoiceState{
+			UserID:    userID,
+			GuildID:   guildID,
+			ChannelID: channelID,
 		},
-	)
+	})
 }

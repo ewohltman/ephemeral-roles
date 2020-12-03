@@ -20,22 +20,15 @@ func TestHandler_Ready(t *testing.T) {
 
 	log := mock.NewLogger()
 
-	monitorConfig := &monitor.Config{
-		Log: log,
-	}
-
-	config := &callbacks.Handler{
+	handler := &callbacks.Handler{
 		Log:          log,
 		BotName:      "testBot",
 		BotKeyword:   "testKeyword",
 		RolePrefix:   "testRolePrefix",
-		ReadyCounter: monitor.ReadyCounter(monitorConfig),
+		ReadyCounter: monitor.ReadyCounter(&monitor.Config{Log: log}),
 	}
 
-	config.Ready(
-		session,
-		&discordgo.Ready{
-			Guilds: make([]*discordgo.Guild, 0),
-		},
-	)
+	handler.Ready(session, &discordgo.Ready{
+		Guilds: make([]*discordgo.Guild, 0),
+	})
 }
