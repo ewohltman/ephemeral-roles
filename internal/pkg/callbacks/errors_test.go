@@ -17,6 +17,14 @@ const (
 	invalidErrorAssertion = "Invalid error assertion"
 )
 
+func TestRoleNotFound_Error(t *testing.T) {
+	rnf := &callbacks.RoleNotFound{}
+
+	if rnf.Error() == "" {
+		t.Error("unexpected empty error message")
+	}
+}
+
 func TestMemberNotFound_Is(t *testing.T) {
 	mnf := &callbacks.MemberNotFound{}
 

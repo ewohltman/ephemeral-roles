@@ -3,6 +3,7 @@ package callbacks
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -31,4 +32,10 @@ type Handler struct {
 	MessageCreateCounter    prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
 	OperationsNexus         OperationsNexus
+}
+
+// RoleNameFromChannel returns the name of a role for a channel, with the bot
+// keyword prefixed.
+func (handler *Handler) RoleNameFromChannel(channelName string) string {
+	return fmt.Sprintf("%s %s", handler.RolePrefix, channelName)
 }

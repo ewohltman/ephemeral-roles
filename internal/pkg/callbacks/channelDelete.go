@@ -2,7 +2,6 @@ package callbacks
 
 import (
 	"context"
-	"errors"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -28,7 +27,7 @@ func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *disco
 	}
 
 	for _, role := range guild.Roles {
-		if role.Name != handler.RolePrefix+" "+channel.Name {
+		if role.Name != handler.RoleNameFromChannel(channel.Name) {
 			continue
 		}
 
@@ -39,7 +38,7 @@ func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *disco
 		}
 
 		err = session.State.RoleRemove(channel.GuildID, role.ID)
-		if err != nil && !errors.Is(err, discordgo.ErrStateNotFound) {
+		if err != nil {
 			handler.Log.WithError(err).Error(channelDeleteEventError)
 			return
 		}

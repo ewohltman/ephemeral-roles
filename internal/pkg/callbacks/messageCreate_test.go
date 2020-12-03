@@ -42,74 +42,64 @@ func TestHandler_MessageCreate(t *testing.T) {
 
 	log := mock.NewLogger()
 
-	monitorConfig := &monitor.Config{
-		Log: log,
-	}
-
-	config := &callbacks.Handler{
+	handler := &callbacks.Handler{
 		Log:                  log,
 		BotName:              "testBot",
 		BotKeyword:           "testKeyword",
 		RolePrefix:           "{eph}",
 		JaegerTracer:         jaegerTracer,
 		ContextTimeout:       time.Second,
-		MessageCreateCounter: monitor.MessageCreateCounter(monitorConfig),
+		MessageCreateCounter: monitor.MessageCreateCounter(&monitor.Config{Log: log}),
 	}
 
 	originalLogLevel := log.Level.String()
 
-	sendBotMessage(session, config)
+	sendBotMessage(session, handler)
 
 	tests := []string{
-		"",                // no words
-		"ixnay",           // no keyword
-		config.BotKeyword, // only keyword
-		fmt.Sprintf("%s %s", config.BotKeyword, "ixnay"), // keyword, unrecognized command
-		fmt.Sprintf("%s %s", config.BotKeyword, callbacks.InfoCommand),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamDebug),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamInfo),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamWarning),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamError),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamFatal),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamPanic),
-		fmt.Sprintf("%s %s %s", config.BotKeyword, callbacks.LogLevelCommand, originalLogLevel),
+		"",                 // no words
+		"ixnay",            // no keyword
+		handler.BotKeyword, // only keyword
+		fmt.Sprintf("%s %s", handler.BotKeyword, "ixnay"), // keyword, unrecognized command
+		fmt.Sprintf("%s %s", handler.BotKeyword, callbacks.InfoCommand),
+		fmt.Sprintf("%s %s %s", handler.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamDebug),
+		fmt.Sprintf("%s %s %s", handler.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamInfo),
+		fmt.Sprintf("%s %s %s", handler.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamWarning),
+		fmt.Sprintf("%s %s %s", handler.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamError),
+		fmt.Sprintf("%s %s %s", handler.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamFatal),
+		fmt.Sprintf("%s %s %s", handler.BotKeyword, callbacks.LogLevelCommand, callbacks.LogLevelParamPanic),
+		fmt.Sprintf("%s %s %s", handler.BotKeyword, callbacks.LogLevelCommand, originalLogLevel),
 	}
 
 	for _, test := range tests {
-		sendMessage(session, config, test)
+		sendMessage(session, handler, test)
 	}
 }
 
-func sendBotMessage(session *discordgo.Session, config *callbacks.Handler) {
-	config.MessageCreate(
-		session,
-		&discordgo.MessageCreate{
-			Message: &discordgo.Message{
-				Author: &discordgo.User{
-					Username: config.BotName,
-					Bot:      true,
-				},
-				GuildID:   mock.TestGuild,
-				ChannelID: mock.TestChannel,
-				Content:   "",
+func sendBotMessage(session *discordgo.Session, handler *callbacks.Handler) {
+	handler.MessageCreate(session, &discordgo.MessageCreate{
+		Message: &discordgo.Message{
+			Author: &discordgo.User{
+				Username: handler.BotName,
+				Bot:      true,
 			},
+			GuildID:   mock.TestGuild,
+			ChannelID: mock.TestChannel,
+			Content:   "",
 		},
-	)
+	})
 }
 
-func sendMessage(s *discordgo.Session, config *callbacks.Handler, message string) {
-	config.MessageCreate(
-		s,
-		&discordgo.MessageCreate{
-			Message: &discordgo.Message{
-				Author: &discordgo.User{
-					Username: config.BotName,
-					Bot:      false,
-				},
-				GuildID:   mock.TestGuild,
-				ChannelID: mock.TestChannel,
-				Content:   message,
+func sendMessage(s *discordgo.Session, handler *callbacks.Handler, message string) {
+	handler.MessageCreate(s, &discordgo.MessageCreate{
+		Message: &discordgo.Message{
+			Author: &discordgo.User{
+				Username: handler.BotName,
+				Bot:      false,
 			},
+			GuildID:   mock.TestGuild,
+			ChannelID: mock.TestChannel,
+			Content:   message,
 		},
-	)
+	})
 }
