@@ -225,7 +225,7 @@ func (handler *Handler) memberHasRole(member *discordgo.Member, role *discordgo.
 		return memberRoles[i] >= role.ID
 	})
 
-	return index != len(memberRoles)
+	return index != len(memberRoles) && memberRoles[index] == role.ID
 }
 
 func (handler *Handler) lookupGuildRole(guild *discordgo.Guild, channel *discordgo.Channel) (*discordgo.Role, error) {
@@ -242,7 +242,7 @@ func (handler *Handler) lookupGuildRole(guild *discordgo.Guild, channel *discord
 		return guildRoles[i].Name >= ephemeralRoleName
 	})
 
-	if index != len(guildRoles) {
+	if index != len(guildRoles) && guildRoles[index].Name == ephemeralRoleName {
 		return guildRoles[index], nil
 	}
 
