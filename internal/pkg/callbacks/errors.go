@@ -12,6 +12,7 @@ const (
 	ChannelNotFoundMessage        = "channel not found"
 	RoleNotFoundMessage           = "role not found"
 	InsufficientPermissionMessage = "insufficient permissions"
+	MaxNumberOfRolesMessage       = "max number of roles"
 )
 
 // CallbackError embeds the error interface with additional methods to provide
@@ -156,4 +157,48 @@ func (inp *InsufficientPermissions) ForMember() *discordgo.Member {
 // InChannel returns channel metadata for InsufficientPermissions.
 func (inp *InsufficientPermissions) InChannel() *discordgo.Channel {
 	return inp.Channel
+}
+
+// MaxNumberOfRoles represents an error for when a guild already has the max
+// number of roles allowed.
+type MaxNumberOfRoles struct {
+	Guild   *discordgo.Guild
+	Member  *discordgo.Member
+	Channel *discordgo.Channel
+	Err     error
+}
+
+// Is allows MaxNumberOfRoles to be compared with errors.Is.
+func (mnr *MaxNumberOfRoles) Is(target error) bool {
+	_, ok := target.(*MaxNumberOfRoles)
+	return ok
+}
+
+// Unwrap returns an error wrapped by MaxNumberOfRoles.
+func (mnr *MaxNumberOfRoles) Unwrap() error {
+	return mnr.Err
+}
+
+// Error satisfies the errors interface for MaxNumberOfRoles.
+func (mnr *MaxNumberOfRoles) Error() string {
+	if mnr.Err != nil {
+		return fmt.Sprintf("%s: %s", MaxNumberOfRolesMessage, mnr.Err)
+	}
+
+	return MaxNumberOfRolesMessage
+}
+
+// InGuild returns guild metadata for MaxNumberOfRoles.
+func (mnr *MaxNumberOfRoles) InGuild() *discordgo.Guild {
+	return mnr.Guild
+}
+
+// ForMember returns member metadata for MaxNumberOfRoles.
+func (mnr *MaxNumberOfRoles) ForMember() *discordgo.Member {
+	return mnr.Member
+}
+
+// InChannel returns channel metadata for MaxNumberOfRoles.
+func (mnr *MaxNumberOfRoles) InChannel() *discordgo.Channel {
+	return mnr.Channel
 }

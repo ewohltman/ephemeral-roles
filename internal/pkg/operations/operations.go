@@ -28,6 +28,8 @@ const (
 	roleHoist             = true
 	roleMention           = true
 	guildMembersPageLimit = 1000
+
+	apiErrorCodeMaxRoles = 30005
 )
 
 // Request is an operations request to be processed.
@@ -194,13 +196,28 @@ func RemoveRoleFromMember(ctx context.Context, session *discordgo.Session, guild
 
 // IsForbiddenResponse checks if the provided error wraps *discordgo.RESTError.
 // If it does, IsForbiddenResponse returns true if the response code is equal
-// to http.StatusForbidden. Otherwise, IsForbiddenResponse returns false.
+// to http.StatusForbidden.
 func IsForbiddenResponse(err error) bool {
 	var restErr *discordgo.RESTError
 
 	if errors.As(err, &restErr) {
 		if restErr.Response.StatusCode == http.StatusForbidden {
 			return true
+		}
+	}
+
+	return false
+}
+
+// IsMaxGuildsResponse checks if the provided error wraps *discordgo.RESTError.
+// If it does, IsMaxGuildsResponse returns true if the response code is equal
+// to http.StatusBadRequest and the error code is 30005.
+func IsMaxGuildsResponse(err error) bool {
+	var restErr *discordgo.RESTError
+
+	if errors.As(err, &restErr) {
+		if restErr.Response.StatusCode == http.StatusBadRequest {
+			return restErr.Message.Code == apiErrorCodeMaxRoles
 		}
 	}
 
