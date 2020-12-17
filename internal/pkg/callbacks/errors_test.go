@@ -292,6 +292,92 @@ func TestInsufficientPermissions_Channel(t *testing.T) {
 	}
 }
 
+func TestMaxNumberOfRoles_Is(t *testing.T) {
+	mnr := &callbacks.MaxNumberOfRoles{}
+
+	if errors.Is(nil, &callbacks.MaxNumberOfRoles{}) {
+		t.Error(invalidErrorAssertion)
+	}
+
+	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MaxNumberOfRoles{}) {
+		t.Error(invalidErrorAssertion)
+	}
+
+	if !errors.Is(mnr, &callbacks.MaxNumberOfRoles{}) {
+		t.Errorf(invalidErrorAssertion)
+	}
+}
+
+func TestMaxNumberOfRoles_Unwrap(t *testing.T) {
+	mnr := &callbacks.MaxNumberOfRoles{}
+
+	unwrappedErr := mnr.Unwrap()
+
+	if unwrappedErr != nil {
+		t.Errorf(
+			"Unexpected wrapped error. Got %s, Expected: nil",
+			unwrappedErr,
+		)
+	}
+}
+
+func TestMaxNumberOfRoles_Error(t *testing.T) {
+	mnr := &callbacks.MaxNumberOfRoles{}
+	expectedErrMsg := callbacks.MaxNumberOfRolesMessage
+
+	if mnr.Error() != expectedErrMsg {
+		t.Errorf(
+			"Unexpected error message. Got %s, Expected: %s",
+			mnr.Error(),
+			expectedErrMsg,
+		)
+	}
+
+	mnr.Err = fmt.Errorf(wrapMsg)
+	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
+
+	if mnr.Error() != expectedErrMsg {
+		t.Errorf(
+			"Unexpected error message. Got %s, Expected: %s",
+			mnr.Error(),
+			expectedErrMsg,
+		)
+	}
+}
+
+func TestMaxNumberOfRoles_Guild(t *testing.T) {
+	expected := &discordgo.Guild{Name: mock.TestGuild}
+	mnr := &callbacks.MaxNumberOfRoles{Guild: expected}
+	actual := mnr.InGuild()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestMaxNumberOfRoles_Member(t *testing.T) {
+	expected := &discordgo.Member{User: &discordgo.User{Username: mock.TestUser}}
+	mnr := &callbacks.MaxNumberOfRoles{Member: expected}
+	actual := mnr.ForMember()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestMaxNumberOfRoles_Channel(t *testing.T) {
+	expected := &discordgo.Channel{Name: mock.TestChannel}
+	mnr := &callbacks.MaxNumberOfRoles{Channel: expected}
+	actual := mnr.InChannel()
+
+	err := deepEqual(actual, expected)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func deepEqual(actual, expected interface{}) error {
 	if !reflect.DeepEqual(actual, expected) {
 		return fmt.Errorf(

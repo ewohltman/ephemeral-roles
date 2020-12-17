@@ -135,8 +135,16 @@ func (handler *Handler) parseEvent(
 
 		ephemeralRole, err = handler.createRole(ctx, guild, handler.RoleNameFromChannel(channel.Name))
 		if err != nil {
-			if operations.IsForbiddenResponse(err) {
+			switch {
+			case operations.IsForbiddenResponse(err):
 				return nil, &InsufficientPermissions{
+					Guild:   guild,
+					Member:  member,
+					Channel: channel,
+					Err:     err,
+				}
+			case operations.IsMaxGuildsResponse(err):
+				return nil, &MaxNumberOfRoles{
 					Guild:   guild,
 					Member:  member,
 					Channel: channel,
@@ -162,6 +170,7 @@ func (handler *Handler) handleParseEventError(ctx context.Context, session *disc
 		memberNotFoundErr          *MemberNotFound
 		channelNotFoundErr         *ChannelNotFound
 		insufficientPermissionsErr *InsufficientPermissions
+		maxNumberOfRolesErr        *MaxNumberOfRoles
 	)
 
 	switch {
@@ -171,6 +180,8 @@ func (handler *Handler) handleParseEventError(ctx context.Context, session *disc
 		handler.logRemove(ctx, session, channelNotFoundErr)
 	case errors.As(err, &insufficientPermissionsErr):
 		handler.logRemove(ctx, session, insufficientPermissionsErr)
+	case errors.As(err, &maxNumberOfRolesErr):
+		handler.logRemove(ctx, session, maxNumberOfRolesErr)
 	default:
 		handler.Log.WithError(err).Error(voiceStateUpdateEventError)
 	}

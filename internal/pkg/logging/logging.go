@@ -184,11 +184,11 @@ func (logger *Logger) DiscordGoLogf(discordgoLevel, caller int, format string, a
 
 	switch discordgoLevel {
 	case discordgo.LogError:
-		logger.Errorf(format, arguments...)
+		logger.Debugf(format, arguments...)
 	case discordgo.LogWarning:
-		logger.Warnf(format, arguments...)
+		logger.Debugf(format, arguments...)
 	case discordgo.LogInformational:
-		logger.Infof(format, arguments...)
+		logger.Debugf(format, arguments...)
 	case discordgo.LogDebug:
 		logger.Debugf(format, arguments...)
 	}
