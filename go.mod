@@ -10,7 +10,7 @@ require (
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/kz/discordrus v1.2.0
 	github.com/opentracing/opentracing-go v1.2.0
-	github.com/prometheus/client_golang v1.8.0
+	github.com/prometheus/client_golang v1.9.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/uber/jaeger-client-go v2.25.0+incompatible
 	github.com/uber/jaeger-lib v2.4.0+incompatible
