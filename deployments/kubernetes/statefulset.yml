@@ -20,7 +20,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ephemeral-roles
-          image: ewohltman/ephemeral-roles:v1.2.6
+          image: ewohltman/ephemeral-roles:v1.2.7
           imagePullPolicy: Always
           resources:
             limits:
