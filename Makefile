@@ -24,6 +24,7 @@ lint:
 
 test:
 	go test -v -race -coverprofile=coverage.out ./...
+	@ echo "all tests passed"
 
 build:
 	CGO_ENABLED=0 go build -o build/package/ephemeral-roles/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
