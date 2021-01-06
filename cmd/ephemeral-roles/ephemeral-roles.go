@@ -104,7 +104,7 @@ func startSession(
 			ReadyCounter:            callbackMetrics.ReadyCounter,
 			MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
 			VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
-			OperationsNexus:         operations.NewNexus(session),
+			OperationsGateway:       operations.NewGateway(session),
 		},
 	)
 

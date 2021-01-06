@@ -263,7 +263,7 @@ func (handler *Handler) lookupGuildRole(guild *discordgo.Guild, channel *discord
 func (handler *Handler) createRole(ctx context.Context, guild *discordgo.Guild, roleName string) (*discordgo.Role, error) {
 	resultChannel := operations.NewResultChannel()
 
-	handler.OperationsNexus.Process(ctx, resultChannel, &operations.Request{
+	handler.OperationsGateway.Process(ctx, resultChannel, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:     guild,

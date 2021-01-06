@@ -13,9 +13,9 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
 
-// OperationsNexus is an interface abstraction for processing operations
+// OperationsGateway is an interface abstraction for processing operations
 // requests.
-type OperationsNexus interface {
+type OperationsGateway interface {
 	Process(context.Context, operations.ResultChannel, *operations.Request)
 }
 
@@ -31,7 +31,7 @@ type Handler struct {
 	ReadyCounter            prometheus.Counter
 	MessageCreateCounter    prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
-	OperationsNexus         OperationsNexus
+	OperationsGateway       OperationsGateway
 }
 
 // RoleNameFromChannel returns the name of a role for a channel, with the bot

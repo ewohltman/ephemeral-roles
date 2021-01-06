@@ -35,13 +35,13 @@ type roleForMemberTestCase struct {
 
 const duplicateRequests = 5
 
-func TestNewNexus(t *testing.T) {
-	if operations.NewNexus(nil) == nil {
+func TestNewGateway(t *testing.T) {
+	if operations.NewGateway(nil) == nil {
 		t.Error("unexpected nil queue")
 	}
 }
 
-func TestNexus_Process(t *testing.T) {
+func TestGateway_Process(t *testing.T) {
 	roleNames := []string{mock.TestRole, mock.TestRole + "2"}
 
 	session, err := mock.NewSession()
@@ -51,13 +51,13 @@ func TestNexus_Process(t *testing.T) {
 
 	defer mock.SessionClose(t, session)
 
-	nexus := operations.NewNexus(session)
+	gateway := operations.NewGateway(session)
 	waitGroup := &sync.WaitGroup{}
 
 	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second)
 	defer cancelCtx()
 
-	runTestRequestUnknown(ctx, t, nexus)
+	runTestRequestUnknown(ctx, t, gateway)
 
 	for _, roleName := range roleNames {
 		roleName := roleName
@@ -67,7 +67,7 @@ func TestNexus_Process(t *testing.T) {
 
 			go func() {
 				defer waitGroup.Done()
-				runTestRequestCreateRole(ctx, t, nexus, roleName)
+				runTestRequestCreateRole(ctx, t, gateway, roleName)
 			}()
 		}
 	}
@@ -226,14 +226,14 @@ func TestBotHasChannelPermission(t *testing.T) {
 	}
 }
 
-func runTestRequestUnknown(ctx context.Context, t *testing.T, nexus *operations.Nexus) {
-	runTest(ctx, t, nexus, true, &operations.Request{
+func runTestRequestUnknown(ctx context.Context, t *testing.T, gateway *operations.Gateway) {
+	runTest(ctx, t, gateway, true, &operations.Request{
 		Type: operations.RequestType(-1),
 	})
 }
 
-func runTestRequestCreateRole(ctx context.Context, t *testing.T, nexus *operations.Nexus, roleName string) {
-	runTest(ctx, t, nexus, false, &operations.Request{
+func runTestRequestCreateRole(ctx context.Context, t *testing.T, gateway *operations.Gateway, roleName string) {
+	runTest(ctx, t, gateway, false, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:    &discordgo.Guild{ID: mock.TestGuild},
@@ -242,10 +242,10 @@ func runTestRequestCreateRole(ctx context.Context, t *testing.T, nexus *operatio
 	})
 }
 
-func runTest(ctx context.Context, t *testing.T, nexus *operations.Nexus, expectError bool, request *operations.Request) {
+func runTest(ctx context.Context, t *testing.T, gateway *operations.Gateway, expectError bool, request *operations.Request) {
 	resultChannel := operations.NewResultChannel()
 
-	nexus.Process(ctx, resultChannel, request)
+	gateway.Process(ctx, resultChannel, request)
 
 	result := <-resultChannel
 

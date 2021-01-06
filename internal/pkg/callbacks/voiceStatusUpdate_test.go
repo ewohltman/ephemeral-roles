@@ -50,7 +50,7 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 		JaegerTracer:            jaegerTracer,
 		ContextTimeout:          time.Second,
 		VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(&monitor.Config{Log: log}),
-		OperationsNexus:         operations.NewNexus(session),
+		OperationsGateway:       operations.NewGateway(session),
 	}
 
 	sendUpdate(session, handler, mock.TestGuild, "unknownUser", mock.TestChannel)
