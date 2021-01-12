@@ -65,7 +65,7 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 
 	err = handler.addEphemeralRole(ctx, metadata)
 	if err != nil {
-		if operations.IsForbiddenResponse(err) {
+		if operations.ShouldLogDebug(err) {
 			log.WithError(err).Debug(voiceStateUpdateEventError)
 			return
 		}
@@ -119,40 +119,19 @@ func (handler *Handler) parseEvent(
 	}
 
 	ephemeralRole, err := handler.lookupGuildRole(guild, channel)
-	if err != nil {
-		if !errors.Is(err, &RoleNotFound{}) {
-			if operations.IsForbiddenResponse(err) {
-				return nil, &InsufficientPermissions{
-					Guild:   guild,
-					Member:  member,
-					Channel: channel,
-					Err:     err,
-				}
-			}
-
-			return nil, err
-		}
-
+	if errors.Is(err, &RoleNotFound{}) {
 		ephemeralRole, err = handler.createRole(ctx, guild, handler.RoleNameFromChannel(channel.Name))
 		if err != nil {
 			switch {
+			case operations.IsDeadlineExceeded(err):
+				return nil, &DeadlineExceeded{Guild: guild, Member: member, Channel: channel, Err: err}
 			case operations.IsForbiddenResponse(err):
-				return nil, &InsufficientPermissions{
-					Guild:   guild,
-					Member:  member,
-					Channel: channel,
-					Err:     err,
-				}
+				return nil, &InsufficientPermissions{Guild: guild, Member: member, Channel: channel, Err: err}
 			case operations.IsMaxGuildsResponse(err):
-				return nil, &MaxNumberOfRoles{
-					Guild:   guild,
-					Member:  member,
-					Channel: channel,
-					Err:     err,
-				}
+				return nil, &MaxNumberOfRoles{Guild: guild, Member: member, Channel: channel, Err: err}
+			default:
+				return nil, err
 			}
-
-			return nil, err
 		}
 	}
 
@@ -171,23 +150,52 @@ func (handler *Handler) handleParseEventError(ctx context.Context, session *disc
 		channelNotFoundErr         *ChannelNotFound
 		insufficientPermissionsErr *InsufficientPermissions
 		maxNumberOfRolesErr        *MaxNumberOfRoles
+		deadlineExceededErr        *DeadlineExceeded
 	)
 
 	switch {
 	case errors.As(err, &memberNotFoundErr):
-		handler.logRemove(ctx, session, memberNotFoundErr)
+		handler.logCleanup(ctx, session, memberNotFoundErr)
 	case errors.As(err, &channelNotFoundErr):
-		handler.logRemove(ctx, session, channelNotFoundErr)
+		handler.logCleanup(ctx, session, channelNotFoundErr)
 	case errors.As(err, &insufficientPermissionsErr):
-		handler.logRemove(ctx, session, insufficientPermissionsErr)
+		handler.logCleanup(ctx, session, insufficientPermissionsErr)
 	case errors.As(err, &maxNumberOfRolesErr):
-		handler.logRemove(ctx, session, maxNumberOfRolesErr)
+		handler.logCleanup(ctx, session, maxNumberOfRolesErr)
+	case errors.As(err, &deadlineExceededErr):
+		handler.logParseEventError(deadlineExceededErr)
 	default:
 		handler.Log.WithError(err).Error(voiceStateUpdateEventError)
 	}
 }
 
-func (handler *Handler) logRemove(ctx context.Context, session *discordgo.Session, callbackError CallbackError) {
+func (handler *Handler) logCleanup(ctx context.Context, session *discordgo.Session, callbackError CallbackError) {
+	handler.logParseEventError(callbackError)
+	handler.cleanupParseEventError(ctx, session, callbackError)
+}
+
+func (handler *Handler) logParseEventError(callbackError CallbackError) {
+	handler.newCallbackErrorLogger(callbackError).WithError(callbackError).Debug(voiceStateUpdateEventError)
+}
+
+func (handler *Handler) cleanupParseEventError(ctx context.Context, session *discordgo.Session, callbackError CallbackError) {
+	metadata := &voiceStateUpdateMetadata{
+		Session: session,
+		Guild:   callbackError.InGuild(),
+		Member:  callbackError.ForMember(),
+	}
+
+	if metadata.Member == nil {
+		return
+	}
+
+	err := handler.removeEphemeralRoles(ctx, metadata)
+	if err != nil {
+		handler.newCallbackErrorLogger(callbackError).WithError(err).Debug(voiceStateUpdateEventError)
+	}
+}
+
+func (handler *Handler) newCallbackErrorLogger(callbackError CallbackError) *logrus.Entry {
 	log := logrus.NewEntry(handler.Log.WrappedLogger())
 
 	guild := callbackError.InGuild()
@@ -205,22 +213,7 @@ func (handler *Handler) logRemove(ctx context.Context, session *discordgo.Sessio
 		log = log.WithField("channel", channel.Name)
 	}
 
-	log.WithError(callbackError).Debug(voiceStateUpdateEventError)
-
-	if member == nil {
-		return
-	}
-
-	metadata := &voiceStateUpdateMetadata{
-		Session: session,
-		Guild:   callbackError.InGuild(),
-		Member:  callbackError.ForMember(),
-	}
-
-	err := handler.removeEphemeralRoles(ctx, metadata)
-	if err != nil {
-		log.WithError(err).Debug(voiceStateUpdateEventError)
-	}
+	return log
 }
 
 func (handler *Handler) memberHasRole(member *discordgo.Member, role *discordgo.Role) bool {
@@ -263,7 +256,7 @@ func (handler *Handler) lookupGuildRole(guild *discordgo.Guild, channel *discord
 func (handler *Handler) createRole(ctx context.Context, guild *discordgo.Guild, roleName string) (*discordgo.Role, error) {
 	resultChannel := operations.NewResultChannel()
 
-	handler.OperationsNexus.Process(ctx, resultChannel, &operations.Request{
+	handler.OperationsGateway.Process(ctx, resultChannel, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:     guild,

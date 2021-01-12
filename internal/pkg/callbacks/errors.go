@@ -13,12 +13,15 @@ const (
 	RoleNotFoundMessage           = "role not found"
 	InsufficientPermissionMessage = "insufficient permissions"
 	MaxNumberOfRolesMessage       = "max number of roles"
+	DeadlineExceededMessage       = "deadline exceeded"
 )
 
 // CallbackError embeds the error interface with additional methods to provide
 // metadata for the error.
 type CallbackError interface {
 	error
+	Is(error) bool
+	Unwrap() error
 	InGuild() *discordgo.Guild
 	ForMember() *discordgo.Member
 	InChannel() *discordgo.Channel
@@ -201,4 +204,48 @@ func (mnr *MaxNumberOfRoles) ForMember() *discordgo.Member {
 // InChannel returns channel metadata for MaxNumberOfRoles.
 func (mnr *MaxNumberOfRoles) InChannel() *discordgo.Channel {
 	return mnr.Channel
+}
+
+// DeadlineExceeded represents an error for when a context deadline has been
+// exceeded.
+type DeadlineExceeded struct {
+	Guild   *discordgo.Guild
+	Member  *discordgo.Member
+	Channel *discordgo.Channel
+	Err     error
+}
+
+// Error satisfies the errors interface for DeadlineExceeded.
+func (de *DeadlineExceeded) Error() string {
+	if de.Err != nil {
+		return fmt.Sprintf("%s: %s", DeadlineExceededMessage, de.Err)
+	}
+
+	return DeadlineExceededMessage
+}
+
+// Is allows DeadlineExceeded to be compared with errors.Is.
+func (de *DeadlineExceeded) Is(target error) bool {
+	_, ok := target.(*DeadlineExceeded)
+	return ok
+}
+
+// Unwrap returns an error wrapped by DeadlineExceeded.
+func (de *DeadlineExceeded) Unwrap() error {
+	return de.Err
+}
+
+// InGuild returns guild metadata for DeadlineExceeded.
+func (de *DeadlineExceeded) InGuild() *discordgo.Guild {
+	return de.Guild
+}
+
+// ForMember returns member metadata for DeadlineExceeded.
+func (de *DeadlineExceeded) ForMember() *discordgo.Member {
+	return de.Member
+}
+
+// InChannel returns channel metadata for DeadlineExceeded.
+func (de *DeadlineExceeded) InChannel() *discordgo.Channel {
+	return de.Channel
 }

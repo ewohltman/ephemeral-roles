@@ -1,4 +1,4 @@
-// Package operations provides a centralized nexus for processing requests
+// Package operations provides a centralized gateway for processing requests
 // on Discord API operations.
 package operations
 
@@ -24,12 +24,15 @@ const (
 	UnknownString    = "unknown"
 )
 
+// Discord API error codes.
+const (
+	APIErrorCodeMaxRoles = 30005
+)
+
 const (
 	roleHoist             = true
 	roleMention           = true
 	guildMembersPageLimit = 1000
-
-	apiErrorCodeMaxRoles = 30005
 )
 
 // Request is an operations request to be processed.
@@ -67,10 +70,10 @@ func NewResultChannel() ResultChannel {
 	return make(ResultChannel, 1)
 }
 
-// Nexus is a centralized construct to process operation requests by
+// Gateway is a centralized construct to process operation requests by
 // de-duplicating identical simultaneous requests and providing the result to
 // all of the callers.
-type Nexus struct {
+type Gateway struct {
 	Session *discordgo.Session
 
 	mutex          *sync.Mutex
@@ -79,9 +82,9 @@ type Nexus struct {
 
 type keyHash uint32
 
-// NewNexus returns a new *Nexus ready to process requests.
-func NewNexus(session *discordgo.Session) *Nexus {
-	return &Nexus{
+// NewGateway returns a new *Gateway ready to process requests.
+func NewGateway(session *discordgo.Session) *Gateway {
+	return &Gateway{
 		Session:        session,
 		mutex:          &sync.Mutex{},
 		resultChannels: make(map[keyHash][]ResultChannel),
@@ -91,17 +94,17 @@ func NewNexus(session *discordgo.Session) *Nexus {
 // Process will process the provided request and send back the result to the
 // provided ResultChannel. The caller should type check the result it receives
 // to determine if an error was sent or the result is of the type it expects.
-func (nexus *Nexus) Process(ctx context.Context, resultChannel ResultChannel, request *Request) {
+func (gateway *Gateway) Process(ctx context.Context, resultChannel ResultChannel, request *Request) {
 	switch request.Type {
 	case CreateRole:
-		nexus.processCreateRole(ctx, resultChannel, request)
+		gateway.processCreateRole(ctx, resultChannel, request)
 	default:
 		resultChannel <- fmt.Errorf("%s request type not supported", request.Type)
 		close(resultChannel)
 	}
 }
 
-func (nexus *Nexus) processCreateRole(ctx context.Context, resultChannel ResultChannel, request *Request) {
+func (gateway *Gateway) processCreateRole(ctx context.Context, resultChannel ResultChannel, request *Request) {
 	hashFunc := fnv.New32()
 
 	// According to documentation, this Write will never return an error
@@ -114,41 +117,41 @@ func (nexus *Nexus) processCreateRole(ctx context.Context, resultChannel ResultC
 
 	key := keyHash(hashFunc.Sum32())
 
-	nexus.mutex.Lock()
+	gateway.mutex.Lock()
 
-	_, found := nexus.resultChannels[key]
+	_, found := gateway.resultChannels[key]
 	if found {
-		nexus.resultChannels[key] = append(nexus.resultChannels[key], resultChannel)
-		nexus.mutex.Unlock()
+		gateway.resultChannels[key] = append(gateway.resultChannels[key], resultChannel)
+		gateway.mutex.Unlock()
 
 		return
 	}
 
-	nexus.resultChannels[key] = []ResultChannel{resultChannel}
-	nexus.mutex.Unlock()
+	gateway.resultChannels[key] = []ResultChannel{resultChannel}
+	gateway.mutex.Unlock()
 
 	role, err := createRole(
 		ctx,
-		nexus.Session,
+		gateway.Session,
 		request.CreateRole.Guild,
 		request.CreateRole.RoleName,
 		request.CreateRole.RoleColor,
 	)
 	if err != nil {
-		nexus.sendResult(key, err)
+		gateway.sendResult(key, err)
 		return
 	}
 
-	nexus.sendResult(key, role)
+	gateway.sendResult(key, role)
 }
 
-func (nexus *Nexus) sendResult(key keyHash, result interface{}) {
-	nexus.mutex.Lock()
-	defer nexus.mutex.Unlock()
+func (gateway *Gateway) sendResult(key keyHash, result interface{}) {
+	gateway.mutex.Lock()
+	defer gateway.mutex.Unlock()
 
-	defer delete(nexus.resultChannels, key)
+	defer delete(gateway.resultChannels, key)
 
-	for _, resultChannel := range nexus.resultChannels[key] {
+	for _, resultChannel := range gateway.resultChannels[key] {
 		resultChannel <- result
 		close(resultChannel)
 	}
@@ -194,6 +197,12 @@ func RemoveRoleFromMember(ctx context.Context, session *discordgo.Session, guild
 	return nil
 }
 
+// IsDeadlineExceeded checks if the provided error wraps
+// context.DeadlineExceeded.
+func IsDeadlineExceeded(err error) bool {
+	return errors.Is(err, context.DeadlineExceeded)
+}
+
 // IsForbiddenResponse checks if the provided error wraps *discordgo.RESTError.
 // If it does, IsForbiddenResponse returns true if the response code is equal
 // to http.StatusForbidden.
@@ -217,11 +226,22 @@ func IsMaxGuildsResponse(err error) bool {
 
 	if errors.As(err, &restErr) {
 		if restErr.Response.StatusCode == http.StatusBadRequest {
-			return restErr.Message.Code == apiErrorCodeMaxRoles
+			return restErr.Message.Code == APIErrorCodeMaxRoles
 		}
 	}
 
 	return false
+}
+
+// ShouldLogDebug checks if the provided error should be logged at a debug
+// level.
+func ShouldLogDebug(err error) bool {
+	switch {
+	case IsDeadlineExceeded(err), IsForbiddenResponse(err):
+		return true
+	default:
+		return false
+	}
 }
 
 // BotHasChannelPermission checks if the bot has view permissions for the

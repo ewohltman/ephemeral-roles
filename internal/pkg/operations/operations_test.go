@@ -11,6 +11,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
@@ -35,13 +36,13 @@ type roleForMemberTestCase struct {
 
 const duplicateRequests = 5
 
-func TestNewNexus(t *testing.T) {
-	if operations.NewNexus(nil) == nil {
+func TestNewGateway(t *testing.T) {
+	if operations.NewGateway(nil) == nil {
 		t.Error("unexpected nil queue")
 	}
 }
 
-func TestNexus_Process(t *testing.T) {
+func TestGateway_Process(t *testing.T) {
 	roleNames := []string{mock.TestRole, mock.TestRole + "2"}
 
 	session, err := mock.NewSession()
@@ -51,13 +52,13 @@ func TestNexus_Process(t *testing.T) {
 
 	defer mock.SessionClose(t, session)
 
-	nexus := operations.NewNexus(session)
+	gateway := operations.NewGateway(session)
 	waitGroup := &sync.WaitGroup{}
 
 	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second)
 	defer cancelCtx()
 
-	runTestRequestUnknown(ctx, t, nexus)
+	runTestRequestUnknown(ctx, t, gateway)
 
 	for _, roleName := range roleNames {
 		roleName := roleName
@@ -67,7 +68,7 @@ func TestNexus_Process(t *testing.T) {
 
 			go func() {
 				defer waitGroup.Done()
-				runTestRequestCreateRole(ctx, t, nexus, roleName)
+				runTestRequestCreateRole(ctx, t, gateway, roleName)
 			}()
 		}
 	}
@@ -151,6 +152,16 @@ func TestRemoveRoleFromMember(t *testing.T) {
 	runRoleForMemberTestCases(context.Background(), t, removeRoleFromMemberTestCases(getSession))
 }
 
+func TestIsDeadlineExceeded(t *testing.T) {
+	if operations.IsDeadlineExceeded(io.EOF) {
+		t.Errorf("Unexpected success")
+	}
+
+	if !operations.IsDeadlineExceeded(&callbacks.DeadlineExceeded{Err: context.DeadlineExceeded}) {
+		t.Errorf("Unexpected failure")
+	}
+}
+
 func TestIsForbiddenResponse(t *testing.T) {
 	type testCase struct {
 		name     string
@@ -195,6 +206,31 @@ func TestIsForbiddenResponse(t *testing.T) {
 	}
 }
 
+func TestIsMaxGuildsResponse(t *testing.T) {
+	if operations.IsMaxGuildsResponse(io.EOF) {
+		t.Errorf("Unexpected success")
+	}
+
+	maxGuildsResponse := &discordgo.RESTError{
+		Response: &http.Response{StatusCode: http.StatusBadRequest},
+		Message:  &discordgo.APIErrorMessage{Code: operations.APIErrorCodeMaxRoles},
+	}
+
+	if !operations.IsMaxGuildsResponse(maxGuildsResponse) {
+		t.Errorf("Unexpected failure")
+	}
+}
+
+func TestShouldLogDebug(t *testing.T) {
+	if operations.ShouldLogDebug(io.EOF) {
+		t.Errorf("Unexpected success")
+	}
+
+	if !operations.ShouldLogDebug(&callbacks.DeadlineExceeded{Err: context.DeadlineExceeded}) {
+		t.Errorf("Unexpected failure")
+	}
+}
+
 func TestBotHasChannelPermission(t *testing.T) {
 	session, err := mock.NewSession()
 	if err != nil {
@@ -226,14 +262,14 @@ func TestBotHasChannelPermission(t *testing.T) {
 	}
 }
 
-func runTestRequestUnknown(ctx context.Context, t *testing.T, nexus *operations.Nexus) {
-	runTest(ctx, t, nexus, true, &operations.Request{
+func runTestRequestUnknown(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway) {
+	runTest(ctx, t, gateway, true, &operations.Request{
 		Type: operations.RequestType(-1),
 	})
 }
 
-func runTestRequestCreateRole(ctx context.Context, t *testing.T, nexus *operations.Nexus, roleName string) {
-	runTest(ctx, t, nexus, false, &operations.Request{
+func runTestRequestCreateRole(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
+	runTest(ctx, t, gateway, false, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:    &discordgo.Guild{ID: mock.TestGuild},
@@ -242,10 +278,10 @@ func runTestRequestCreateRole(ctx context.Context, t *testing.T, nexus *operatio
 	})
 }
 
-func runTest(ctx context.Context, t *testing.T, nexus *operations.Nexus, expectError bool, request *operations.Request) {
+func runTest(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway, expectError bool, request *operations.Request) {
 	resultChannel := operations.NewResultChannel()
 
-	nexus.Process(ctx, resultChannel, request)
+	gateway.Process(ctx, resultChannel, request)
 
 	result := <-resultChannel
 
