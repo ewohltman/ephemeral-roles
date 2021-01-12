@@ -11,6 +11,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
@@ -151,6 +152,16 @@ func TestRemoveRoleFromMember(t *testing.T) {
 	runRoleForMemberTestCases(context.Background(), t, removeRoleFromMemberTestCases(getSession))
 }
 
+func TestIsDeadlineExceeded(t *testing.T) {
+	if operations.IsDeadlineExceeded(io.EOF) {
+		t.Errorf("Unexpected success")
+	}
+
+	if !operations.IsDeadlineExceeded(&callbacks.DeadlineExceeded{Err: context.DeadlineExceeded}) {
+		t.Errorf("Unexpected failure")
+	}
+}
+
 func TestIsForbiddenResponse(t *testing.T) {
 	type testCase struct {
 		name     string
@@ -195,6 +206,31 @@ func TestIsForbiddenResponse(t *testing.T) {
 	}
 }
 
+func TestIsMaxGuildsResponse(t *testing.T) {
+	if operations.IsMaxGuildsResponse(io.EOF) {
+		t.Errorf("Unexpected success")
+	}
+
+	maxGuildsResponse := &discordgo.RESTError{
+		Response: &http.Response{StatusCode: http.StatusBadRequest},
+		Message:  &discordgo.APIErrorMessage{Code: operations.APIErrorCodeMaxRoles},
+	}
+
+	if !operations.IsMaxGuildsResponse(maxGuildsResponse) {
+		t.Errorf("Unexpected failure")
+	}
+}
+
+func TestShouldLogDebug(t *testing.T) {
+	if operations.ShouldLogDebug(io.EOF) {
+		t.Errorf("Unexpected success")
+	}
+
+	if !operations.ShouldLogDebug(&callbacks.DeadlineExceeded{Err: context.DeadlineExceeded}) {
+		t.Errorf("Unexpected failure")
+	}
+}
+
 func TestBotHasChannelPermission(t *testing.T) {
 	session, err := mock.NewSession()
 	if err != nil {
@@ -226,13 +262,13 @@ func TestBotHasChannelPermission(t *testing.T) {
 	}
 }
 
-func runTestRequestUnknown(ctx context.Context, t *testing.T, gateway *operations.Gateway) {
+func runTestRequestUnknown(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway) {
 	runTest(ctx, t, gateway, true, &operations.Request{
 		Type: operations.RequestType(-1),
 	})
 }
 
-func runTestRequestCreateRole(ctx context.Context, t *testing.T, gateway *operations.Gateway, roleName string) {
+func runTestRequestCreateRole(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
 	runTest(ctx, t, gateway, false, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
@@ -242,7 +278,7 @@ func runTestRequestCreateRole(ctx context.Context, t *testing.T, gateway *operat
 	})
 }
 
-func runTest(ctx context.Context, t *testing.T, gateway *operations.Gateway, expectError bool, request *operations.Request) {
+func runTest(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway, expectError bool, request *operations.Request) {
 	resultChannel := operations.NewResultChannel()
 
 	gateway.Process(ctx, resultChannel, request)

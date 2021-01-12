@@ -24,12 +24,15 @@ const (
 	UnknownString    = "unknown"
 )
 
+// Discord API error codes.
+const (
+	APIErrorCodeMaxRoles = 30005
+)
+
 const (
 	roleHoist             = true
 	roleMention           = true
 	guildMembersPageLimit = 1000
-
-	apiErrorCodeMaxRoles = 30005
 )
 
 // Request is an operations request to be processed.
@@ -194,6 +197,12 @@ func RemoveRoleFromMember(ctx context.Context, session *discordgo.Session, guild
 	return nil
 }
 
+// IsDeadlineExceeded checks if the provided error wraps
+// context.DeadlineExceeded.
+func IsDeadlineExceeded(err error) bool {
+	return errors.Is(err, context.DeadlineExceeded)
+}
+
 // IsForbiddenResponse checks if the provided error wraps *discordgo.RESTError.
 // If it does, IsForbiddenResponse returns true if the response code is equal
 // to http.StatusForbidden.
@@ -217,11 +226,22 @@ func IsMaxGuildsResponse(err error) bool {
 
 	if errors.As(err, &restErr) {
 		if restErr.Response.StatusCode == http.StatusBadRequest {
-			return restErr.Message.Code == apiErrorCodeMaxRoles
+			return restErr.Message.Code == APIErrorCodeMaxRoles
 		}
 	}
 
 	return false
+}
+
+// ShouldLogDebug checks if the provided error should be logged at a debug
+// level.
+func ShouldLogDebug(err error) bool {
+	switch {
+	case IsDeadlineExceeded(err), IsForbiddenResponse(err):
+		return true
+	default:
+		return false
+	}
 }
 
 // BotHasChannelPermission checks if the bot has view permissions for the
