@@ -7,7 +7,7 @@ replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.20.3-
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v0.9.0 // indirect
-	github.com/bwmarrin/discordgo v0.22.0
+	github.com/bwmarrin/discordgo v0.22.1
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/kz/discordrus v1.2.0
 	github.com/opentracing/opentracing-go v1.2.0
