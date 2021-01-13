@@ -32,13 +32,9 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	session.Client = http.NewClient(
-		session.Client.Transport,
-		jaegerTracer,
-		"test-0",
-	)
-
 	defer mock.SessionClose(t, session)
+
+	session.Client = http.NewClient(http.WrapTransport(session.Client.Transport))
 
 	log := mock.NewLogger()
 

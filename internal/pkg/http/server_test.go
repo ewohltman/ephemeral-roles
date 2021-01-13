@@ -52,7 +52,7 @@ func TestNewServer(t *testing.T) {
 
 	time.Sleep(serverStartupDelay)
 
-	client := internalHTTP.NewClient(nil, nil, "")
+	client := internalHTTP.NewClient(internalHTTP.NewTransport())
 
 	testRootEndpoint(t, client)
 	testGuildsEndpoint(t, client)
@@ -67,7 +67,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func testRootEndpoint(t *testing.T, client *http.Client) {
-	resp, err := doRequest(context.Background(), client, testURL+internalHTTP.RootEndpoint)
+	resp, err := doContextRequest(context.Background(), client, testURL+internalHTTP.RootEndpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func testGuildsEndpoint(t *testing.T, client *http.Client) {
 		t.Fatalf("Error unmarshaling expected guild data: %s", err)
 	}
 
-	resp, err := doRequest(context.Background(), client, testURL+internalHTTP.GuildsEndpoint)
+	resp, err := doContextRequest(context.Background(), client, testURL+internalHTTP.GuildsEndpoint)
 	if err != nil {
 		t.Fatal(err)
 	}

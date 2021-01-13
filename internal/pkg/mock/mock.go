@@ -30,12 +30,6 @@ const (
 	sessionCreateErrMessage = "unable to create new session"
 )
 
-// TestingInstance is an interface intended for testing.T and testing.B
-// instances.
-type TestingInstance interface {
-	Error(args ...interface{})
-}
-
 // RoundTripperFunc allows functions to satisfy the http.RoundTripper
 // interface.
 type RoundTripperFunc func(req *http.Request) (*http.Response, error)

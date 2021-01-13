@@ -185,7 +185,10 @@ func main() {
 
 	defer closeComponent(log, "Jaeger tracer", jaegerCloser)
 
-	client := internalHTTP.NewClient(nil, jaegerTracer, envVars.InstanceName)
+	client := internalHTTP.NewClient(internalHTTP.WrapTransport(
+		internalHTTP.NewTransport(),
+		internalHTTP.WrapTransportWithTracer(jaegerTracer, envVars.InstanceName),
+	))
 
 	monitorCtx, cancelMonitorCtx := context.WithCancel(context.Background())
 	defer cancelMonitorCtx()
