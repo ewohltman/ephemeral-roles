@@ -32,17 +32,10 @@ func TestNewClient(t *testing.T) {
 		}
 	}()
 
-	client := internalHTTP.NewClient(nil, jaegerTracer, "")
-
-	if client == nil {
-		t.Fatal("Unexpected nil *http.Client")
-	}
-
-	if client.Transport == nil {
-		t.Fatal("Unexpected nil http.RoundTripper")
-	}
-
-	client = internalHTTP.NewClient(http.DefaultTransport, jaegerTracer, "")
+	client := internalHTTP.NewClient(internalHTTP.WrapTransport(
+		internalHTTP.NewTransport(),
+		internalHTTP.WrapTransportWithTracer(jaegerTracer, ""),
+	))
 
 	if client == nil {
 		t.Fatal("Unexpected nil *http.Client")
@@ -80,7 +73,21 @@ func testServerHandler() http.HandlerFunc {
 }
 
 func doTestRequests(client *http.Client, testServerURL string) error {
-	resp, err := doRequest(context.Background(), client, testServerURL)
+	resp, err := doRequest(client, testServerURL)
+	if err != nil {
+		return err
+	}
+
+	err = drainCloseResponse(resp)
+	if err != nil {
+		return err
+	}
+
+	if resp.Request.Context() == context.Background() {
+		return fmt.Errorf("request context was not set")
+	}
+
+	resp, err = doContextRequest(context.Background(), client, testServerURL)
 	if err != nil {
 		return err
 	}
@@ -97,7 +104,7 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second)
 	defer cancelCtx()
 
-	resp, err = doRequest(ctx, client, testServerURL)
+	resp, err = doContextRequest(ctx, client, testServerURL)
 	if err != nil {
 		return err
 	}
@@ -114,22 +121,22 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 	return nil
 }
 
-func doRequest(ctx context.Context, client *http.Client, testServerURL string) (resp *http.Response, err error) {
-	var req *http.Request
-
-	req, err = http.NewRequestWithContext(ctx, http.MethodGet, testServerURL, nil)
+func doRequest(client *http.Client, testServerURL string) (resp *http.Response, err error) {
+	req, err := http.NewRequest(http.MethodGet, testServerURL, nil)
 	if err != nil {
-		err = fmt.Errorf("unable to create test request: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("unable to create test request: %w", err)
 	}
 
-	resp, err = client.Do(req)
+	return client.Do(req)
+}
+
+func doContextRequest(ctx context.Context, client *http.Client, testServerURL string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, testServerURL, nil)
 	if err != nil {
-		err = fmt.Errorf("unable to perform test request: %w", err)
-		return nil, err
+		return nil, fmt.Errorf("unable to create test request: %w", err)
 	}
 
-	return resp, nil
+	return client.Do(req)
 }
 
 func readCloseResponse(resp *http.Response) (respBytes []byte, err error) {

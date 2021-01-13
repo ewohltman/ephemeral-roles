@@ -2,6 +2,7 @@ package mock
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -39,7 +40,7 @@ func NewSessionEmptyState() (*discordgo.Session, error) {
 
 // SessionClose closes a *discordgo.Session instance and if an error is encountered,
 // the provided testingInstance logs the error and marks the test as failed.
-func SessionClose(testingInstance TestingInstance, session *discordgo.Session) {
+func SessionClose(testingInstance testing.TB, session *discordgo.Session) {
 	err := session.Close()
 	if err != nil {
 		testingInstance.Error(err)

@@ -1,7 +1,7 @@
 package http
 
 import (
-	"context"
+	"net"
 	"net/http"
 	"time"
 
@@ -10,50 +10,53 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
-const contextTimeout = 20 * time.Second
+const (
+	clientTimeout         = 1 * time.Minute
+	dialerTimeout         = 30 * time.Second
+	tlsHandshakeTimeout   = 30 * time.Second
+	responseHeaderTimeout = 1 * time.Minute
+)
 
-type roundTripperFunc func(req *http.Request) (*http.Response, error)
-
-func (rt roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return rt(req)
-}
+const poolSize = 100
 
 // NewClient returns a new preconfigured *http.Client.
-func NewClient(transport http.RoundTripper, jaegerTracer opentracing.Tracer, instanceName string) *http.Client {
-	client := &http.Client{Transport: transport}
-
-	setTransport(client, jaegerTracer, instanceName)
-
-	return client
+func NewClient(transport http.RoundTripper) *http.Client {
+	return &http.Client{
+		Transport: transport,
+		Timeout:   clientTimeout,
+	}
 }
 
-func setTransport(client *http.Client, jaegerTracer opentracing.Tracer, instanceName string) {
-	if client.Transport == nil {
-		client.Transport = &http.Transport{}
+// NewTransport returns a new pre-configured *http.Transport.
+func NewTransport() *http.Transport {
+	return &http.Transport{
+		DialContext:           (&net.Dialer{Timeout: dialerTimeout}).DialContext,
+		TLSHandshakeTimeout:   tlsHandshakeTimeout,
+		MaxIdleConns:          poolSize,
+		MaxIdleConnsPerHost:   poolSize,
+		MaxConnsPerHost:       poolSize,
+		ResponseHeaderTimeout: responseHeaderTimeout,
+	}
+}
+
+// TransportWrapper is a function that returns an http.RoundTripper that wraps
+// the next http.RoundTripper by calling its RoundTrip method.
+type TransportWrapper func(next http.RoundTripper) http.RoundTripper
+
+// WrapTransport returns an http.RoundTripper with all the provided
+// TransportWrapper functions wrapping the provided http.RoundTripper in order.
+func WrapTransport(roundTripper http.RoundTripper, transportWrappers ...TransportWrapper) http.RoundTripper {
+	for _, transportWrapper := range transportWrappers {
+		roundTripper = transportWrapper(roundTripper)
 	}
 
-	client.Transport = roundTripperWithTracer(
-		jaegerTracer,
-		instanceName,
-		roundTripperWithContext(client.Transport),
-	)
+	return roundTripper
 }
 
-func roundTripperWithContext(next http.RoundTripper) http.RoundTripper {
-	return roundTripperFunc(
-		func(req *http.Request) (*http.Response, error) {
-			if req.Context() != context.Background() {
-				return next.RoundTrip(req)
-			}
-
-			ctx, cancelCtx := context.WithTimeout(context.Background(), contextTimeout)
-			defer cancelCtx()
-
-			return next.RoundTrip(req.Clone(ctx))
-		},
-	)
-}
-
-func roundTripperWithTracer(jaegerTracer opentracing.Tracer, instanceName string, next http.RoundTripper) http.RoundTripper {
-	return tracer.RoundTripper(jaegerTracer, instanceName, next)
+// WrapTransportWithTracer wraps the next http.RoundTripper with a Jaeger
+// tracer.
+func WrapTransportWithTracer(jaegerTracer opentracing.Tracer, instanceName string) TransportWrapper {
+	return func(next http.RoundTripper) http.RoundTripper {
+		return tracer.RoundTripper(jaegerTracer, instanceName, next)
+	}
 }
