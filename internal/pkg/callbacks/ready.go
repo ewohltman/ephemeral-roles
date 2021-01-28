@@ -17,9 +17,11 @@ func (handler *Handler) Ready(s *discordgo.Session, event *discordgo.Ready) {
 
 	usd := discordgo.UpdateStatusData{
 		IdleSince: &idleSince,
-		Game: &discordgo.Game{
-			Name: handler.BotKeyword,
-			Type: discordgo.GameTypeWatching,
+		Activities: []*discordgo.Activity{
+			{
+				Name: handler.BotKeyword,
+				Type: discordgo.ActivityTypeListening,
+			},
 		},
 		AFK:    false,
 		Status: "online",

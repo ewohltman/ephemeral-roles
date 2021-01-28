@@ -160,18 +160,16 @@ func mockChannel(channelID string) *discordgo.Channel {
 	if channelID == TestPrivateChannel {
 		permissionOverwrites = []*discordgo.PermissionOverwrite{
 			{
-				ID:    TestGuild,
-				Type:  "role",
-				Deny:  discordgo.PermissionViewChannel,
-				Allow: 0,
+				ID:   TestGuild,
+				Type: discordgo.PermissionOverwriteTypeRole,
+				Deny: discordgo.PermissionViewChannel,
 			},
 		}
 	} else {
 		permissionOverwrites = []*discordgo.PermissionOverwrite{
 			{
 				ID:    TestGuild,
-				Type:  "role",
-				Deny:  0,
+				Type:  discordgo.PermissionOverwriteTypeRole,
 				Allow: discordgo.PermissionViewChannel,
 			},
 		}
