@@ -19,7 +19,7 @@ generate:
 fmt:
 	gofmt -s -w . && goimports -w . && go mod tidy
 
-lint:
+lint: fmt
 	golangci-lint run ./...
 
 test:
