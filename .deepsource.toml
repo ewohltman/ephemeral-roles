@@ -1,8 +1,13 @@
 version = 1
 
+test_patterns = [
+    "**/*_test.go"
+]
+
 [[analyzers]]
 name = "go"
 enabled = true
 
-  [analyzers.meta]
-  import_paths = ["github.com/ewohltman/ephemeral-roles"]
+[analyzers.meta]
+import_paths = ["github.com/ewohltman/ephemeral-roles"]
+cgo_enabled = false
