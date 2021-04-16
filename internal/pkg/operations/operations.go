@@ -13,10 +13,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// RequestType enumerations.
-const (
-	CreateRole RequestType = iota
-)
+// CreateRole is a RequestType enumeration.
+const CreateRole RequestType = iota
 
 // RequestType string representations.
 const (
@@ -24,10 +22,8 @@ const (
 	UnknownString    = "unknown"
 )
 
-// Discord API error codes.
-const (
-	APIErrorCodeMaxRoles = 30005
-)
+// APIErrorCodeMaxRoles is the Discord API error code for max roles.
+const APIErrorCodeMaxRoles = 30005
 
 const (
 	roleHoist             = true
