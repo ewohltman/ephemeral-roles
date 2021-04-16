@@ -18,6 +18,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/caarlos0/env"
 	"github.com/opentracing/opentracing-go"
+	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
@@ -151,9 +152,16 @@ func closeComponent(log logging.Interface, component string, closer io.Closer) {
 }
 
 func main() {
+	undo, err := maxprocs.Set()
+	if err != nil {
+		stdLog.Fatalf("Failed to set GOMAXPROCS: %s", err)
+	}
+
+	defer undo()
+
 	envVars := &environmentVariables{}
 
-	err := env.Parse(envVars)
+	err = env.Parse(envVars)
 	if err != nil {
 		stdLog.Fatalf("Error looking up environment variables: %s", err)
 	}
