@@ -20,15 +20,8 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ephemeral-roles
-          image: ewohltman/ephemeral-roles:v1.7.0
+          image: ewohltman/ephemeral-roles:v1.7.1
           imagePullPolicy: Always
-          resources:
-            limits:
-              cpu: "100m"
-              memory: "512Mi"
-            requests:
-              cpu: "100m"
-              memory: "512Mi"
           env:
             - name: SHARD_COUNT
               value: "10"
