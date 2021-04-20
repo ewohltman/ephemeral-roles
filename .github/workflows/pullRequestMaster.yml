@@ -23,6 +23,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
+      - name: Download dependencies
+        run: |
+          go mod tidy
+          go mod download
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -36,9 +41,7 @@ jobs:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PATH="${PATH}:$(go env GOPATH)/bin"
-
           GO111MODULE=off go get -u github.com/mattn/goveralls
-
           goveralls -coverprofile=coverage.out -service=github
 
       - name: Perform CodeQL Analysis
