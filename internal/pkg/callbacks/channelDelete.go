@@ -1,8 +1,6 @@
 package callbacks
 
 import (
-	"context"
-
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -13,9 +11,6 @@ const (
 
 // ChannelDelete is the callback function for the ChannelDelete event from Discord.
 func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *discordgo.ChannelDelete) {
-	ctx, cancelCtx := context.WithTimeout(context.Background(), handler.ContextTimeout)
-	defer cancelCtx()
-
 	if channel.Type != discordgo.ChannelTypeGuildVoice {
 		return
 	}
@@ -31,7 +26,7 @@ func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *disco
 			continue
 		}
 
-		err = session.GuildRoleDeleteWithContext(ctx, channel.GuildID, role.ID)
+		err = session.GuildRoleDelete(channel.GuildID, role.ID)
 		if err != nil {
 			handler.Log.WithError(err).Error(channelDeleteEventError)
 			return
