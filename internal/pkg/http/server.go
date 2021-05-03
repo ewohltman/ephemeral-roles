@@ -8,9 +8,8 @@ import (
 	"net/http/pprof"
 	"sort"
 
-	"github.com/goccy/go-json"
-
 	"github.com/bwmarrin/discordgo"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
@@ -31,6 +30,9 @@ const (
 	pprofSymbolEndpoint  = "/debug/pprof/symbol"
 	pprofTraceEndpoint   = "/debug/pprof/trace"
 )
+
+//nolint:gochecknoglobals // override stdlib json package
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // SortableGuild is a representation of a guild that can be sorted by member
 // count.

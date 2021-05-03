@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/goccy/go-json"
+	jsoniter "github.com/json-iterator/go"
 )
 
 const unsupportedMockRequest = "unsupported mock request"
+
+//nolint:gochecknoglobals // override stdlib json package
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func restClient() *http.Client {
 	return &http.Client{Transport: RoundTripperFunc(discordAPIResponse)}
