@@ -90,17 +90,17 @@ func NewGateway(session *discordgo.Session) *Gateway {
 // Process will process the provided request and send back the result to the
 // provided ResultChannel. The caller should type check the result it receives
 // to determine if an error was sent or the result is of the type it expects.
-func (gateway *Gateway) Process(ctx context.Context, resultChannel ResultChannel, request *Request) {
+func (gateway *Gateway) Process(resultChannel ResultChannel, request *Request) {
 	switch request.Type {
 	case CreateRole:
-		gateway.processCreateRole(ctx, resultChannel, request)
+		gateway.processCreateRole(resultChannel, request)
 	default:
 		resultChannel <- fmt.Errorf("%s request type not supported", request.Type)
 		close(resultChannel)
 	}
 }
 
-func (gateway *Gateway) processCreateRole(ctx context.Context, resultChannel ResultChannel, request *Request) {
+func (gateway *Gateway) processCreateRole(resultChannel ResultChannel, request *Request) {
 	hashFunc := fnv.New32()
 
 	// According to documentation, this Write will never return an error
@@ -127,7 +127,6 @@ func (gateway *Gateway) processCreateRole(ctx context.Context, resultChannel Res
 	gateway.mutex.Unlock()
 
 	role, err := createRole(
-		ctx,
 		gateway.Session,
 		request.CreateRole.Guild,
 		request.CreateRole.RoleName,
@@ -157,10 +156,10 @@ func (gateway *Gateway) sendResult(key keyHash, result interface{}) {
 // cache. If the guild is not found in the state cache, LookupGuild will query
 // the Discord API for the guild and add it to the state cache before returning
 // it.
-func LookupGuild(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
+func LookupGuild(session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
 	guild, err := session.State.Guild(guildID)
 	if err != nil {
-		guild, err = updateStateGuilds(ctx, session, guildID)
+		guild, err = updateStateGuilds(session, guildID)
 		if err != nil {
 			return nil, fmt.Errorf("unable to query guild: %w", err)
 		}
@@ -172,8 +171,8 @@ func LookupGuild(ctx context.Context, session *discordgo.Session, guildID string
 // AddRoleToMember adds the role associated with the provided roleID to the
 // user associated with the provided userID, in the guild associated with the
 // provided guildID.
-func AddRoleToMember(ctx context.Context, session *discordgo.Session, guildID, userID, roleID string) error {
-	err := session.GuildMemberRoleAddWithContext(ctx, guildID, userID, roleID)
+func AddRoleToMember(session *discordgo.Session, guildID, userID, roleID string) error {
+	err := session.GuildMemberRoleAdd(guildID, userID, roleID)
 	if err != nil {
 		return fmt.Errorf("unable to add ephemeral role: %w", err)
 	}
@@ -184,8 +183,8 @@ func AddRoleToMember(ctx context.Context, session *discordgo.Session, guildID, u
 // RemoveRoleFromMember removes the role associated with the provided roleID
 // from the user associated with the provided userID, in the guild associated
 // with the provided guildID.
-func RemoveRoleFromMember(ctx context.Context, session *discordgo.Session, guildID, userID, roleID string) error {
-	err := session.GuildMemberRoleRemoveWithContext(ctx, guildID, userID, roleID)
+func RemoveRoleFromMember(session *discordgo.Session, guildID, userID, roleID string) error {
+	err := session.GuildMemberRoleRemove(guildID, userID, roleID)
 	if err != nil {
 		return fmt.Errorf("unable to remove ephemeral role: %w", err)
 	}
@@ -243,7 +242,7 @@ func ShouldLogDebug(err error) bool {
 // BotHasChannelPermission checks if the bot has view permissions for the
 // channel. If the bot does have the view permission, BotHasChannelPermission
 // returns nil.
-func BotHasChannelPermission(ctx context.Context, session *discordgo.Session, channel *discordgo.Channel) error {
+func BotHasChannelPermission(session *discordgo.Session, channel *discordgo.Channel) error {
 	permissions, err := session.UserChannelPermissions(session.State.User.ID, channel.ID)
 	if err != nil {
 		return fmt.Errorf("unable to determine channel permissions: %w", err)
@@ -256,23 +255,23 @@ func BotHasChannelPermission(ctx context.Context, session *discordgo.Session, ch
 	return nil
 }
 
-func updateStateGuilds(ctx context.Context, session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
-	guild, err := session.GuildWithContext(ctx, guildID)
+func updateStateGuilds(session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
+	guild, err := session.Guild(guildID)
 	if err != nil {
 		return nil, fmt.Errorf("error senging guild query request: %w", err)
 	}
 
-	roles, err := session.GuildRolesWithContext(ctx, guildID)
+	roles, err := session.GuildRoles(guildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to query guild channels: %w", err)
 	}
 
-	channels, err := session.GuildChannelsWithContext(ctx, guildID)
+	channels, err := session.GuildChannels(guildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to query guild channels: %w", err)
 	}
 
-	members, err := recursiveGuildMembersWithContext(ctx, session, guildID, "", guildMembersPageLimit)
+	members, err := recursiveGuildMembers(session, guildID, "", guildMembersPageLimit)
 	if err != nil {
 		return nil, fmt.Errorf("unable to query guild members: %w", err)
 	}
@@ -291,19 +290,17 @@ func updateStateGuilds(ctx context.Context, session *discordgo.Session, guildID 
 }
 
 func createRole(
-	ctx context.Context,
 	session *discordgo.Session,
 	guild *discordgo.Guild,
 	roleName string,
 	roleColor int,
 ) (*discordgo.Role, error) {
-	role, err := session.GuildRoleCreateWithContext(ctx, guild.ID)
+	role, err := session.GuildRoleCreate(guild.ID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create ephemeral role: %w", err)
 	}
 
-	role, err = session.GuildRoleEditWithContext(
-		ctx,
+	role, err = session.GuildRoleEdit(
 		guild.ID, role.ID,
 		roleName, roleColor,
 		roleHoist, role.Permissions, roleMention,
@@ -320,13 +317,12 @@ func createRole(
 	return role, nil
 }
 
-func recursiveGuildMembersWithContext(
-	ctx context.Context,
+func recursiveGuildMembers(
 	session *discordgo.Session,
 	guildID, after string,
 	limit int,
 ) ([]*discordgo.Member, error) {
-	guildMembers, err := session.GuildMembersWithContext(ctx, guildID, after, limit)
+	guildMembers, err := session.GuildMembers(guildID, after, limit)
 	if err != nil {
 		return nil, fmt.Errorf("error sending recursive guild members request: %w", err)
 	}
@@ -335,8 +331,7 @@ func recursiveGuildMembersWithContext(
 		return guildMembers, nil
 	}
 
-	nextGuildMembers, err := recursiveGuildMembersWithContext(
-		ctx,
+	nextGuildMembers, err := recursiveGuildMembers(
 		session,
 		guildID,
 		guildMembers[len(guildMembers)-1].User.ID,

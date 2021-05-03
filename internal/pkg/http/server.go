@@ -1,13 +1,14 @@
 package http
 
 import (
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	stdLog "log"
 	"net/http"
 	"net/http/pprof"
 	"sort"
+
+	"github.com/goccy/go-json"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

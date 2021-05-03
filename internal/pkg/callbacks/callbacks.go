@@ -2,7 +2,6 @@
 package callbacks
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -16,7 +15,7 @@ import (
 // OperationsGateway is an interface abstraction for processing operations
 // requests.
 type OperationsGateway interface {
-	Process(context.Context, operations.ResultChannel, *operations.Request)
+	Process(operations.ResultChannel, *operations.Request)
 }
 
 // Handler contains fields for the callback methods attached to it.

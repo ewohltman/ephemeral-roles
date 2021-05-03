@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 
@@ -27,7 +26,6 @@ type roleForMemberTestCase struct {
 	roleID     string
 	getSession sessionFunc
 	testFunc   func(
-		ctx context.Context,
 		t *testing.T,
 		getSession sessionFunc,
 		guildID, userID, roleName string,
@@ -55,10 +53,7 @@ func TestGateway_Process(t *testing.T) {
 	gateway := operations.NewGateway(session)
 	waitGroup := &sync.WaitGroup{}
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second)
-	defer cancelCtx()
-
-	runTestRequestUnknown(ctx, t, gateway)
+	runTestRequestUnknown(t, gateway)
 
 	for _, roleName := range roleNames {
 		roleName := roleName
@@ -68,7 +63,7 @@ func TestGateway_Process(t *testing.T) {
 
 			go func() {
 				defer waitGroup.Done()
-				runTestRequestCreateRole(ctx, t, gateway, roleName)
+				runTestRequestCreateRole(t, gateway, roleName)
 			}()
 		}
 	}
@@ -106,7 +101,7 @@ func TestLookupGuild(t *testing.T) {
 					return nil, err
 				}
 
-				_, err = operations.LookupGuild(context.Background(), session, mock.TestGuildLarge)
+				_, err = operations.LookupGuild(session, mock.TestGuildLarge)
 				if err != nil {
 					return nil, err
 				}
@@ -136,7 +131,7 @@ func TestAddRoleToMember(t *testing.T) {
 
 	getSession := func() (*discordgo.Session, error) { return session, nil }
 
-	runRoleForMemberTestCases(context.Background(), t, addRoleToMemberTestCases(getSession))
+	runRoleForMemberTestCases(t, addRoleToMemberTestCases(getSession))
 }
 
 func TestRemoveRoleFromMember(t *testing.T) {
@@ -149,7 +144,7 @@ func TestRemoveRoleFromMember(t *testing.T) {
 
 	getSession := func() (*discordgo.Session, error) { return session, nil }
 
-	runRoleForMemberTestCases(context.Background(), t, removeRoleFromMemberTestCases(getSession))
+	runRoleForMemberTestCases(t, removeRoleFromMemberTestCases(getSession))
 }
 
 func TestIsDeadlineExceeded(t *testing.T) {
@@ -249,27 +244,25 @@ func TestBotHasChannelPermission(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := context.Background()
-
-	err = operations.BotHasChannelPermission(ctx, session, testChannelWithPermission)
+	err = operations.BotHasChannelPermission(session, testChannelWithPermission)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = operations.BotHasChannelPermission(ctx, session, testChannelWithoutPermission)
+	err = operations.BotHasChannelPermission(session, testChannelWithoutPermission)
 	if err == nil {
 		t.Error("unexpected nil error")
 	}
 }
 
-func runTestRequestUnknown(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway) {
-	runTest(ctx, t, gateway, true, &operations.Request{
+func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
+	runTest(t, gateway, true, &operations.Request{
 		Type: operations.RequestType(-1),
 	})
 }
 
-func runTestRequestCreateRole(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
-	runTest(ctx, t, gateway, false, &operations.Request{
+func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
+	runTest(t, gateway, false, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:    &discordgo.Guild{ID: mock.TestGuild},
@@ -278,17 +271,17 @@ func runTestRequestCreateRole(ctx context.Context, t *testing.T, gateway callbac
 	})
 }
 
-func runTest(ctx context.Context, t *testing.T, gateway callbacks.OperationsGateway, expectError bool, request *operations.Request) {
+func runTest(t *testing.T, gateway callbacks.OperationsGateway, expectError bool, request *operations.Request) {
 	resultChannel := operations.NewResultChannel()
 
-	gateway.Process(ctx, resultChannel, request)
+	gateway.Process(resultChannel, request)
 
 	result := <-resultChannel
 
 	_, resultError := result.(error)
 	if resultError != expectError {
 		if resultError {
-			t.Error(result)
+			t.Errorf("%s", result)
 			return
 		}
 
@@ -302,7 +295,7 @@ func lookupGuild(t *testing.T, getSession sessionFunc, guildID string) {
 		t.Fatal(err)
 	}
 
-	guild, err := operations.LookupGuild(context.Background(), session, guildID)
+	guild, err := operations.LookupGuild(session, guildID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,25 +344,22 @@ func removeRoleFromMemberTestCases(getSession sessionFunc) []*roleForMemberTestC
 }
 
 func addNewRoleToMember(
-	ctx context.Context,
 	t *testing.T,
 	getSession sessionFunc,
 	guildID, userID, roleID string,
 ) {
-	roleForMember(ctx, t, getSession, guildID, userID, roleID, true)
+	roleForMember(t, getSession, guildID, userID, roleID, true)
 }
 
 func removeRoleFromMember(
-	ctx context.Context,
 	t *testing.T,
 	getSession sessionFunc,
 	guildID, userID, roleID string,
 ) {
-	roleForMember(ctx, t, getSession, guildID, userID, roleID, false)
+	roleForMember(t, getSession, guildID, userID, roleID, false)
 }
 
 func roleForMember(
-	ctx context.Context,
 	t *testing.T,
 	getSession sessionFunc,
 	guildID, userID, roleID string,
@@ -382,24 +372,24 @@ func roleForMember(
 
 	switch add {
 	case true:
-		err = operations.AddRoleToMember(ctx, session, guildID, userID, roleID)
+		err = operations.AddRoleToMember(session, guildID, userID, roleID)
 		if err != nil {
 			t.Errorf("unexpected error adding role to member: %s", err)
 		}
 	case false:
-		err = operations.RemoveRoleFromMember(ctx, session, guildID, userID, roleID)
+		err = operations.RemoveRoleFromMember(session, guildID, userID, roleID)
 		if err != nil {
 			t.Errorf("unexpected error removing role from member: %s", err)
 		}
 	}
 }
 
-func runRoleForMemberTestCases(ctx context.Context, t *testing.T, testCases []*roleForMemberTestCase) {
+func runRoleForMemberTestCases(t *testing.T, testCases []*roleForMemberTestCase) {
 	for _, testCase := range testCases {
 		testCase := testCase
 
 		t.Run(testCase.name, func(t *testing.T) {
-			testCase.testFunc(ctx, t, testCase.getSession, testCase.guildID, testCase.userID, testCase.roleID)
+			testCase.testFunc(t, testCase.getSession, testCase.guildID, testCase.userID, testCase.roleID)
 		})
 	}
 }
