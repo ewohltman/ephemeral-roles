@@ -9,9 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goccy/go-json"
-
 	"github.com/bwmarrin/discordgo"
+	jsoniter "github.com/json-iterator/go"
 
 	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
@@ -25,6 +24,9 @@ const (
 
 	expectedGuildsFile = "testdata/guilds.json"
 )
+
+//nolint:gochecknoglobals // override stdlib json package
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func TestNewServer(t *testing.T) {
 	log := mock.NewLogger()
