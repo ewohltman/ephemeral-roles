@@ -2,11 +2,12 @@ package mock
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 const unsupportedMockRequest = "unsupported mock request"

@@ -2,13 +2,14 @@ package http_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	"github.com/bwmarrin/discordgo"
 
