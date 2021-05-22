@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/discordgo-mock/mockconstants"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
@@ -31,10 +31,6 @@ func TestHandler_MessageCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	defer mock.SessionClose(t, session)
-
-	session.Client = http.NewClient(http.WrapTransport(session.Client.Transport))
 
 	log := mock.NewLogger()
 
@@ -79,8 +75,8 @@ func sendBotMessage(session *discordgo.Session, handler *callbacks.Handler) {
 				Username: handler.BotName,
 				Bot:      true,
 			},
-			GuildID:   mock.TestGuild,
-			ChannelID: mock.TestChannel,
+			GuildID:   mockconstants.TestGuild,
+			ChannelID: mockconstants.TestChannel,
 			Content:   "",
 		},
 	})
@@ -93,8 +89,8 @@ func sendMessage(s *discordgo.Session, handler *callbacks.Handler, message strin
 				Username: handler.BotName,
 				Bot:      false,
 			},
-			GuildID:   mock.TestGuild,
-			ChannelID: mock.TestChannel,
+			GuildID:   mockconstants.TestGuild,
+			ChannelID: mockconstants.TestChannel,
 			Content:   message,
 		},
 	})

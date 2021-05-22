@@ -45,8 +45,10 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 		},
 	)
 
-	if handler.memberHasRole(metadata.Member, metadata.EphemeralRole) {
-		return
+	if metadata.EphemeralRole != nil {
+		if handler.memberHasRole(metadata.Member, metadata.EphemeralRole) {
+			return
+		}
 	}
 
 	err = handler.removeEphemeralRoles(metadata)
@@ -54,7 +56,9 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 		log.WithError(err).Error(voiceStateUpdateEventError)
 	}
 
-	log.Debug("Removed Ephemeral Roles")
+	if metadata.Channel == nil {
+		return
+	}
 
 	err = handler.addEphemeralRole(metadata)
 	if err != nil {
@@ -67,17 +71,12 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 
 		return
 	}
-
-	log.WithField("role", metadata.EphemeralRole.Name).Debug("Added Ephemeral Role")
 }
 
 func (handler *Handler) parseEvent(
 	session *discordgo.Session,
 	voiceState *discordgo.VoiceStateUpdate,
-) (
-	*voiceStateUpdateMetadata,
-	error,
-) {
+) (*voiceStateUpdateMetadata, error) {
 	guild, err := operations.LookupGuild(session, voiceState.GuildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup Guild: %w", err)
@@ -89,6 +88,14 @@ func (handler *Handler) parseEvent(
 			Guild: guild,
 			Err:   err,
 		}
+	}
+
+	if voiceState.ChannelID == "" {
+		return &voiceStateUpdateMetadata{
+			Session: session,
+			Guild:   guild,
+			Member:  member,
+		}, nil
 	}
 
 	channel, err := session.State.Channel(voiceState.ChannelID)
@@ -276,8 +283,8 @@ func (handler *Handler) addEphemeralRole(metadata *voiceStateUpdateMetadata) err
 func (handler *Handler) removeEphemeralRoles(metadata *voiceStateUpdateMetadata) error {
 	var err error
 
-	for _, memberRoleID := range metadata.Member.Roles {
-		removeError := handler.removeEphemeralRole(metadata, memberRoleID)
+	for _, roleID := range metadata.Member.Roles {
+		removeError := handler.removeEphemeralRole(metadata, roleID)
 		if removeError != nil {
 			if err == nil {
 				err = removeError
@@ -291,8 +298,8 @@ func (handler *Handler) removeEphemeralRoles(metadata *voiceStateUpdateMetadata)
 	return err
 }
 
-func (handler *Handler) removeEphemeralRole(metadata *voiceStateUpdateMetadata, memberRoleID string) error {
-	role, err := metadata.Session.State.Role(metadata.Guild.ID, memberRoleID)
+func (handler *Handler) removeEphemeralRole(metadata *voiceStateUpdateMetadata, roleID string) error {
+	role, err := metadata.Session.State.Role(metadata.Guild.ID, roleID)
 	if err != nil {
 		if errors.Is(err, discordgo.ErrStateNotFound) {
 			return nil

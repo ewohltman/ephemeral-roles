@@ -16,8 +16,6 @@ func TestHandler_Ready(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer mock.SessionClose(t, session)
-
 	log := mock.NewLogger()
 
 	handler := &callbacks.Handler{

@@ -17,7 +17,7 @@ generate:
 	protoc ${protocArguments} ${protocDirectory}/api.proto
 
 fmt:
-	gofmt -s -w . && goimports -w . && go mod tidy
+	gofmt -s -w . && goimports -local github.com/ewohltman/ephemeral-roles -w . && go mod tidy
 
 lint: fmt
 	golangci-lint run ./...

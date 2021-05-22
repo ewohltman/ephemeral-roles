@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/discordgo-mock/mockconstants"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
@@ -16,8 +17,6 @@ func TestHandler_ChannelDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer mock.SessionClose(t, session)
-
 	log := mock.NewLogger()
 
 	handler := &callbacks.Handler{
@@ -28,8 +27,15 @@ func TestHandler_ChannelDelete(t *testing.T) {
 		ContextTimeout: time.Second,
 	}
 
-	guild := session.State.Guilds[0]
-	channel := guild.Channels[0]
+	guild, err := session.State.Guild(mockconstants.TestGuild)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	channel, err := session.State.Channel(mockconstants.TestChannel)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !foundRole(handler, guild, channel) {
 		t.Fatalf("Unable to find ephemeral role for channel %s", channel.Name)
@@ -43,8 +49,10 @@ func TestHandler_ChannelDelete(t *testing.T) {
 }
 
 func foundRole(handler *callbacks.Handler, guild *discordgo.Guild, channel *discordgo.Channel) bool {
+	ephRoleName := handler.RoleNameFromChannel(channel.Name)
+
 	for _, guildRole := range guild.Roles {
-		if guildRole.Name == handler.RoleNameFromChannel(channel.Name) {
+		if guildRole.Name == ephRoleName {
 			return true
 		}
 	}

@@ -258,7 +258,7 @@ func BotHasChannelPermission(session *discordgo.Session, channel *discordgo.Chan
 func updateStateGuilds(session *discordgo.Session, guildID string) (*discordgo.Guild, error) {
 	guild, err := session.Guild(guildID)
 	if err != nil {
-		return nil, fmt.Errorf("error senging guild query request: %w", err)
+		return nil, fmt.Errorf("error sending guild query request: %w", err)
 	}
 
 	roles, err := session.GuildRoles(guildID)

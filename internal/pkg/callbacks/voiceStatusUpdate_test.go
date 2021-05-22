@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/discordgo-mock/mockconstants"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
@@ -32,10 +32,6 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer mock.SessionClose(t, session)
-
-	session.Client = http.NewClient(http.WrapTransport(session.Client.Transport))
-
 	log := mock.NewLogger()
 
 	handler := &callbacks.Handler{
@@ -49,15 +45,65 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 		OperationsGateway:       operations.NewGateway(session),
 	}
 
-	sendUpdate(session, handler, mock.TestGuild, "unknownUser", mock.TestChannel)
-	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, mock.TestPrivateChannel)
-	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, mock.TestChannel)
-	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, "")
-	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, mock.TestChannel2)
-	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, mock.TestChannel)
-	sendUpdate(session, handler, mock.TestGuild, mock.TestUser, "")
-	sendUpdate(session, handler, mock.TestGuildLarge, mock.TestUser, mock.TestChannel)
-	sendUpdate(session, handler, mock.TestGuildLarge, mock.TestUser, "")
+	type testCase struct {
+		name      string
+		guildID   string
+		userID    string
+		channelID string
+	}
+
+	testCases := []*testCase{
+		{
+			name:      "unknown user",
+			guildID:   mockconstants.TestGuild,
+			userID:    "unknownUser",
+			channelID: mockconstants.TestChannel,
+		},
+		{
+			name:      "private channel",
+			guildID:   mockconstants.TestGuild,
+			userID:    mockconstants.TestUser,
+			channelID: mockconstants.TestPrivateChannel,
+		},
+		{
+			name:      "join test channel",
+			guildID:   mockconstants.TestGuild,
+			userID:    mockconstants.TestUser,
+			channelID: mockconstants.TestChannel,
+		},
+		{
+			name:      "join test channel 2",
+			guildID:   mockconstants.TestGuild,
+			userID:    mockconstants.TestUser,
+			channelID: mockconstants.TestChannel2,
+		},
+		{
+			name:      "join unknown channel",
+			guildID:   mockconstants.TestGuild,
+			userID:    mockconstants.TestUser,
+			channelID: "unknownChannel",
+		},
+		{
+			name:      "rejoin test channel",
+			guildID:   mockconstants.TestGuild,
+			userID:    mockconstants.TestUser,
+			channelID: mockconstants.TestChannel,
+		},
+		{
+			name:      "disconnect test channel",
+			guildID:   mockconstants.TestGuild,
+			userID:    mockconstants.TestUser,
+			channelID: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			sendUpdate(session, handler, tc.guildID, tc.userID, tc.channelID)
+		})
+	}
 }
 
 func sendUpdate(session *discordgo.Session, handler *callbacks.Handler, guildID, userID, channelID string) {
