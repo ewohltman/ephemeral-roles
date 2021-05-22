@@ -5,9 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 )
@@ -19,12 +16,16 @@ const (
 )
 
 func TestMetrics(t *testing.T) {
-	metrics, mockSession, err := newTestMetrics()
+	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	defer mock.SessionClose(t, mockSession)
+	metrics := monitor.NewMetrics(&monitor.Config{
+		Log:      mock.NewLogger(),
+		Session:  session,
+		Interval: testMonitorInterval,
+	})
 
 	if metrics == nil {
 		t.Fatal("Unexpected nil metrics")
@@ -44,33 +45,17 @@ func TestMetrics(t *testing.T) {
 }
 
 func TestMonitor(t *testing.T) {
-	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
-	defer cancelCtx()
-
-	metrics, mockSession, err := newTestMetrics()
+	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	defer mock.SessionClose(t, mockSession)
+	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
+	defer cancelCtx()
 
-	metrics.Monitor(ctx)
-}
-
-func newTestMetrics() (*monitor.Metrics, *discordgo.Session, error) {
-	mockSession, err := mock.NewSession()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	config := &monitor.Config{
-		// Log:      mock.NewLogger(),
-		Log:      logging.New(),
-		Session:  mockSession,
+	monitor.NewMetrics(&monitor.Config{
+		Log:      mock.NewLogger(),
+		Session:  session,
 		Interval: testMonitorInterval,
-	}
-
-	metrics := monitor.NewMetrics(config)
-
-	return metrics, mockSession, nil
+	}).Monitor(ctx)
 }

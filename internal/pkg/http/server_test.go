@@ -36,8 +36,6 @@ func TestNewServer(t *testing.T) {
 		t.Fatalf("Error obtaining mock session: %s", err)
 	}
 
-	defer mock.SessionClose(t, session)
-
 	session.State.Guilds = append(
 		session.State.Guilds,
 		&discordgo.Guild{Name: "testGuild2", MemberCount: 3},

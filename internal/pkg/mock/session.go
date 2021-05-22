@@ -2,47 +2,136 @@ package mock
 
 import (
 	"fmt"
-	"testing"
+	"net/http"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/ewohltman/discordgo-mock/pkg/mockchannel"
+	"github.com/ewohltman/discordgo-mock/pkg/mockconstants"
+	"github.com/ewohltman/discordgo-mock/pkg/mockguild"
+	"github.com/ewohltman/discordgo-mock/pkg/mockmember"
+	"github.com/ewohltman/discordgo-mock/pkg/mockrest"
+	"github.com/ewohltman/discordgo-mock/pkg/mockrole"
+	"github.com/ewohltman/discordgo-mock/pkg/mocksession"
+	"github.com/ewohltman/discordgo-mock/pkg/mockstate"
+	"github.com/ewohltman/discordgo-mock/pkg/mockuser"
+)
+
+const (
+	rolePrefix     = "{eph}"
+	largeGuildSize = 3000
 )
 
 // NewSession provides a *discordgo.Session instance to be used in unit
 // testing with pre-populated initial state.
 func NewSession() (*discordgo.Session, error) {
-	state, err := NewState()
+	role := mockrole.New(
+		mockrole.WithID(mockconstants.TestRole),
+		mockrole.WithName(mockconstants.TestRole),
+		mockrole.WithPermissions(discordgo.PermissionViewChannel),
+	)
+
+	ephRole := mockrole.New(
+		mockrole.WithID(fmt.Sprintf("%s %s", rolePrefix, mockconstants.TestChannel)),
+		mockrole.WithName(fmt.Sprintf("%s %s", rolePrefix, mockconstants.TestChannel)),
+		mockrole.WithPermissions(discordgo.PermissionViewChannel),
+	)
+
+	botUser := mockuser.New(
+		mockuser.WithID(mockconstants.TestUser+"Bot"),
+		mockuser.WithUsername(mockconstants.TestUser+"Bot"),
+		mockuser.IsBot(true),
+	)
+
+	state, err := mockstate.New(
+		mockstate.WithUser(botUser),
+		mockstate.WithGuilds(
+			smallGuild(botUser, role, ephRole),
+			largeGuild(botUser, role, ephRole),
+		),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", sessionCreateErrMessage, err)
+		return nil, err
 	}
 
-	session := &discordgo.Session{
-		State:        state,
-		StateEnabled: true,
-		Ratelimiter:  discordgo.NewRatelimiter(),
-		Client:       restClient(),
-	}
-
-	return session, nil
+	return mocksession.New(
+		mocksession.WithState(state),
+		mocksession.WithRESTClient(&http.Client{
+			Transport: mockrest.NewTransport(state),
+		}),
+	)
 }
 
-// NewSessionEmptyState provides a *discordgo.Session instance to be used in
-// unit testing with an empty initial state.
-func NewSessionEmptyState() (*discordgo.Session, error) {
-	session := &discordgo.Session{
-		State:        discordgo.NewState(),
-		StateEnabled: true,
-		Ratelimiter:  discordgo.NewRatelimiter(),
-		Client:       restClient(),
-	}
+func smallGuild(botUser *discordgo.User, role, ephRole *discordgo.Role) *discordgo.Guild {
+	botMember := mockmember.New(
+		mockmember.WithUser(botUser),
+		mockmember.WithGuildID(mockconstants.TestGuild),
+		mockmember.WithRoles(role, ephRole),
+	)
 
-	return session, nil
+	userMember := mockmember.New(
+		mockmember.WithUser(mockuser.New(
+			mockuser.WithID(mockconstants.TestUser),
+			mockuser.WithUsername(mockconstants.TestUser),
+		)),
+		mockmember.WithGuildID(mockconstants.TestGuild),
+		mockmember.WithRoles(role, ephRole),
+	)
+
+	channel1 := mockchannel.New(
+		mockchannel.WithID(mockconstants.TestChannel),
+		mockchannel.WithGuildID(mockconstants.TestGuild),
+		mockchannel.WithName(mockconstants.TestChannel),
+		mockchannel.WithType(discordgo.ChannelTypeGuildVoice),
+	)
+
+	channel2 := mockchannel.New(
+		mockchannel.WithID(mockconstants.TestChannel2),
+		mockchannel.WithGuildID(mockconstants.TestGuild),
+		mockchannel.WithName(mockconstants.TestChannel2),
+		mockchannel.WithType(discordgo.ChannelTypeGuildVoice),
+	)
+
+	privateChannel := mockchannel.New(
+		mockchannel.WithID(mockconstants.TestPrivateChannel),
+		mockchannel.WithGuildID(mockconstants.TestGuild),
+		mockchannel.WithName(mockconstants.TestPrivateChannel),
+		mockchannel.WithType(discordgo.ChannelTypeGuildVoice),
+		mockchannel.WithPermissionOverwrites(&discordgo.PermissionOverwrite{
+			ID:   botMember.User.ID,
+			Type: discordgo.PermissionOverwriteTypeMember,
+			Deny: discordgo.PermissionViewChannel,
+		}),
+	)
+
+	return mockguild.New(
+		mockguild.WithID(mockconstants.TestGuild),
+		mockguild.WithName(mockconstants.TestGuild),
+		mockguild.WithRoles(role, ephRole),
+		mockguild.WithChannels(channel1, channel2, privateChannel),
+		mockguild.WithMembers(botMember, userMember),
+	)
 }
 
-// SessionClose closes a *discordgo.Session instance and if an error is encountered,
-// the provided testingInstance logs the error and marks the test as failed.
-func SessionClose(testingInstance testing.TB, session *discordgo.Session) {
-	err := session.Close()
-	if err != nil {
-		testingInstance.Error(err)
+func largeGuild(botUser *discordgo.User, role, ephRole *discordgo.Role) *discordgo.Guild {
+	guild := smallGuild(botUser, role, ephRole)
+
+	largeGuildMembers := make([]*discordgo.Member, largeGuildSize)
+
+	for i := 0; i < largeGuildSize; i++ {
+		largeGuildMembers[i] = mockmember.New(
+			mockmember.WithUser(mockuser.New(
+				mockuser.WithID(fmt.Sprintf("%s%d", mockconstants.TestUser, i)),
+				mockuser.WithUsername(fmt.Sprintf("%s%d", mockconstants.TestUser, i)),
+			)),
+			mockmember.WithGuildID(mockconstants.TestGuildLarge),
+			mockmember.WithRoles(role, ephRole),
+		)
 	}
+
+	guild.ID = mockconstants.TestGuildLarge
+	guild.Name = mockconstants.TestGuildLarge
+	guild.Members = append(guild.Members, largeGuildMembers...)
+	guild.MemberCount = len(guild.Members)
+
+	return guild
 }

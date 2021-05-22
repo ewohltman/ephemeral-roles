@@ -38,8 +38,6 @@ func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *disco
 			return
 		}
 
-		handler.Log.WithField("role", role.Name).Debug("Deleted Ephemeral Role")
-
 		return
 	}
 }

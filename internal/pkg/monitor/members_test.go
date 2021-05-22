@@ -10,15 +10,10 @@ import (
 )
 
 func TestMembers_Monitor(t *testing.T) {
-	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
-	defer cancelCtx()
-
 	mockSession, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	defer mock.SessionClose(t, mockSession)
 
 	log := mock.NewLogger()
 
@@ -29,6 +24,9 @@ func TestMembers_Monitor(t *testing.T) {
 		PrometheusGauge: monitor.MembersGauge(&monitor.Config{Log: log}),
 		Cache:           &monitor.MembersCache{Mutex: &sync.Mutex{}},
 	}
+
+	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
+	defer cancelCtx()
 
 	go func() {
 		members.Monitor(ctx)

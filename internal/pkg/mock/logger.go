@@ -1,7 +1,7 @@
 package mock
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/sirupsen/logrus"
 )
@@ -15,10 +15,11 @@ type Logger struct {
 func NewLogger() *Logger {
 	log := &Logger{
 		Logger: &logrus.Logger{
-			Out:       ioutil.Discard,
+			// Out:       ioutil.Discard,
+			Out:       os.Stdout,
 			Hooks:     make(logrus.LevelHooks),
 			Formatter: &logrus.TextFormatter{},
-			Level:     logrus.InfoLevel,
+			Level:     logrus.DebugLevel,
 		},
 	}
 

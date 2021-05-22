@@ -1,9 +1,9 @@
 package mock_test
 
 import (
-	"strings"
 	"testing"
 
+	"github.com/ewohltman/discordgo-mock/pkg/mockconstants"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
@@ -13,60 +13,33 @@ func TestNewSession(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer mock.SessionClose(t, session)
-
-	_, err = session.User(mock.TestUser)
+	_, err = session.User(mockconstants.TestUser)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = session.Guild(mock.TestGuild)
+	_, err = session.Guild(mockconstants.TestGuild)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = session.GuildMember(mock.TestGuild, mock.TestUser)
+	_, err = session.GuildMember(mockconstants.TestGuild, mockconstants.TestUser)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = session.GuildRoles(mock.TestGuild)
+	_, err = session.GuildRoles(mockconstants.TestGuild)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = session.Channel(mock.TestChannel)
+	_, err = session.Channel(mockconstants.TestChannel)
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = session.GuildRoleCreate(mock.TestGuild)
+	_, err = session.GuildRoleCreate(mockconstants.TestGuild)
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-func TestNewSessionEmptyState(t *testing.T) {
-	session, err := mock.NewSessionEmptyState()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer mock.SessionClose(t, session)
-
-	numGuilds := len(session.State.Guilds)
-
-	if numGuilds != 0 {
-		var guildIDs []string
-
-		for _, guild := range session.State.Guilds {
-			guildIDs = append(guildIDs, guild.ID)
-		}
-
-		t.Errorf(
-			"expected empty state, found %d guilds: %s",
-			numGuilds,
-			strings.Join(guildIDs, ", "),
-		)
 	}
 }
