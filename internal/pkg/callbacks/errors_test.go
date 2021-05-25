@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
-
 	"github.com/ewohltman/discordgo-mock/pkg/mockconstants"
+
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 )
 

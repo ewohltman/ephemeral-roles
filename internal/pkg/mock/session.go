@@ -39,7 +39,7 @@ func NewSession() (*discordgo.Session, error) {
 	botUser := mockuser.New(
 		mockuser.WithID(mockconstants.TestUser+"Bot"),
 		mockuser.WithUsername(mockconstants.TestUser+"Bot"),
-		mockuser.IsBot(true),
+		mockuser.WithBotFlag(true),
 	)
 
 	state, err := mockstate.New(
@@ -55,7 +55,7 @@ func NewSession() (*discordgo.Session, error) {
 
 	return mocksession.New(
 		mocksession.WithState(state),
-		mocksession.WithRESTClient(&http.Client{
+		mocksession.WithClient(&http.Client{
 			Transport: mockrest.NewTransport(state),
 		}),
 	)
