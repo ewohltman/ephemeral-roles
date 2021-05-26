@@ -5,15 +5,15 @@ import (
 	"net/http"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/discordgo-mock/pkg/mockchannel"
-	"github.com/ewohltman/discordgo-mock/pkg/mockconstants"
-	"github.com/ewohltman/discordgo-mock/pkg/mockguild"
-	"github.com/ewohltman/discordgo-mock/pkg/mockmember"
-	"github.com/ewohltman/discordgo-mock/pkg/mockrest"
-	"github.com/ewohltman/discordgo-mock/pkg/mockrole"
-	"github.com/ewohltman/discordgo-mock/pkg/mocksession"
-	"github.com/ewohltman/discordgo-mock/pkg/mockstate"
-	"github.com/ewohltman/discordgo-mock/pkg/mockuser"
+	"github.com/ewohltman/discordgo-mock/mockchannel"
+	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/ewohltman/discordgo-mock/mockguild"
+	"github.com/ewohltman/discordgo-mock/mockmember"
+	"github.com/ewohltman/discordgo-mock/mockrest"
+	"github.com/ewohltman/discordgo-mock/mockrole"
+	"github.com/ewohltman/discordgo-mock/mocksession"
+	"github.com/ewohltman/discordgo-mock/mockstate"
+	"github.com/ewohltman/discordgo-mock/mockuser"
 )
 
 const (

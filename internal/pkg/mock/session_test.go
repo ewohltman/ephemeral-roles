@@ -3,7 +3,7 @@ package mock_test
 import (
 	"testing"
 
-	"github.com/ewohltman/discordgo-mock/pkg/mockconstants"
+	"github.com/ewohltman/discordgo-mock/mockconstants"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
