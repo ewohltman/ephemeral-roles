@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ewohltman/discordgo-mock/mockconstants"
+
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
 
+const rolePrefix = "{eph}"
+
 func TestHandler_RoleNameFromChannel(t *testing.T) {
-	const boyKeyword = "{eph}"
-
-	expected := fmt.Sprintf("%s %s", boyKeyword, mock.TestChannel)
-	handler := &callbacks.Handler{RolePrefix: "{eph}"}
-
-	actual := handler.RoleNameFromChannel(mock.TestChannel)
+	handler := &callbacks.Handler{RolePrefix: rolePrefix}
+	expected := fmt.Sprintf("%s %s", rolePrefix, mockconstants.TestChannel)
+	actual := handler.RoleNameFromChannel(mockconstants.TestChannel)
 
 	if actual != expected {
 		t.Errorf("unexpected role name: %s", actual)

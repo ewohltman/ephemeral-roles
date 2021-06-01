@@ -1,5 +1,9 @@
 [
   {
+    "name": "testGuildLarge",
+    "memberCount": 3002
+  },
+  {
     "name": "testGuild3",
     "memberCount": 4
   },
