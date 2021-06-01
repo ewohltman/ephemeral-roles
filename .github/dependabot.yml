@@ -1,22 +1,11 @@
 version: 2
 updates:
-- package-ecosystem: gomod
-  directory: "/"
-  schedule:
-    interval: daily
-    time: "10:00"
-  open-pull-requests-limit: 10
-  target-branch: develop
-  reviewers:
-  - ewohltman
-  assignees:
-  - ewohltman
-  ignore:
-  - dependency-name: github.com/uber/jaeger-client-go
-    versions:
-    - 2.26.0+incompatible
-  - dependency-name: github.com/sirupsen/logrus
-    versions:
-    - 1.7.1
-    - 1.8.0
-    - 1.8.1
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: daily
+      time: "10:00"
+    open-pull-requests-limit: 10
+    target-branch: develop
+    assignees:
+      - ewohltman
