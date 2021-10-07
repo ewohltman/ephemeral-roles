@@ -32,7 +32,7 @@ func (logger *Logger) WrappedLogger() *logrus.Logger {
 }
 
 // UpdateLevel is a mock stub of the *logging.Logger UpdateLevel method.
-func (_ *Logger) UpdateLevel(level string) {
+func (_ *Logger) UpdateLevel(_ string) {
 	// Nop
 }
 
@@ -43,6 +43,6 @@ func (_ *Logger) UpdateDiscordrus() {
 }
 
 // DiscordGoLogf is a mock stub of the *logging.Logger DiscordGoLogf method.
-func (_ *Logger) DiscordGoLogf(discordgoLevel, caller int, format string, arguments ...interface{}) {
+func (_ *Logger) DiscordGoLogf(_, _ int, _ string, _ ...interface{}) {
 	// Nop
 }

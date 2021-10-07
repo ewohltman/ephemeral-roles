@@ -13,7 +13,7 @@ import (
 
 const updateError = "Failed update logging level"
 
-func TestNew(t *testing.T) {
+func TestNew(_ *testing.T) {
 	testLogger()
 }
 
@@ -80,7 +80,7 @@ func TestLogger_UpdateDiscordrus(t *testing.T) {
 	}
 }
 
-func TestLogger_DiscordGoLogf(t *testing.T) {
+func TestLogger_DiscordGoLogf(_ *testing.T) {
 	log := testLogger()
 	log.DiscordrusWebHookURL = ""
 	log.UpdateDiscordrus()
