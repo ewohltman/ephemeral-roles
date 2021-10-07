@@ -215,7 +215,7 @@ func (handler *Handler) newCallbackErrorLogger(callbackError CallbackError) *log
 	return log
 }
 
-func (handler *Handler) memberHasRole(member *discordgo.Member, role *discordgo.Role) bool {
+func (_ *Handler) memberHasRole(member *discordgo.Member, role *discordgo.Role) bool {
 	memberRoles := make([]string, len(member.Roles))
 
 	copy(memberRoles, member.Roles)
@@ -276,7 +276,7 @@ func (handler *Handler) createRole(guild *discordgo.Guild, roleName string) (*di
 	}
 }
 
-func (handler *Handler) addEphemeralRole(metadata *voiceStateUpdateMetadata) error {
+func (_ *Handler) addEphemeralRole(metadata *voiceStateUpdateMetadata) error {
 	return operations.AddRoleToMember(metadata.Session, metadata.Guild.ID, metadata.Member.User.ID, metadata.EphemeralRole.ID)
 }
 
