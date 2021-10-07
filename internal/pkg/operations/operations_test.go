@@ -158,7 +158,11 @@ func TestIsForbiddenResponse(t *testing.T) {
 		testCase := testCase
 
 		t.Run(testCase.name, func(t *testing.T) {
-			isForbiddenResponse(t, testCase.expected, testCase.err)
+			actual := operations.IsForbiddenResponse(testCase.err)
+
+			if actual != testCase.expected {
+				t.Errorf("unexpected forbidden response: %t", actual)
+			}
 		})
 	}
 }
@@ -216,37 +220,40 @@ func TestBotHasChannelPermission(t *testing.T) {
 }
 
 func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
-	runTest(t, gateway, true, &operations.Request{
-		Type: operations.RequestType(-1),
-	})
+	requestType := operations.RequestType(-1)
+
+	err := runTest(gateway, &operations.Request{Type: requestType})
+	if (err != nil) != true {
+		t.Errorf("unexpected success for request type %q", requestType)
+	}
 }
 
 func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
-	runTest(t, gateway, false, &operations.Request{
+	err := runTest(gateway, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:    &discordgo.Guild{ID: mockconstants.TestGuild},
 			RoleName: roleName,
 		},
 	})
+	if (err != nil) != false {
+		t.Error(err)
+	}
 }
 
-func runTest(t *testing.T, gateway callbacks.OperationsGateway, expectError bool, request *operations.Request) {
+func runTest(gateway callbacks.OperationsGateway, request *operations.Request) error {
 	resultChannel := operations.NewResultChannel()
 
 	gateway.Process(resultChannel, request)
 
 	result := <-resultChannel
 
-	_, resultError := result.(error)
-	if resultError != expectError {
-		if resultError {
-			t.Errorf("%s", result)
-			return
-		}
-
-		t.Errorf("unexpected success for request type %q", request.Type)
+	err, ok := result.(error)
+	if ok {
+		return err
 	}
+
+	return nil
 }
 
 func addRoleToMemberTestCases(getSession sessionFunc) []*roleForMemberTestCase {
@@ -336,13 +343,5 @@ func runRoleForMemberTestCases(t *testing.T, testCases []*roleForMemberTestCase)
 		t.Run(testCase.name, func(t *testing.T) {
 			testCase.testFunc(t, testCase.getSession, testCase.guildID, testCase.userID, testCase.roleID)
 		})
-	}
-}
-
-func isForbiddenResponse(t *testing.T, expected bool, err error) {
-	actual := operations.IsForbiddenResponse(err)
-
-	if actual != expected {
-		t.Errorf("unexpected forbidden response: %t", actual)
 	}
 }

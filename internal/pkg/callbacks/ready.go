@@ -10,7 +10,7 @@ const (
 )
 
 // Ready is the callback function for the Ready event from Discord.
-func (handler *Handler) Ready(s *discordgo.Session, event *discordgo.Ready) {
+func (handler *Handler) Ready(s *discordgo.Session, _ *discordgo.Ready) {
 	handler.ReadyCounter.Inc()
 
 	idleSince := 0

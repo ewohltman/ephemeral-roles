@@ -34,7 +34,7 @@ type MemberNotFound struct {
 }
 
 // Is allows MemberNotFound to be compared with errors.Is.
-func (mnf *MemberNotFound) Is(target error) bool {
+func (*MemberNotFound) Is(target error) bool {
 	_, ok := target.(*MemberNotFound)
 	return ok
 }
@@ -59,12 +59,12 @@ func (mnf *MemberNotFound) InGuild() *discordgo.Guild {
 }
 
 // ForMember satisfies the CallbackError interface for MemberNotFound.
-func (mnf *MemberNotFound) ForMember() *discordgo.Member {
+func (*MemberNotFound) ForMember() *discordgo.Member {
 	return nil
 }
 
 // InChannel satisfies the CallbackError interface for MemberNotFound.
-func (mnf *MemberNotFound) InChannel() *discordgo.Channel {
+func (*MemberNotFound) InChannel() *discordgo.Channel {
 	return nil
 }
 
@@ -76,7 +76,7 @@ type ChannelNotFound struct {
 }
 
 // Is allows ChannelNotFound to be compared with errors.Is.
-func (cnf *ChannelNotFound) Is(target error) bool {
+func (*ChannelNotFound) Is(target error) bool {
 	_, ok := target.(*ChannelNotFound)
 	return ok
 }
@@ -106,7 +106,7 @@ func (cnf *ChannelNotFound) ForMember() *discordgo.Member {
 }
 
 // InChannel satisfies the CallbackError interface for ChannelNotFound.
-func (cnf *ChannelNotFound) InChannel() *discordgo.Channel {
+func (*ChannelNotFound) InChannel() *discordgo.Channel {
 	return nil
 }
 
@@ -114,7 +114,7 @@ func (cnf *ChannelNotFound) InChannel() *discordgo.Channel {
 type RoleNotFound struct{}
 
 // Error satisfies the errors interface for RoleNotFound.
-func (rnf *RoleNotFound) Error() string {
+func (*RoleNotFound) Error() string {
 	return RoleNotFoundMessage
 }
 
@@ -128,7 +128,7 @@ type InsufficientPermissions struct {
 }
 
 // Is allows InsufficientPermissions to be compared with errors.Is.
-func (inp *InsufficientPermissions) Is(target error) bool {
+func (*InsufficientPermissions) Is(target error) bool {
 	_, ok := target.(*InsufficientPermissions)
 	return ok
 }
@@ -172,7 +172,7 @@ type MaxNumberOfRoles struct {
 }
 
 // Is allows MaxNumberOfRoles to be compared with errors.Is.
-func (mnr *MaxNumberOfRoles) Is(target error) bool {
+func (*MaxNumberOfRoles) Is(target error) bool {
 	_, ok := target.(*MaxNumberOfRoles)
 	return ok
 }
@@ -225,7 +225,7 @@ func (de *DeadlineExceeded) Error() string {
 }
 
 // Is allows DeadlineExceeded to be compared with errors.Is.
-func (de *DeadlineExceeded) Is(target error) bool {
+func (*DeadlineExceeded) Is(target error) bool {
 	_, ok := target.(*DeadlineExceeded)
 	return ok
 }

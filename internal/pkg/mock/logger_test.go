@@ -24,10 +24,10 @@ func TestLogger_WrappedLogger(t *testing.T) {
 	}
 }
 
-func TestLogger_UpdateLevel(t *testing.T) {
+func TestLogger_UpdateLevel(_ *testing.T) {
 	mock.NewLogger().UpdateLevel("info")
 }
 
-func TestLogger_DiscordGoLogf(t *testing.T) {
+func TestLogger_DiscordGoLogf(_ *testing.T) {
 	mock.NewLogger().DiscordGoLogf(discordgo.LogDebug, 0, "Test: %d", 123)
 }

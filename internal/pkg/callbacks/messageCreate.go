@@ -91,7 +91,7 @@ func (handler *Handler) parseMessage(s *discordgo.Session, contentTokens []strin
 	return nil
 }
 
-func (handler *Handler) handleInfo(s *discordgo.Session, channelID string) error {
+func (*Handler) handleInfo(s *discordgo.Session, channelID string) error {
 	_, err := s.ChannelMessageSendEmbed(channelID, infoMessage())
 	if err != nil {
 		return fmt.Errorf("error sending info message: %w", err)

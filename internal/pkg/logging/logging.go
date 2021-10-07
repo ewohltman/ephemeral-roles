@@ -178,7 +178,7 @@ func (logger *Logger) UpdateDiscordrus() {
 }
 
 // DiscordGoLogf is an adapter for plugging into DiscordGo's logging system.
-func (logger *Logger) DiscordGoLogf(discordgoLevel, caller int, format string, arguments ...interface{}) {
+func (logger *Logger) DiscordGoLogf(discordgoLevel, _ int, format string, arguments ...interface{}) {
 	logger.Mutex.Lock()
 	defer logger.Mutex.Unlock()
 
