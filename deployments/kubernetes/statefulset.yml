@@ -20,19 +20,19 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ephemeral-roles
-          image: ewohltman/ephemeral-roles:v1.10.1
+          image: ewohltman/ephemeral-roles:v1.10.2
           imagePullPolicy: Always
           env:
             - name: SHARD_COUNT
               value: "10"
             - name: LOG_LEVEL
-              value: "info"
+              value: "debug"
             - name: LOG_TIMEZONE_LOCATION
               value: "America/New_York"
             - name: JAEGER_SERVICE_NAME
-              value: ephemeral-roles.ephemeral-roles
+              value: "ephemeral-roles.ephemeral-roles"
             - name: JAEGER_PROPAGATION
-              value: jaeger,b3
+              value: "jaeger,b3"
             - name: INSTANCE_NAME
               valueFrom:
                 fieldRef:
