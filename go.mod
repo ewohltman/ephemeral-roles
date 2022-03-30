@@ -1,11 +1,11 @@
 module github.com/ewohltman/ephemeral-roles
 
-go 1.17
+go 1.18
 
 require (
-	github.com/bwmarrin/discordgo v0.23.3-0.20210520041320-df74d8bbe6cd
+	github.com/bwmarrin/discordgo v0.24.0
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/ewohltman/discordgo-mock v0.0.5
+	github.com/ewohltman/discordgo-mock v0.0.6
 	github.com/json-iterator/go v1.1.12
 	github.com/kz/discordrus v1.3.0
 	github.com/opentracing/opentracing-go v1.2.0

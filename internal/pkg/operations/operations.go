@@ -103,13 +103,14 @@ func (gateway *Gateway) Process(resultChannel ResultChannel, request *Request) {
 func (gateway *Gateway) processCreateRole(resultChannel ResultChannel, request *Request) {
 	hashFunc := fnv.New32()
 
-	// According to documentation, this Write will never return an error
-	_, _ = hashFunc.Write([]byte(fmt.Sprintf(
+	// According to documentation, this hashFunc.Write will never return an
+	// error
+	_, _ = fmt.Fprintf(hashFunc,
 		"%s/%s/%s",
 		request.Type,
 		request.CreateRole.Guild.ID,
 		request.CreateRole.RoleName,
-	)))
+	)
 
 	key := keyHash(hashFunc.Sum32())
 

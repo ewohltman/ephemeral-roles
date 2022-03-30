@@ -1,7 +1,7 @@
 package logging
 
 import (
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -133,7 +133,7 @@ func TestLocale_Format(t *testing.T) {
 
 func testLogger() *Logger {
 	log := New(
-		OptionalOutput(ioutil.Discard),
+		OptionalOutput(io.Discard),
 		OptionalShardID(0),
 		OptionalLogLevel("info"),
 		OptionalTimezoneLocation("xyz"),

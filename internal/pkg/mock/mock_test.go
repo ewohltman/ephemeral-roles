@@ -3,7 +3,7 @@ package mock_test
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"testing"
@@ -27,7 +27,7 @@ func TestNewMirrorRoundTripper(t *testing.T) {
 		t.Fatalf("Error performing round trip: %s", err)
 	}
 
-	respBodyContent, err := ioutil.ReadAll(resp.Body)
+	respBodyContent, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("Error reading test response body: %s", err)
 	}

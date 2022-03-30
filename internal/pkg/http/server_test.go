@@ -3,8 +3,8 @@ package http_test
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -80,7 +80,7 @@ func testRootEndpoint(t *testing.T, client *http.Client) {
 }
 
 func testGuildsEndpoint(t *testing.T, client *http.Client) {
-	expectedGuildsBytes, err := ioutil.ReadFile(expectedGuildsFile)
+	expectedGuildsBytes, err := os.ReadFile(expectedGuildsFile)
 	if err != nil {
 		t.Fatal(err)
 	}
