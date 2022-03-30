@@ -62,8 +62,8 @@ github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymF
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
-github.com/ewohltman/discordgo v0.24.1 h1:Gm7k4AT3a3cQGk44VwPRvOQEyOGsjJIhQpOHXrVWyUc=
-github.com/ewohltman/discordgo v0.24.1/go.mod h1:NJZpH+1AfhIcyQsPeuBKsUtYrRnjkyu0kIVMCHkZtRY=
+github.com/ewohltman/discordgo v0.24.3 h1:6g47CJdQF6CJIF48cy2cGze48zUqQo+RG3nA8Mkrc1k=
+github.com/ewohltman/discordgo v0.24.3/go.mod h1:NJZpH+1AfhIcyQsPeuBKsUtYrRnjkyu0kIVMCHkZtRY=
 github.com/ewohltman/discordgo-mock v0.0.6 h1:yr2WP9II1XJUrcEwp6Gvfxbc4JNt003ar5FwF8plReM=
 github.com/ewohltman/discordgo-mock v0.0.6/go.mod h1:a/KcYNnH/XU0WdC8zdPy5tV0Z594YQCo/M4bdbrFfjk=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=

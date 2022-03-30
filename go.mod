@@ -2,7 +2,7 @@ module github.com/ewohltman/ephemeral-roles
 
 go 1.18
 
-replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.24.1
+replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.24.3
 
 require (
 	github.com/bwmarrin/discordgo v0.24.0
