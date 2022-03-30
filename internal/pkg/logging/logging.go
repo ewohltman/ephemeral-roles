@@ -50,10 +50,10 @@ type OptionFunc func(*Logger)
 
 // Logger wraps a *logrus.Logger instance and provides custom methods.
 type Logger struct {
-	sync.Mutex
 	*logrus.Entry
 	Location             *time.Location
 	DiscordrusWebHookURL string
+	mutex                *sync.Mutex
 }
 
 // New returns a new *Logger instance configured with the OptionFunc arguments
@@ -72,6 +72,7 @@ func New(options ...OptionFunc) *Logger {
 			Level:     logrus.InfoLevel,
 		}),
 		Location: localeFormatter.Location,
+		mutex:    &sync.Mutex{},
 	}
 
 	for _, option := range options {
@@ -129,16 +130,16 @@ func OptionalDiscordrus(webhookURL string) OptionFunc {
 
 // WrappedLogger returns the wrapped *logrus.Logger instance.
 func (logger *Logger) WrappedLogger() *logrus.Logger {
-	logger.Mutex.Lock()
-	defer logger.Mutex.Unlock()
+	logger.mutex.Lock()
+	defer logger.mutex.Unlock()
 
 	return logger.Logger
 }
 
 // UpdateLevel allows for runtime updates of the logging level.
 func (logger *Logger) UpdateLevel(level string) {
-	logger.Mutex.Lock()
-	defer logger.Mutex.Unlock()
+	logger.mutex.Lock()
+	defer logger.mutex.Unlock()
 
 	logger.Logger.SetLevel(parseLevel(level))
 }
@@ -146,8 +147,8 @@ func (logger *Logger) UpdateLevel(level string) {
 // UpdateDiscordrus updates the Discordrus integration to use the *Logger
 // configuration.
 func (logger *Logger) UpdateDiscordrus() {
-	logger.Mutex.Lock()
-	defer logger.Mutex.Unlock()
+	logger.mutex.Lock()
+	defer logger.mutex.Unlock()
 
 	if logger.DiscordrusWebHookURL == "" {
 		logger.Logger.Hooks = make(logrus.LevelHooks)
@@ -179,8 +180,8 @@ func (logger *Logger) UpdateDiscordrus() {
 
 // DiscordGoLogf is an adapter for plugging into DiscordGo's logging system.
 func (logger *Logger) DiscordGoLogf(discordgoLevel, _ int, format string, arguments ...interface{}) {
-	logger.Mutex.Lock()
-	defer logger.Mutex.Unlock()
+	logger.mutex.Lock()
+	defer logger.mutex.Unlock()
 
 	switch discordgoLevel {
 	case discordgo.LogError:

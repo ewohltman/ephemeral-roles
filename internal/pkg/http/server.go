@@ -2,7 +2,6 @@ package http
 
 import (
 	"io"
-	"io/ioutil"
 	stdLog "log"
 	"net/http"
 	"net/http/pprof"
@@ -119,7 +118,7 @@ func rootHandler(log logging.Interface) http.HandlerFunc {
 }
 
 func drainCloseRequest(log logging.Interface, r *http.Request) {
-	_, err := io.Copy(ioutil.Discard, r.Body)
+	_, err := io.Copy(io.Discard, r.Body)
 	if err != nil {
 		log.WithError(err).Warn("Internal HTTP server error draining request body")
 	}

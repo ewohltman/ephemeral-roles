@@ -9,19 +9,14 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.17
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.17
-        id: go
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v1
-        with:
-          languages: go
-
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Set up Go 1.18
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.18'
+          check-latest: true
 
       - name: Download dependencies
         run: |
@@ -31,7 +26,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.31
+          version: v1.45
 
       - name: Run tests
         run: make test
@@ -43,6 +38,11 @@ jobs:
           PATH="${PATH}:$(go env GOPATH)/bin"
           GO111MODULE=off go get -u github.com/mattn/goveralls
           goveralls -coverprofile=coverage.out -service=github
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: go
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1

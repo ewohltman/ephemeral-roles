@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
@@ -86,7 +85,7 @@ func doRoundTrip(roundTripper http.RoundTripper, reqBody io.Reader) ([]byte, err
 		return nil, fmt.Errorf("error performing round trip: %w", err)
 	}
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading test response body: %w", err)
 	}

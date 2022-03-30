@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -54,7 +53,7 @@ func TestNewClient(t *testing.T) {
 func testServerHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
-			_, err := io.Copy(ioutil.Discard, r.Body)
+			_, err := io.Copy(io.Discard, r.Body)
 			if err != nil {
 				panic(fmt.Sprintf("Error draining test request body: %s", err))
 			}
@@ -122,7 +121,7 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 }
 
 func doRequest(client *http.Client, testServerURL string) (resp *http.Response, err error) {
-	req, err := http.NewRequest(http.MethodGet, testServerURL, nil)
+	req, err := http.NewRequest(http.MethodGet, testServerURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create test request: %w", err)
 	}
@@ -131,7 +130,7 @@ func doRequest(client *http.Client, testServerURL string) (resp *http.Response, 
 }
 
 func doContextRequest(ctx context.Context, client *http.Client, testServerURL string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, testServerURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, testServerURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create test request: %w", err)
 	}
@@ -144,7 +143,7 @@ func readCloseResponse(resp *http.Response) (respBytes []byte, err error) {
 		err = closeResponse(resp, err)
 	}()
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 func drainCloseResponse(resp *http.Response) (err error) {
@@ -152,7 +151,7 @@ func drainCloseResponse(resp *http.Response) (err error) {
 		err = closeResponse(resp, err)
 	}()
 
-	_, err = io.Copy(ioutil.Discard, resp.Body)
+	_, err = io.Copy(io.Discard, resp.Body)
 	if err != nil {
 		err = fmt.Errorf("error draining test response body: %w", err)
 	}

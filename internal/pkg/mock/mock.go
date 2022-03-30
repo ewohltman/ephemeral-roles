@@ -4,7 +4,7 @@ package mock
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -30,12 +30,12 @@ func NewMirrorRoundTripper() http.RoundTripper {
 
 		if req.Body == nil {
 			resp.ContentLength = 0
-			resp.Body = ioutil.NopCloser(bytes.NewReader([]byte{}))
+			resp.Body = io.NopCloser(bytes.NewReader([]byte{}))
 
 			return resp, nil
 		}
 
-		reqBody, err := ioutil.ReadAll(req.Body)
+		reqBody, err := io.ReadAll(req.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +46,7 @@ func NewMirrorRoundTripper() http.RoundTripper {
 		}
 
 		resp.ContentLength = int64(len(reqBody))
-		resp.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
+		resp.Body = io.NopCloser(bytes.NewReader(reqBody))
 
 		return resp, nil
 	})

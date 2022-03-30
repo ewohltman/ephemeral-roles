@@ -40,6 +40,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - exportloopref
     - funlen
     - gochecknoglobals
     - gochecknoinits
@@ -50,21 +51,18 @@ linters:
     - godox
     - gofmt
     - goimports
-    - golint
     - gomnd
     - goprintffuncname
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - lll
-    - maligned
     - misspell
     - nakedret
     - prealloc
+    - revive
     - rowserrcheck
-    - scopelint
     - staticcheck
     - structcheck
     - stylecheck
@@ -81,7 +79,6 @@ run:
   skip-dirs:
     - .github
     - build
-    - distributed/api
     - web
 
 issues:
