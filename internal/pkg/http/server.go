@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"sort"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	jsoniter "github.com/json-iterator/go"
@@ -22,6 +23,8 @@ const (
 )
 
 const (
+	readHeaderTimeout = 3 * time.Second
+
 	metricsEndpoint      = "/metrics"
 	pprofIndexEndpoint   = "/debug/pprof/"
 	pprofCmdlineEndpoint = "/debug/pprof/cmdline"
@@ -76,9 +79,10 @@ func NewServer(log logging.Interface, session *discordgo.Session, port string) *
 	errorLog := stdLog.New(log.WrappedLogger().WriterLevel(logrus.ErrorLevel), "", 0)
 
 	return &http.Server{
-		Addr:     "0.0.0.0:" + port,
-		Handler:  mux,
-		ErrorLog: errorLog,
+		Addr:              "0.0.0.0:" + port,
+		Handler:           mux,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ErrorLog:          errorLog,
 	}
 }
 
