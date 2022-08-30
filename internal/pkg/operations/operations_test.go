@@ -36,12 +36,16 @@ type roleForMemberTestCase struct {
 const duplicateRequests = 5
 
 func TestNewGateway(t *testing.T) {
+	t.Parallel()
+
 	if operations.NewGateway(nil) == nil {
 		t.Error("unexpected nil queue")
 	}
 }
 
 func TestGateway_Process(t *testing.T) {
+	t.Parallel()
+
 	roleNames := []string{mockconstants.TestRole, mockconstants.TestRole + "2"}
 
 	session, err := mock.NewSession()
@@ -71,6 +75,8 @@ func TestGateway_Process(t *testing.T) {
 }
 
 func TestLookupGuild(t *testing.T) {
+	t.Parallel()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -88,6 +94,8 @@ func TestLookupGuild(t *testing.T) {
 }
 
 func TestAddRoleToMember(t *testing.T) {
+	t.Parallel()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -99,6 +107,8 @@ func TestAddRoleToMember(t *testing.T) {
 }
 
 func TestRemoveRoleFromMember(t *testing.T) {
+	t.Parallel()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -110,16 +120,20 @@ func TestRemoveRoleFromMember(t *testing.T) {
 }
 
 func TestIsDeadlineExceeded(t *testing.T) {
+	t.Parallel()
+
 	if operations.IsDeadlineExceeded(io.EOF) {
 		t.Errorf("Unexpected success")
 	}
 
-	if !operations.IsDeadlineExceeded(&callbacks.DeadlineExceeded{Err: context.DeadlineExceeded}) {
+	if !operations.IsDeadlineExceeded(&callbacks.DeadlineExceededError{Err: context.DeadlineExceeded}) {
 		t.Errorf("Unexpected failure")
 	}
 }
 
 func TestIsForbiddenResponse(t *testing.T) {
+	t.Parallel()
+
 	type testCase struct {
 		name     string
 		expected bool
@@ -158,6 +172,8 @@ func TestIsForbiddenResponse(t *testing.T) {
 		testCase := testCase
 
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			actual := operations.IsForbiddenResponse(testCase.err)
 
 			if actual != testCase.expected {
@@ -168,6 +184,8 @@ func TestIsForbiddenResponse(t *testing.T) {
 }
 
 func TestIsMaxGuildsResponse(t *testing.T) {
+	t.Parallel()
+
 	if operations.IsMaxGuildsResponse(io.EOF) {
 		t.Errorf("Unexpected success")
 	}
@@ -183,16 +201,20 @@ func TestIsMaxGuildsResponse(t *testing.T) {
 }
 
 func TestShouldLogDebug(t *testing.T) {
+	t.Parallel()
+
 	if operations.ShouldLogDebug(io.EOF) {
 		t.Errorf("Unexpected success")
 	}
 
-	if !operations.ShouldLogDebug(&callbacks.DeadlineExceeded{Err: context.DeadlineExceeded}) {
+	if !operations.ShouldLogDebug(&callbacks.DeadlineExceededError{Err: context.DeadlineExceeded}) {
 		t.Errorf("Unexpected failure")
 	}
 }
 
 func TestBotHasChannelPermission(t *testing.T) {
+	t.Parallel()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -220,15 +242,25 @@ func TestBotHasChannelPermission(t *testing.T) {
 }
 
 func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
+	t.Helper()
+
 	requestType := operations.RequestType(-1)
 
-	err := runTest(gateway, &operations.Request{Type: requestType})
+	err := runTest(gateway, &operations.Request{
+		Type: requestType,
+		CreateRole: &operations.CreateRoleRequest{
+			Guild:    &discordgo.Guild{ID: mockconstants.TestGuild},
+			RoleName: "",
+		},
+	})
 	if (err != nil) != true {
 		t.Errorf("unexpected success for request type %q", requestType)
 	}
 }
 
 func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
+	t.Helper()
+
 	err := runTest(gateway, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
@@ -242,18 +274,9 @@ func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway,
 }
 
 func runTest(gateway callbacks.OperationsGateway, request *operations.Request) error {
-	resultChannel := operations.NewResultChannel()
+	result := <-gateway.Process(request)
 
-	gateway.Process(resultChannel, request)
-
-	result := <-resultChannel
-
-	err, ok := result.(error)
-	if ok {
-		return err
-	}
-
-	return nil
+	return result.Err
 }
 
 func addRoleToMemberTestCases(getSession sessionFunc) []*roleForMemberTestCase {
@@ -303,6 +326,8 @@ func addNewRoleToMember(
 	getSession sessionFunc,
 	guildID, userID, roleID string,
 ) {
+	t.Helper()
+
 	roleForMember(t, getSession, guildID, userID, roleID, true)
 }
 
@@ -311,6 +336,8 @@ func removeRoleFromMember(
 	getSession sessionFunc,
 	guildID, userID, roleID string,
 ) {
+	t.Helper()
+
 	roleForMember(t, getSession, guildID, userID, roleID, false)
 }
 
@@ -320,6 +347,8 @@ func roleForMember(
 	guildID, userID, roleID string,
 	add bool,
 ) {
+	t.Helper()
+
 	session := getSession()
 
 	switch add {
@@ -337,10 +366,14 @@ func roleForMember(
 }
 
 func runRoleForMemberTestCases(t *testing.T, testCases []*roleForMemberTestCase) {
+	t.Helper()
+
 	for _, testCase := range testCases {
 		testCase := testCase
 
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			testCase.testFunc(t, testCase.getSession, testCase.guildID, testCase.userID, testCase.roleID)
 		})
 	}

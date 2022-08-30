@@ -73,6 +73,7 @@ func RoundTripper(jaegerTracer opentracing.Tracer, instanceName string, next htt
 		resp, err := next.RoundTrip(req.Clone(traceCtx))
 		if err != nil {
 			span.SetTag("error", err.Error())
+
 			return resp, err
 		}
 

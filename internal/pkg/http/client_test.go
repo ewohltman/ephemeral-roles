@@ -16,6 +16,8 @@ import (
 const jaegerServiceName = "ephemeral-roles"
 
 func TestNewClient(t *testing.T) {
+	t.Parallel()
+
 	testServer := httptest.NewServer(testServerHandler())
 	defer testServer.Close()
 

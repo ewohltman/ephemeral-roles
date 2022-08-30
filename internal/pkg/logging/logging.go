@@ -59,7 +59,7 @@ type Logger struct {
 // New returns a new *Logger instance configured with the OptionFunc arguments
 // provided.
 func New(options ...OptionFunc) *Logger {
-	localeFormatter := &locale{
+	localeFormatter := &Locale{
 		Location:  time.UTC,
 		Formatter: &logrus.TextFormatter{},
 	}
@@ -112,7 +112,7 @@ func OptionalTimezoneLocation(timezoneLocation string) OptionFunc {
 	return func(logger *Logger) {
 		logger.Location = parseTimezoneLocation(logger, timezoneLocation)
 
-		logger.Entry.Logger.Formatter = &locale{
+		logger.Entry.Logger.Formatter = &Locale{
 			Location:  logger.Location,
 			Formatter: &logrus.TextFormatter{},
 		}
@@ -152,6 +152,7 @@ func (logger *Logger) UpdateDiscordrus() {
 
 	if logger.DiscordrusWebHookURL == "" {
 		logger.Logger.Hooks = make(logrus.LevelHooks)
+
 		return
 	}
 
@@ -195,13 +196,14 @@ func (logger *Logger) DiscordGoLogf(discordgoLevel, _ int, format string, argume
 	}
 }
 
-type locale struct {
+// Locale is used for formatting logs for a locale.
+type Locale struct {
 	*time.Location
 	logrus.Formatter
 }
 
 // Format satisfies the logrus.Formatter interface.
-func (locale *locale) Format(log *logrus.Entry) ([]byte, error) {
+func (locale *Locale) Format(log *logrus.Entry) ([]byte, error) {
 	if locale.Location == nil {
 		return locale.Formatter.Format(log)
 	}
@@ -215,6 +217,7 @@ func parseTimezoneLocation(logger *Logger, location string) *time.Location {
 	timezoneLocation, err := time.LoadLocation(location)
 	if err != nil {
 		logger.WithError(err).Warnf("Error parsing timezone location: %s", location)
+
 		return time.UTC
 	}
 

@@ -4,6 +4,7 @@ package monitor
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -26,7 +27,6 @@ type Metrics struct {
 	Guilds                  *Guilds
 	Members                 *Members
 	ReadyCounter            prometheus.Counter
-	MessageCreateCounter    prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
 	GuildsGauge             prometheus.Gauge
 	MembersGauge            prometheus.Gauge
@@ -37,7 +37,6 @@ func NewMetrics(config *Config) *Metrics {
 	metrics := &Metrics{
 		Config:                  config,
 		ReadyCounter:            ReadyCounter(config),
-		MessageCreateCounter:    MessageCreateCounter(config),
 		VoiceStateUpdateCounter: VoiceStateUpdateCounter(config),
 		GuildsGauge:             GuildsGauge(config),
 		MembersGauge:            MembersGauge(config),
@@ -80,7 +79,7 @@ func ReadyCounter(config *Config) prometheus.Counter {
 	prometheusReadyCounter := prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Namespace: "ephemeral_roles",
-			Name:      "ready_events",
+			Name:      "ready_events_total",
 			Help:      "Total Ready events",
 		},
 	)
@@ -88,29 +87,11 @@ func ReadyCounter(config *Config) prometheus.Counter {
 	err := prometheus.Register(prometheusReadyCounter)
 	if err != nil && !alreadyRegisteredError(err) {
 		config.Log.WithError(err).Error("Unable to register Ready events metric with Prometheus")
+
 		return nil
 	}
 
 	return prometheusReadyCounter
-}
-
-// MessageCreateCounter returns a Prometheus counter for MessageCreate events.
-func MessageCreateCounter(config *Config) prometheus.Counter {
-	prometheusMessageCreateCounter := prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Namespace: "ephemeral_roles",
-			Name:      "message_create_events",
-			Help:      "Total MessageCreate events",
-		},
-	)
-
-	err := prometheus.Register(prometheusMessageCreateCounter)
-	if err != nil && !alreadyRegisteredError(err) {
-		config.Log.WithError(err).Error("Unable to register MessageCreate events metric with Prometheus")
-		return nil
-	}
-
-	return prometheusMessageCreateCounter
 }
 
 // VoiceStateUpdateCounter returns a Prometheus counter for VoiceStateUpdate
@@ -119,7 +100,7 @@ func VoiceStateUpdateCounter(config *Config) prometheus.Counter {
 	prometheusVoiceStateUpdateCounter := prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Namespace: "ephemeral_roles",
-			Name:      "voice_state_update_events",
+			Name:      "voice_state_update_events_total",
 			Help:      "Total VoiceStateUpdate events",
 		},
 	)
@@ -127,6 +108,7 @@ func VoiceStateUpdateCounter(config *Config) prometheus.Counter {
 	err := prometheus.Register(prometheusVoiceStateUpdateCounter)
 	if err != nil && !alreadyRegisteredError(err) {
 		config.Log.WithError(err).Error("Unable to register VoiceStateUpdate events metric with Prometheus")
+
 		return nil
 	}
 
@@ -139,7 +121,7 @@ func GuildsGauge(config *Config) prometheus.Gauge {
 	prometheusGuildsGauge := prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: "ephemeral_roles",
-			Name:      "guilds_count",
+			Name:      "guilds",
 			Help:      "Total Guilds count",
 		},
 	)
@@ -147,6 +129,7 @@ func GuildsGauge(config *Config) prometheus.Gauge {
 	err := prometheus.Register(prometheusGuildsGauge)
 	if err != nil && !alreadyRegisteredError(err) {
 		config.Log.WithError(err).Error("Unable to register Guilds gauge with Prometheus")
+
 		return nil
 	}
 
@@ -159,7 +142,7 @@ func MembersGauge(config *Config) prometheus.Gauge {
 	prometheusMembersGauge := prometheus.NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: "ephemeral_roles",
-			Name:      "members_count",
+			Name:      "members",
 			Help:      "Total Members count",
 		},
 	)
@@ -167,6 +150,7 @@ func MembersGauge(config *Config) prometheus.Gauge {
 	err := prometheus.Register(prometheusMembersGauge)
 	if err != nil && !alreadyRegisteredError(err) {
 		config.Log.WithError(err).Error("Unable to register Members gauge with Prometheus")
+
 		return nil
 	}
 
@@ -174,6 +158,5 @@ func MembersGauge(config *Config) prometheus.Gauge {
 }
 
 func alreadyRegisteredError(err error) bool {
-	_, alreadyRegistered := err.(prometheus.AlreadyRegisteredError)
-	return alreadyRegistered
+	return errors.As(err, &prometheus.AlreadyRegisteredError{})
 }

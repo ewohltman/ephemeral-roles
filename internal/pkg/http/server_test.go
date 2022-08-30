@@ -29,6 +29,8 @@ const (
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func TestNewServer(t *testing.T) {
+	t.Parallel()
+
 	log := mock.NewLogger()
 
 	session, err := mock.NewSession()
@@ -68,6 +70,8 @@ func TestNewServer(t *testing.T) {
 }
 
 func testRootEndpoint(t *testing.T, client *http.Client) {
+	t.Helper()
+
 	resp, err := doContextRequest(context.Background(), client, testURL+internalHTTP.RootEndpoint)
 	if err != nil {
 		t.Fatal(err)
@@ -80,6 +84,8 @@ func testRootEndpoint(t *testing.T, client *http.Client) {
 }
 
 func testGuildsEndpoint(t *testing.T, client *http.Client) {
+	t.Helper()
+
 	expectedGuildsBytes, err := os.ReadFile(expectedGuildsFile)
 	if err != nil {
 		t.Fatal(err)

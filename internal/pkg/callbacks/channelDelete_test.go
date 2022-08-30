@@ -12,6 +12,8 @@ import (
 )
 
 func TestHandler_ChannelDelete(t *testing.T) {
+	t.Parallel()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -22,7 +24,6 @@ func TestHandler_ChannelDelete(t *testing.T) {
 	handler := &callbacks.Handler{
 		Log:            log,
 		BotName:        "testBot",
-		BotKeyword:     "testKeyword",
 		RolePrefix:     "{eph}",
 		ContextTimeout: time.Second,
 	}

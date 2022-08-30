@@ -1,6 +1,7 @@
 package callbacks
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
@@ -27,25 +28,24 @@ type CallbackError interface {
 	InChannel() *discordgo.Channel
 }
 
-// MemberNotFound represents an error when a member is not found.
-type MemberNotFound struct {
+// MemberNotFoundError represents an error when a member is not found.
+type MemberNotFoundError struct {
 	Guild *discordgo.Guild
 	Err   error
 }
 
-// Is allows MemberNotFound to be compared with errors.Is.
-func (*MemberNotFound) Is(target error) bool {
-	_, ok := target.(*MemberNotFound)
-	return ok
+// Is allows MemberNotFoundError to be compared with errors.Is.
+func (mnf *MemberNotFoundError) Is(target error) bool {
+	return errors.As(target, &mnf)
 }
 
-// Unwrap returns an error wrapped by MemberNotFound.
-func (mnf *MemberNotFound) Unwrap() error {
+// Unwrap returns an error wrapped by MemberNotFoundError.
+func (mnf *MemberNotFoundError) Unwrap() error {
 	return mnf.Err
 }
 
-// Error satisfies the errors interface for MemberNotFound.
-func (mnf *MemberNotFound) Error() string {
+// Error satisfies the errors interface for MemberNotFoundError.
+func (mnf *MemberNotFoundError) Error() string {
 	if mnf.Err != nil {
 		return fmt.Sprintf("%s: %s", MemberNotFoundMessage, mnf.Err)
 	}
@@ -53,41 +53,40 @@ func (mnf *MemberNotFound) Error() string {
 	return MemberNotFoundMessage
 }
 
-// InGuild returns guild metadata for MemberNotFound.
-func (mnf *MemberNotFound) InGuild() *discordgo.Guild {
+// InGuild returns guild metadata for MemberNotFoundError.
+func (mnf *MemberNotFoundError) InGuild() *discordgo.Guild {
 	return mnf.Guild
 }
 
-// ForMember satisfies the CallbackError interface for MemberNotFound.
-func (*MemberNotFound) ForMember() *discordgo.Member {
+// ForMember satisfies the CallbackError interface for MemberNotFoundError.
+func (*MemberNotFoundError) ForMember() *discordgo.Member {
 	return nil
 }
 
-// InChannel satisfies the CallbackError interface for MemberNotFound.
-func (*MemberNotFound) InChannel() *discordgo.Channel {
+// InChannel satisfies the CallbackError interface for MemberNotFoundError.
+func (*MemberNotFoundError) InChannel() *discordgo.Channel {
 	return nil
 }
 
-// ChannelNotFound represents an error when a channel is not found.
-type ChannelNotFound struct {
+// ChannelNotFoundError represents an error when a channel is not found.
+type ChannelNotFoundError struct {
 	Guild  *discordgo.Guild
 	Member *discordgo.Member
 	Err    error
 }
 
-// Is allows ChannelNotFound to be compared with errors.Is.
-func (*ChannelNotFound) Is(target error) bool {
-	_, ok := target.(*ChannelNotFound)
-	return ok
+// Is allows ChannelNotFoundError to be compared with errors.Is.
+func (cnf *ChannelNotFoundError) Is(target error) bool {
+	return errors.As(target, &cnf)
 }
 
-// Unwrap returns an error wrapped by ChannelNotFound.
-func (cnf *ChannelNotFound) Unwrap() error {
+// Unwrap returns an error wrapped by ChannelNotFoundError.
+func (cnf *ChannelNotFoundError) Unwrap() error {
 	return cnf.Err
 }
 
-// Error satisfies the errors interface for ChannelNotFound.
-func (cnf *ChannelNotFound) Error() string {
+// Error satisfies the errors interface for ChannelNotFoundError.
+func (cnf *ChannelNotFoundError) Error() string {
 	if cnf.Err != nil {
 		return fmt.Sprintf("%s: %s", ChannelNotFoundMessage, cnf.Err)
 	}
@@ -95,51 +94,50 @@ func (cnf *ChannelNotFound) Error() string {
 	return ChannelNotFoundMessage
 }
 
-// InGuild returns guild metadata for ChannelNotFound.
-func (cnf *ChannelNotFound) InGuild() *discordgo.Guild {
+// InGuild returns guild metadata for ChannelNotFoundError.
+func (cnf *ChannelNotFoundError) InGuild() *discordgo.Guild {
 	return cnf.Guild
 }
 
-// ForMember returns member metadata for ChannelNotFound.
-func (cnf *ChannelNotFound) ForMember() *discordgo.Member {
+// ForMember returns member metadata for ChannelNotFoundError.
+func (cnf *ChannelNotFoundError) ForMember() *discordgo.Member {
 	return cnf.Member
 }
 
-// InChannel satisfies the CallbackError interface for ChannelNotFound.
-func (*ChannelNotFound) InChannel() *discordgo.Channel {
+// InChannel satisfies the CallbackError interface for ChannelNotFoundError.
+func (*ChannelNotFoundError) InChannel() *discordgo.Channel {
 	return nil
 }
 
-// RoleNotFound represents an error for when the bot fails to find a role.
-type RoleNotFound struct{}
+// RoleNotFoundError represents an error for when the bot fails to find a role.
+type RoleNotFoundError struct{}
 
-// Error satisfies the errors interface for RoleNotFound.
-func (*RoleNotFound) Error() string {
+// Error satisfies the errors interface for RoleNotFoundError.
+func (*RoleNotFoundError) Error() string {
 	return RoleNotFoundMessage
 }
 
-// InsufficientPermissions represents an error for when the bot lacks role
+// InsufficientPermissionsError represents an error for when the bot lacks role
 // privileges to perform an operation.
-type InsufficientPermissions struct {
+type InsufficientPermissionsError struct {
 	Guild   *discordgo.Guild
 	Member  *discordgo.Member
 	Channel *discordgo.Channel
 	Err     error
 }
 
-// Is allows InsufficientPermissions to be compared with errors.Is.
-func (*InsufficientPermissions) Is(target error) bool {
-	_, ok := target.(*InsufficientPermissions)
-	return ok
+// Is allows InsufficientPermissionsError to be compared with errors.Is.
+func (inp *InsufficientPermissionsError) Is(target error) bool {
+	return errors.As(target, &inp)
 }
 
-// Unwrap returns an error wrapped by InsufficientPermissions.
-func (inp *InsufficientPermissions) Unwrap() error {
+// Unwrap returns an error wrapped by InsufficientPermissionsError.
+func (inp *InsufficientPermissionsError) Unwrap() error {
 	return inp.Err
 }
 
-// Error satisfies the errors interface for InsufficientPermissions.
-func (inp *InsufficientPermissions) Error() string {
+// Error satisfies the errors interface for InsufficientPermissionsError.
+func (inp *InsufficientPermissionsError) Error() string {
 	if inp.Err != nil {
 		return fmt.Sprintf("%s: %s", InsufficientPermissionMessage, inp.Err)
 	}
@@ -147,43 +145,42 @@ func (inp *InsufficientPermissions) Error() string {
 	return InsufficientPermissionMessage
 }
 
-// InGuild returns guild metadata for InsufficientPermissions.
-func (inp *InsufficientPermissions) InGuild() *discordgo.Guild {
+// InGuild returns guild metadata for InsufficientPermissionsError.
+func (inp *InsufficientPermissionsError) InGuild() *discordgo.Guild {
 	return inp.Guild
 }
 
-// ForMember returns member metadata for InsufficientPermissions.
-func (inp *InsufficientPermissions) ForMember() *discordgo.Member {
+// ForMember returns member metadata for InsufficientPermissionsError.
+func (inp *InsufficientPermissionsError) ForMember() *discordgo.Member {
 	return inp.Member
 }
 
-// InChannel returns channel metadata for InsufficientPermissions.
-func (inp *InsufficientPermissions) InChannel() *discordgo.Channel {
+// InChannel returns channel metadata for InsufficientPermissionsError.
+func (inp *InsufficientPermissionsError) InChannel() *discordgo.Channel {
 	return inp.Channel
 }
 
-// MaxNumberOfRoles represents an error for when a guild already has the max
+// MaxNumberOfRolesError represents an error for when a guild already has the max
 // number of roles allowed.
-type MaxNumberOfRoles struct {
+type MaxNumberOfRolesError struct {
 	Guild   *discordgo.Guild
 	Member  *discordgo.Member
 	Channel *discordgo.Channel
 	Err     error
 }
 
-// Is allows MaxNumberOfRoles to be compared with errors.Is.
-func (*MaxNumberOfRoles) Is(target error) bool {
-	_, ok := target.(*MaxNumberOfRoles)
-	return ok
+// Is allows MaxNumberOfRolesError to be compared with errors.Is.
+func (mnr *MaxNumberOfRolesError) Is(target error) bool {
+	return errors.As(target, &mnr)
 }
 
-// Unwrap returns an error wrapped by MaxNumberOfRoles.
-func (mnr *MaxNumberOfRoles) Unwrap() error {
+// Unwrap returns an error wrapped by MaxNumberOfRolesError.
+func (mnr *MaxNumberOfRolesError) Unwrap() error {
 	return mnr.Err
 }
 
-// Error satisfies the errors interface for MaxNumberOfRoles.
-func (mnr *MaxNumberOfRoles) Error() string {
+// Error satisfies the errors interface for MaxNumberOfRolesError.
+func (mnr *MaxNumberOfRolesError) Error() string {
 	if mnr.Err != nil {
 		return fmt.Sprintf("%s: %s", MaxNumberOfRolesMessage, mnr.Err)
 	}
@@ -191,32 +188,32 @@ func (mnr *MaxNumberOfRoles) Error() string {
 	return MaxNumberOfRolesMessage
 }
 
-// InGuild returns guild metadata for MaxNumberOfRoles.
-func (mnr *MaxNumberOfRoles) InGuild() *discordgo.Guild {
+// InGuild returns guild metadata for MaxNumberOfRolesError.
+func (mnr *MaxNumberOfRolesError) InGuild() *discordgo.Guild {
 	return mnr.Guild
 }
 
-// ForMember returns member metadata for MaxNumberOfRoles.
-func (mnr *MaxNumberOfRoles) ForMember() *discordgo.Member {
+// ForMember returns member metadata for MaxNumberOfRolesError.
+func (mnr *MaxNumberOfRolesError) ForMember() *discordgo.Member {
 	return mnr.Member
 }
 
-// InChannel returns channel metadata for MaxNumberOfRoles.
-func (mnr *MaxNumberOfRoles) InChannel() *discordgo.Channel {
+// InChannel returns channel metadata for MaxNumberOfRolesError.
+func (mnr *MaxNumberOfRolesError) InChannel() *discordgo.Channel {
 	return mnr.Channel
 }
 
-// DeadlineExceeded represents an error for when a context deadline has been
+// DeadlineExceededError represents an error for when a context deadline has been
 // exceeded.
-type DeadlineExceeded struct {
+type DeadlineExceededError struct {
 	Guild   *discordgo.Guild
 	Member  *discordgo.Member
 	Channel *discordgo.Channel
 	Err     error
 }
 
-// Error satisfies the errors interface for DeadlineExceeded.
-func (de *DeadlineExceeded) Error() string {
+// Error satisfies the errors interface for DeadlineExceededError.
+func (de *DeadlineExceededError) Error() string {
 	if de.Err != nil {
 		return fmt.Sprintf("%s: %s", DeadlineExceededMessage, de.Err)
 	}
@@ -224,28 +221,27 @@ func (de *DeadlineExceeded) Error() string {
 	return DeadlineExceededMessage
 }
 
-// Is allows DeadlineExceeded to be compared with errors.Is.
-func (*DeadlineExceeded) Is(target error) bool {
-	_, ok := target.(*DeadlineExceeded)
-	return ok
+// Is allows DeadlineExceededError to be compared with errors.Is.
+func (de *DeadlineExceededError) Is(target error) bool {
+	return errors.As(target, &de)
 }
 
-// Unwrap returns an error wrapped by DeadlineExceeded.
-func (de *DeadlineExceeded) Unwrap() error {
+// Unwrap returns an error wrapped by DeadlineExceededError.
+func (de *DeadlineExceededError) Unwrap() error {
 	return de.Err
 }
 
-// InGuild returns guild metadata for DeadlineExceeded.
-func (de *DeadlineExceeded) InGuild() *discordgo.Guild {
+// InGuild returns guild metadata for DeadlineExceededError.
+func (de *DeadlineExceededError) InGuild() *discordgo.Guild {
 	return de.Guild
 }
 
-// ForMember returns member metadata for DeadlineExceeded.
-func (de *DeadlineExceeded) ForMember() *discordgo.Member {
+// ForMember returns member metadata for DeadlineExceededError.
+func (de *DeadlineExceededError) ForMember() *discordgo.Member {
 	return de.Member
 }
 
-// InChannel returns channel metadata for DeadlineExceeded.
-func (de *DeadlineExceeded) InChannel() *discordgo.Channel {
+// InChannel returns channel metadata for DeadlineExceededError.
+func (de *DeadlineExceededError) InChannel() *discordgo.Channel {
 	return de.Channel
 }

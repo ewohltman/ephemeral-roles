@@ -24,7 +24,10 @@ lint: fmt
 
 test:
 	go test -v -race -coverprofile=coverage.out ./...
-	@ echo "all tests passed"
+	@echo "all tests passed"
+
+test-report:
+	@make test | grep -A 1 'coverage: '
 
 build:
 	CGO_ENABLED=0 go build -o build/package/ephemeral-roles/ephemeral-roles cmd/ephemeral-roles/ephemeral-roles.go
