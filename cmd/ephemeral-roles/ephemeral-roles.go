@@ -1,3 +1,4 @@
+// Package main is the main package of the project.
 package main
 
 import (
@@ -41,7 +42,6 @@ type environmentVariables struct {
 	DiscordrusWebHookURL string `env:"DISCORDRUS_WEBHOOK_URL"`
 	Port                 string `env:"PORT" envDefault:"8081"`
 	BotName              string `env:"BOT_NAME" envDefault:"Ephemeral Roles"`
-	BotKeyword           string `env:"BOT_KEYWORD" envDefault:"!eph"`
 	RolePrefix           string `env:"ROLE_PREFIX" envDefault:"{eph}"`
 	RoleColor            int    `env:"ROLE_COLOR_HEX2DEC" envDefault:"16753920"`
 	InstanceName         string `env:"INSTANCE_NAME" envDefault:"ephemeral-roles-0"`
@@ -97,13 +97,11 @@ func startSession(
 		&callbacks.Handler{
 			Log:                     log,
 			BotName:                 envVars.BotName,
-			BotKeyword:              envVars.BotKeyword,
 			RolePrefix:              envVars.RolePrefix,
 			RoleColor:               envVars.RoleColor,
 			JaegerTracer:            jaegerTracer,
 			ContextTimeout:          contextTimeout,
 			ReadyCounter:            callbackMetrics.ReadyCounter,
-			MessageCreateCounter:    callbackMetrics.MessageCreateCounter,
 			VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
 			OperationsGateway:       operations.NewGateway(session),
 		},
@@ -121,7 +119,6 @@ func startSession(
 
 func setupCallbackHandler(session *discordgo.Session, callbackConfig *callbacks.Handler) {
 	session.AddHandler(callbackConfig.ChannelDelete)
-	session.AddHandler(callbackConfig.MessageCreate)
 	session.AddHandler(callbackConfig.Ready)
 	session.AddHandler(callbackConfig.VoiceStateUpdate)
 }

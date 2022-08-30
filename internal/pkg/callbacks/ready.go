@@ -19,8 +19,8 @@ func (handler *Handler) Ready(s *discordgo.Session, _ *discordgo.Ready) {
 		IdleSince: &idleSince,
 		Activities: []*discordgo.Activity{
 			{
-				Name: handler.BotKeyword,
-				Type: discordgo.ActivityTypeListening,
+				Name: "voice channels",
+				Type: discordgo.ActivityTypeWatching,
 			},
 		},
 		AFK:    false,

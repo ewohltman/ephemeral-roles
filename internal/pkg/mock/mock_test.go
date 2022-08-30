@@ -12,6 +12,8 @@ import (
 )
 
 func TestNewMirrorRoundTripper(t *testing.T) {
+	t.Parallel()
+
 	mirror := mock.NewMirrorRoundTripper()
 
 	reqBodyContent := []byte("Test message")

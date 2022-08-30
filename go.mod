@@ -2,12 +2,10 @@ module github.com/ewohltman/ephemeral-roles
 
 go 1.19
 
-replace github.com/bwmarrin/discordgo => github.com/ewohltman/discordgo v0.24.3
-
 require (
-	github.com/bwmarrin/discordgo v0.24.0
+	github.com/bwmarrin/discordgo v0.26.1
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/ewohltman/discordgo-mock v0.0.6
+	github.com/ewohltman/discordgo-mock v0.0.7
 	github.com/json-iterator/go v1.1.12
 	github.com/kz/discordrus v1.3.0
 	github.com/opentracing/opentracing-go v1.2.0
@@ -16,6 +14,7 @@ require (
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible
 	go.uber.org/automaxprocs v1.5.1
+	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 )
 
 require (
@@ -24,7 +23,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -33,7 +32,7 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
-	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
+	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
+	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )

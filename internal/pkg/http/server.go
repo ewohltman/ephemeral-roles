@@ -104,12 +104,14 @@ func guildsHandler(log logging.Interface, session *discordgo.Session) http.Handl
 		sortedGuildsJSON, err := json.MarshalIndent(sortedGuilds, "", "    ")
 		if err != nil {
 			log.WithError(err).Errorf("Error marshaling sorted guilds to JSON")
+
 			return
 		}
 
 		_, err = w.Write(sortedGuildsJSON)
 		if err != nil {
 			log.WithError(err).Errorf("Error writing sorted guilds response")
+
 			return
 		}
 	}
