@@ -11,6 +11,8 @@ import (
 )
 
 func TestHandler_Ready(t *testing.T) {
+	t.Parallel()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -21,7 +23,6 @@ func TestHandler_Ready(t *testing.T) {
 	handler := &callbacks.Handler{
 		Log:          log,
 		BotName:      "testBot",
-		BotKeyword:   "testKeyword",
 		RolePrefix:   "testRolePrefix",
 		ReadyCounter: monitor.ReadyCounter(&monitor.Config{Log: log}),
 	}

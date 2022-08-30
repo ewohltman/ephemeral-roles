@@ -1,5 +1,9 @@
 ---
 linters-settings:
+  cyclop:
+    max-complexity: 15
+    package-average: 0.0
+    skip-tests: true
   dupl:
     threshold: 100
   funlen:
@@ -16,6 +20,10 @@ linters-settings:
       - performance
       - style
     disabled-checks:
+      - hugeParam
+      - paramTypeCombine
+      - rangeValCopy
+      - typeDefFirst
   gocyclo:
     min-complexity: 15
   goimports:
@@ -32,47 +40,31 @@ linters-settings:
     locale: US
 
 linters:
-  disable-all: true
-  enable:
-    - bodyclose
+  enable-all: true
+  disable:
+    - contextcheck
     - deadcode
-    - depguard
-    - dogsled
-    - dupl
-    - errcheck
-    - exportloopref
-    - funlen
-    - gochecknoglobals
-    - gochecknoinits
-    - gocognit
-    - goconst
-    - gocritic
-    - gocyclo
-    - godox
-    - gofmt
-    - goimports
-    - gomnd
-    - goprintffuncname
-    - gosec
-    - gosimple
-    - govet
-    - ineffassign
-    - lll
-    - misspell
-    - nakedret
-    - prealloc
-    - revive
+    - exhaustivestruct
+    - exhaustruct
+    - gci
+    - goerr113
+    - gofumpt
+    - golint
+    - ifshort
+    - interfacer
+    - ireturn
+    - maligned
+    - nonamedreturns
+    - nosnakecase
     - rowserrcheck
-    - staticcheck
+    - scopelint
+    - sqlclosecheck
     - structcheck
-    - stylecheck
-    - typecheck
-    - unconvert
-    - unparam
-    - unused
+    - tagliatelle
     - varcheck
-    - whitespace
-    - wsl
+    - varnamelen
+    - wastedassign
+    - wrapcheck
 
 run:
   timeout: 5m
@@ -84,3 +76,14 @@ run:
 issues:
   max-same-issues: 0
   exclude-use-default: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - bodyclose
+        - cyclop
+        - dupl
+        - errcheck
+        - errchkjson
+        - forcetypeassert
+        - gocyclo
+        - gosec

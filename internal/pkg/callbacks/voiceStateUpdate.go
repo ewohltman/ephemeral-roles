@@ -35,6 +35,7 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 	metadata, err := handler.parseEvent(session, voiceState)
 	if err != nil {
 		handler.handleParseEventError(session, err)
+
 		return
 	}
 
@@ -64,6 +65,7 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 	if err != nil {
 		if operations.ShouldLogDebug(err) {
 			log.WithError(err).Debug(voiceStateUpdateEventError)
+
 			return
 		}
 
@@ -84,7 +86,7 @@ func (handler *Handler) parseEvent(
 
 	member, err := session.State.Member(voiceState.GuildID, voiceState.UserID)
 	if err != nil {
-		return nil, &MemberNotFound{
+		return nil, &MemberNotFoundError{
 			Guild: guild,
 			Err:   err,
 		}
@@ -100,7 +102,7 @@ func (handler *Handler) parseEvent(
 
 	channel, err := session.State.Channel(voiceState.ChannelID)
 	if err != nil {
-		return nil, &ChannelNotFound{
+		return nil, &ChannelNotFoundError{
 			Guild:  guild,
 			Member: member,
 			Err:    err,
@@ -109,7 +111,7 @@ func (handler *Handler) parseEvent(
 
 	err = operations.BotHasChannelPermission(session, channel)
 	if err != nil {
-		return nil, &InsufficientPermissions{
+		return nil, &InsufficientPermissionsError{
 			Guild:   guild,
 			Member:  member,
 			Channel: channel,
@@ -118,16 +120,16 @@ func (handler *Handler) parseEvent(
 	}
 
 	ephemeralRole, err := handler.lookupGuildRole(guild, channel)
-	if errors.Is(err, &RoleNotFound{}) {
+	if errors.Is(err, &RoleNotFoundError{}) {
 		ephemeralRole, err = handler.createRole(guild, handler.RoleNameFromChannel(channel.Name))
 		if err != nil {
 			switch {
 			case operations.IsDeadlineExceeded(err):
-				return nil, &DeadlineExceeded{Guild: guild, Member: member, Channel: channel, Err: err}
+				return nil, &DeadlineExceededError{Guild: guild, Member: member, Channel: channel, Err: err}
 			case operations.IsForbiddenResponse(err):
-				return nil, &InsufficientPermissions{Guild: guild, Member: member, Channel: channel, Err: err}
+				return nil, &InsufficientPermissionsError{Guild: guild, Member: member, Channel: channel, Err: err}
 			case operations.IsMaxGuildsResponse(err):
-				return nil, &MaxNumberOfRoles{Guild: guild, Member: member, Channel: channel, Err: err}
+				return nil, &MaxNumberOfRolesError{Guild: guild, Member: member, Channel: channel, Err: err}
 			default:
 				return nil, err
 			}
@@ -145,11 +147,11 @@ func (handler *Handler) parseEvent(
 
 func (handler *Handler) handleParseEventError(session *discordgo.Session, err error) {
 	var (
-		memberNotFoundErr          *MemberNotFound
-		channelNotFoundErr         *ChannelNotFound
-		insufficientPermissionsErr *InsufficientPermissions
-		maxNumberOfRolesErr        *MaxNumberOfRoles
-		deadlineExceededErr        *DeadlineExceeded
+		memberNotFoundErr          *MemberNotFoundError
+		channelNotFoundErr         *ChannelNotFoundError
+		insufficientPermissionsErr *InsufficientPermissionsError
+		maxNumberOfRolesErr        *MaxNumberOfRolesError
+		deadlineExceededErr        *DeadlineExceededError
 	)
 
 	switch {
@@ -249,13 +251,11 @@ func (handler *Handler) lookupGuildRole(guild *discordgo.Guild, channel *discord
 		return guildRoles[index], nil
 	}
 
-	return nil, &RoleNotFound{}
+	return nil, &RoleNotFoundError{}
 }
 
 func (handler *Handler) createRole(guild *discordgo.Guild, roleName string) (*discordgo.Role, error) {
-	resultChannel := operations.NewResultChannel()
-
-	handler.OperationsGateway.Process(resultChannel, &operations.Request{
+	result := <-handler.OperationsGateway.Process(&operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:     guild,
@@ -263,17 +263,16 @@ func (handler *Handler) createRole(guild *discordgo.Guild, roleName string) (*di
 			RoleColor: handler.RoleColor,
 		},
 	})
-
-	result := <-resultChannel
-
-	switch typedResult := result.(type) {
-	case *discordgo.Role:
-		return typedResult, nil
-	case error:
-		return nil, typedResult
-	default:
-		return nil, fmt.Errorf("unrecognized operations result type: %T", typedResult)
+	if result.Err != nil {
+		return nil, result.Err
 	}
+
+	val, ok := result.Val.(*discordgo.Role)
+	if !ok {
+		return nil, fmt.Errorf("unrecognized operations result type: %T", result.Val)
+	}
+
+	return val, nil
 }
 
 func (*Handler) addEphemeralRole(metadata *voiceStateUpdateMetadata) error {
@@ -288,6 +287,7 @@ func (handler *Handler) removeEphemeralRoles(metadata *voiceStateUpdateMetadata)
 		if removeError != nil {
 			if err == nil {
 				err = removeError
+
 				continue
 			}
 

@@ -18,6 +18,8 @@ import (
 const jaegerServiceName = "ephemeral-roles"
 
 func TestRoundTripperFunc_RoundTrip(t *testing.T) {
+	t.Parallel()
+
 	reqBodyContent := []byte("Test message")
 	reqBody := bytes.NewReader(reqBodyContent)
 
@@ -38,6 +40,8 @@ func TestRoundTripperFunc_RoundTrip(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
+
 	testTracer, closer, err := newTestTracer()
 	if err != nil {
 		t.Fatalf("Error creating test tracer: %s", err)
@@ -56,6 +60,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestRoundTripper(t *testing.T) {
+	t.Parallel()
+
 	jaegerTracer, closer, err := newTestTracer()
 	if err != nil {
 		t.Fatalf("Error creating test tracer: %s", err)

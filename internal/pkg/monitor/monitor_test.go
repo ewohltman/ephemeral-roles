@@ -16,6 +16,8 @@ const (
 )
 
 func TestMetrics(t *testing.T) {
+	t.Parallel()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)
@@ -35,16 +37,14 @@ func TestMetrics(t *testing.T) {
 		t.Error("Unexpected nil Ready counter")
 	}
 
-	if metrics.MessageCreateCounter == nil {
-		t.Error("Unexpected nil MessageCreate counter")
-	}
-
 	if metrics.VoiceStateUpdateCounter == nil {
 		t.Error("Unexpected nil VoiceStateUpdate counter")
 	}
 }
 
 func TestMonitor(t *testing.T) {
+	t.Parallel()
+
 	session, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)

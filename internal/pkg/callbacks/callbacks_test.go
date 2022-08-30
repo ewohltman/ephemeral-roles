@@ -12,6 +12,8 @@ import (
 const rolePrefix = "{eph}"
 
 func TestHandler_RoleNameFromChannel(t *testing.T) {
+	t.Parallel()
+
 	handler := &callbacks.Handler{RolePrefix: rolePrefix}
 	expected := fmt.Sprintf("%s %s", rolePrefix, mockconstants.TestChannel)
 	actual := handler.RoleNameFromChannel(mockconstants.TestChannel)

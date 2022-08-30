@@ -1,4 +1,4 @@
-package logging
+package logging_test
 
 import (
 	"io"
@@ -9,15 +9,21 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 const updateError = "Failed update logging level"
 
-func TestNew(_ *testing.T) {
+func TestNew(t *testing.T) {
+	t.Parallel()
+
 	testLogger()
 }
 
 func TestLogger_WrappedLogger(t *testing.T) {
+	t.Parallel()
+
 	log := testLogger().WrappedLogger()
 
 	if log == nil {
@@ -26,6 +32,8 @@ func TestLogger_WrappedLogger(t *testing.T) {
 }
 
 func TestLogger_UpdateLevel(t *testing.T) {
+	t.Parallel()
+
 	log := testLogger()
 
 	testLevels := []logrus.Level{
@@ -55,6 +63,8 @@ func TestLogger_UpdateLevel(t *testing.T) {
 }
 
 func TestLogger_UpdateDiscordrus(t *testing.T) {
+	t.Parallel()
+
 	const expected = "updateTest"
 
 	log := testLogger()
@@ -80,7 +90,9 @@ func TestLogger_UpdateDiscordrus(t *testing.T) {
 	}
 }
 
-func TestLogger_DiscordGoLogf(_ *testing.T) {
+func TestLogger_DiscordGoLogf(t *testing.T) {
+	t.Parallel()
+
 	log := testLogger()
 	log.DiscordrusWebHookURL = ""
 	log.UpdateDiscordrus()
@@ -99,11 +111,13 @@ func TestLogger_DiscordGoLogf(_ *testing.T) {
 }
 
 func TestLocale_Format(t *testing.T) {
+	t.Parallel()
+
 	const expectedFormat = `time="0001-01-01T00:00:00Z" level=panic shardID=0`
 
 	log := testLogger()
 
-	locale := &locale{
+	locale := &logging.Locale{
 		Location:  nil,
 		Formatter: &logrus.TextFormatter{},
 	}
@@ -131,15 +145,13 @@ func TestLocale_Format(t *testing.T) {
 	}
 }
 
-func testLogger() *Logger {
-	log := New(
-		OptionalOutput(io.Discard),
-		OptionalShardID(0),
-		OptionalLogLevel("info"),
-		OptionalTimezoneLocation("xyz"),
-		OptionalTimezoneLocation("America/New_York"),
-		OptionalDiscordrus("test"),
+func testLogger() *logging.Logger {
+	return logging.New(
+		logging.OptionalOutput(io.Discard),
+		logging.OptionalShardID(0),
+		logging.OptionalLogLevel("info"),
+		logging.OptionalTimezoneLocation("xyz"),
+		logging.OptionalTimezoneLocation("America/New_York"),
+		logging.OptionalDiscordrus("test"),
 	)
-
-	return log
 }

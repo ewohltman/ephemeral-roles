@@ -1,6 +1,7 @@
 package callbacks_test
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -15,17 +16,19 @@ import (
 )
 
 func TestHandler_VoiceStateUpdate(t *testing.T) {
+	t.Parallel()
+
 	jaegerTracer, jaegerCloser, err := tracer.New("test")
 	if err != nil {
 		t.Fatalf("Error creating Jaeger tracer: %s", err)
 	}
 
-	defer func() {
+	t.Cleanup(func() {
 		closeErr := jaegerCloser.Close()
 		if closeErr != nil {
 			t.Errorf("Error closing Jaeger tracer: %s", err)
 		}
-	}()
+	})
 
 	session, err := mock.NewSession()
 	if err != nil {
@@ -37,7 +40,6 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 	handler := &callbacks.Handler{
 		Log:                     log,
 		BotName:                 "testBot",
-		BotKeyword:              "testKeyword",
 		RolePrefix:              "{eph}",
 		JaegerTracer:            jaegerTracer,
 		ContextTimeout:          time.Second,
@@ -97,16 +99,33 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 		},
 	}
 
+	mutex := &sync.Mutex{}
+
 	for _, tc := range testCases {
 		tc := tc
 
 		t.Run(tc.name, func(t *testing.T) {
-			sendUpdate(session, handler, tc.guildID, tc.userID, tc.channelID)
+			t.Parallel()
+
+			sendUpdate(
+				mutex,
+				session,
+				handler,
+				tc.guildID, tc.userID, tc.channelID,
+			)
 		})
 	}
 }
 
-func sendUpdate(session *discordgo.Session, handler *callbacks.Handler, guildID, userID, channelID string) {
+func sendUpdate(
+	mutex *sync.Mutex,
+	session *discordgo.Session,
+	handler *callbacks.Handler,
+	guildID, userID, channelID string,
+) {
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	handler.VoiceStateUpdate(session, &discordgo.VoiceStateUpdate{
 		VoiceState: &discordgo.VoiceState{
 			UserID:    userID,

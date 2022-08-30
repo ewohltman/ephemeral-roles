@@ -9,6 +9,8 @@ import (
 )
 
 func TestNewLogger(t *testing.T) {
+	t.Parallel()
+
 	log := mock.NewLogger()
 
 	if log == nil {
@@ -17,6 +19,8 @@ func TestNewLogger(t *testing.T) {
 }
 
 func TestLogger_WrappedLogger(t *testing.T) {
+	t.Parallel()
+
 	log := mock.NewLogger().WrappedLogger()
 
 	if log == nil {
@@ -24,10 +28,14 @@ func TestLogger_WrappedLogger(t *testing.T) {
 	}
 }
 
-func TestLogger_UpdateLevel(_ *testing.T) {
+func TestLogger_UpdateLevel(t *testing.T) {
+	t.Parallel()
+
 	mock.NewLogger().UpdateLevel("info")
 }
 
-func TestLogger_DiscordGoLogf(_ *testing.T) {
+func TestLogger_DiscordGoLogf(t *testing.T) {
+	t.Parallel()
+
 	mock.NewLogger().DiscordGoLogf(discordgo.LogDebug, 0, "Test: %d", 123)
 }

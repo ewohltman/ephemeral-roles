@@ -6,11 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"hash/fnv"
 	"net/http"
-	"sync"
 
 	"github.com/bwmarrin/discordgo"
+	"golang.org/x/sync/singleflight"
 )
 
 // CreateRole is a RequestType enumeration.
@@ -57,100 +56,47 @@ type CreateRoleRequest struct {
 	RoleColor int
 }
 
-// ResultChannel is a channel the result from an operation is sent to.
-type ResultChannel chan interface{}
-
-// NewResultChannel returns a new, buffered channel to send an operation result
-// to.
-func NewResultChannel() ResultChannel {
-	return make(ResultChannel, 1)
-}
-
 // Gateway is a centralized construct to process operation requests by
 // de-duplicating identical simultaneous requests and providing the result to
 // all of the callers.
 type Gateway struct {
 	Session *discordgo.Session
-
-	mutex          *sync.Mutex
-	resultChannels map[keyHash][]ResultChannel
+	group   *singleflight.Group
 }
-
-type keyHash uint32
 
 // NewGateway returns a new *Gateway ready to process requests.
 func NewGateway(session *discordgo.Session) *Gateway {
 	return &Gateway{
-		Session:        session,
-		mutex:          &sync.Mutex{},
-		resultChannels: make(map[keyHash][]ResultChannel),
+		Session: session,
+		group:   &singleflight.Group{},
 	}
 }
 
 // Process will process the provided request and send back the result to the
 // provided ResultChannel. The caller should type check the result it receives
 // to determine if an error was sent or the result is of the type it expects.
-func (gateway *Gateway) Process(resultChannel ResultChannel, request *Request) {
-	switch request.Type {
-	case CreateRole:
-		gateway.processCreateRole(resultChannel, request)
-	default:
-		resultChannel <- fmt.Errorf("%s request type not supported", request.Type)
-		close(resultChannel)
-	}
-}
-
-func (gateway *Gateway) processCreateRole(resultChannel ResultChannel, request *Request) {
-	hashFunc := fnv.New32()
-
-	// According to documentation, this hashFunc.Write will never return an
-	// error
-	_, _ = fmt.Fprintf(hashFunc,
-		"%s/%s/%s",
+func (gateway *Gateway) Process(request *Request) <-chan singleflight.Result {
+	key := fmt.Sprintf("%s/%s/%s",
 		request.Type,
 		request.CreateRole.Guild.ID,
 		request.CreateRole.RoleName,
 	)
 
-	key := keyHash(hashFunc.Sum32())
+	defer gateway.group.Forget(key)
 
-	gateway.mutex.Lock()
-
-	_, found := gateway.resultChannels[key]
-	if found {
-		gateway.resultChannels[key] = append(gateway.resultChannels[key], resultChannel)
-		gateway.mutex.Unlock()
-
-		return
-	}
-
-	gateway.resultChannels[key] = []ResultChannel{resultChannel}
-	gateway.mutex.Unlock()
-
-	role, err := createRole(
-		gateway.Session,
-		request.CreateRole.Guild,
-		request.CreateRole.RoleName,
-		request.CreateRole.RoleColor,
-	)
-	if err != nil {
-		gateway.sendResult(key, err)
-		return
-	}
-
-	gateway.sendResult(key, role)
-}
-
-func (gateway *Gateway) sendResult(key keyHash, result interface{}) {
-	gateway.mutex.Lock()
-	defer gateway.mutex.Unlock()
-
-	defer delete(gateway.resultChannels, key)
-
-	for _, resultChannel := range gateway.resultChannels[key] {
-		resultChannel <- result
-		close(resultChannel)
-	}
+	return gateway.group.DoChan(key, func() (any, error) {
+		switch request.Type {
+		case CreateRole:
+			return createRole(
+				gateway.Session,
+				request.CreateRole.Guild,
+				request.CreateRole.RoleName,
+				request.CreateRole.RoleColor,
+			)
+		default:
+			return nil, fmt.Errorf("%s request type not supported", request.Type)
+		}
+	})
 }
 
 // LookupGuild returns a *discordgo.Guild from the session's internal state
@@ -296,18 +242,14 @@ func createRole(
 	roleName string,
 	roleColor int,
 ) (*discordgo.Role, error) {
-	role, err := session.GuildRoleCreate(guild.ID)
+	role, err := session.GuildRoleCreate(guild.ID, &discordgo.RoleParams{
+		Name:        roleName,
+		Color:       &roleColor,
+		Hoist:       pointerTo(roleHoist),
+		Mentionable: pointerTo(roleMention),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create ephemeral role: %w", err)
-	}
-
-	role, err = session.GuildRoleEdit(
-		guild.ID, role.ID,
-		roleName, roleColor,
-		roleHoist, role.Permissions, roleMention,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to edit ephemeral role: %w", err)
 	}
 
 	err = session.State.RoleAdd(guild.ID, role)
@@ -343,4 +285,8 @@ func recursiveGuildMembers(
 	}
 
 	return append(guildMembers, nextGuildMembers...), nil
+}
+
+func pointerTo[T any](v T) *T {
+	return &v
 }

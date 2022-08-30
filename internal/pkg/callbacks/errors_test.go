@@ -18,7 +18,9 @@ const (
 )
 
 func TestRoleNotFound_Error(t *testing.T) {
-	rnf := &callbacks.RoleNotFound{}
+	t.Parallel()
+
+	rnf := &callbacks.RoleNotFoundError{}
 
 	if rnf.Error() == "" {
 		t.Error("unexpected empty error message")
@@ -26,29 +28,33 @@ func TestRoleNotFound_Error(t *testing.T) {
 }
 
 func TestMemberNotFound_Is(t *testing.T) {
-	mnf := &callbacks.MemberNotFound{}
+	t.Parallel()
 
-	if errors.Is(nil, &callbacks.MemberNotFound{}) {
+	mnf := &callbacks.MemberNotFoundError{}
+
+	if errors.Is(nil, &callbacks.MemberNotFoundError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MemberNotFound{}) {
+	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MemberNotFoundError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if !errors.Is(mnf, &callbacks.MemberNotFound{}) {
+	if !errors.Is(mnf, &callbacks.MemberNotFoundError{}) {
 		t.Errorf(invalidErrorAssertion)
 	}
 }
 
 func TestMemberNotFound_Unwrap(t *testing.T) {
+	t.Parallel()
+
 	wrappedErr := fmt.Errorf(wrapMsg)
 
-	mnf := &callbacks.MemberNotFound{Err: wrappedErr}
+	mnf := &callbacks.MemberNotFoundError{Err: wrappedErr}
 
 	unwrappedErr := mnf.Unwrap()
 
-	if unwrappedErr != wrappedErr {
+	if !errors.Is(unwrappedErr, wrappedErr) {
 		t.Errorf(
 			"Unexpected wrapped error. Got %s, Expected: %s",
 			unwrappedErr,
@@ -58,7 +64,9 @@ func TestMemberNotFound_Unwrap(t *testing.T) {
 }
 
 func TestMemberNotFound_Error(t *testing.T) {
-	mnf := &callbacks.MemberNotFound{}
+	t.Parallel()
+
+	mnf := &callbacks.MemberNotFoundError{}
 	expectedErrMsg := callbacks.MemberNotFoundMessage
 
 	if mnf.Error() != expectedErrMsg {
@@ -82,8 +90,10 @@ func TestMemberNotFound_Error(t *testing.T) {
 }
 
 func TestMemberNotFound_InGuild(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Guild{Name: mockconstants.TestGuild}
-	mnf := &callbacks.MemberNotFound{Guild: expected}
+	mnf := &callbacks.MemberNotFoundError{Guild: expected}
 	actual := mnf.InGuild()
 
 	err := deepEqual(actual, expected)
@@ -93,9 +103,11 @@ func TestMemberNotFound_InGuild(t *testing.T) {
 }
 
 func TestMemberNotFound_ForMember(t *testing.T) {
+	t.Parallel()
+
 	var expected *discordgo.Member
 
-	mnf := &callbacks.MemberNotFound{}
+	mnf := &callbacks.MemberNotFoundError{}
 	actual := mnf.ForMember()
 
 	err := deepEqual(actual, expected)
@@ -105,9 +117,11 @@ func TestMemberNotFound_ForMember(t *testing.T) {
 }
 
 func TestMemberNotFound_InChannel(t *testing.T) {
+	t.Parallel()
+
 	var expected *discordgo.Channel
 
-	mnf := &callbacks.MemberNotFound{}
+	mnf := &callbacks.MemberNotFoundError{}
 	actual := mnf.InChannel()
 
 	err := deepEqual(actual, expected)
@@ -117,29 +131,33 @@ func TestMemberNotFound_InChannel(t *testing.T) {
 }
 
 func TestChannelNotFound_Is(t *testing.T) {
-	cnf := &callbacks.ChannelNotFound{}
+	t.Parallel()
 
-	if errors.Is(nil, &callbacks.ChannelNotFound{}) {
+	cnf := &callbacks.ChannelNotFoundError{}
+
+	if errors.Is(nil, &callbacks.ChannelNotFoundError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.ChannelNotFound{}) {
+	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.ChannelNotFoundError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if !errors.Is(cnf, &callbacks.ChannelNotFound{}) {
+	if !errors.Is(cnf, &callbacks.ChannelNotFoundError{}) {
 		t.Errorf(invalidErrorAssertion)
 	}
 }
 
 func TestChannelNotFound_Unwrap(t *testing.T) {
+	t.Parallel()
+
 	wrappedErr := fmt.Errorf(wrapMsg)
 
-	cnf := &callbacks.ChannelNotFound{Err: wrappedErr}
+	cnf := &callbacks.ChannelNotFoundError{Err: wrappedErr}
 
 	unwrappedErr := cnf.Unwrap()
 
-	if unwrappedErr != wrappedErr {
+	if !errors.Is(unwrappedErr, wrappedErr) {
 		t.Errorf(
 			"Unexpected wrapped error. Got %s, Expected: %s",
 			unwrappedErr,
@@ -149,7 +167,9 @@ func TestChannelNotFound_Unwrap(t *testing.T) {
 }
 
 func TestChannelNotFound_Error(t *testing.T) {
-	cnf := &callbacks.ChannelNotFound{}
+	t.Parallel()
+
+	cnf := &callbacks.ChannelNotFoundError{}
 	expectedErrMsg := callbacks.ChannelNotFoundMessage
 
 	if cnf.Error() != expectedErrMsg {
@@ -173,8 +193,10 @@ func TestChannelNotFound_Error(t *testing.T) {
 }
 
 func TestChannelNotFound_InGuild(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Guild{Name: mockconstants.TestGuild}
-	cnf := &callbacks.ChannelNotFound{Guild: expected}
+	cnf := &callbacks.ChannelNotFoundError{Guild: expected}
 	actual := cnf.InGuild()
 
 	err := deepEqual(actual, expected)
@@ -184,8 +206,10 @@ func TestChannelNotFound_InGuild(t *testing.T) {
 }
 
 func TestChannelNotFound_ForMember(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Member{User: &discordgo.User{Username: mockconstants.TestUser}}
-	cnf := &callbacks.ChannelNotFound{Member: expected}
+	cnf := &callbacks.ChannelNotFoundError{Member: expected}
 	actual := cnf.ForMember()
 
 	err := deepEqual(actual, expected)
@@ -195,9 +219,11 @@ func TestChannelNotFound_ForMember(t *testing.T) {
 }
 
 func TestChannelNotFound_InChannel(t *testing.T) {
+	t.Parallel()
+
 	var expected *discordgo.Channel
 
-	cnf := &callbacks.ChannelNotFound{}
+	cnf := &callbacks.ChannelNotFoundError{}
 	actual := cnf.InChannel()
 
 	err := deepEqual(actual, expected)
@@ -207,23 +233,27 @@ func TestChannelNotFound_InChannel(t *testing.T) {
 }
 
 func TestInsufficientPermission_Is(t *testing.T) {
-	inp := &callbacks.InsufficientPermissions{}
+	t.Parallel()
 
-	if errors.Is(nil, &callbacks.InsufficientPermissions{}) {
+	inp := &callbacks.InsufficientPermissionsError{}
+
+	if errors.Is(nil, &callbacks.InsufficientPermissionsError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.InsufficientPermissions{}) {
+	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.InsufficientPermissionsError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if !errors.Is(inp, &callbacks.InsufficientPermissions{}) {
+	if !errors.Is(inp, &callbacks.InsufficientPermissionsError{}) {
 		t.Errorf(invalidErrorAssertion)
 	}
 }
 
 func TestInsufficientPermission_Unwrap(t *testing.T) {
-	inp := &callbacks.InsufficientPermissions{}
+	t.Parallel()
+
+	inp := &callbacks.InsufficientPermissionsError{}
 
 	unwrappedErr := inp.Unwrap()
 
@@ -236,7 +266,9 @@ func TestInsufficientPermission_Unwrap(t *testing.T) {
 }
 
 func TestInsufficientPermission_Error(t *testing.T) {
-	inp := &callbacks.InsufficientPermissions{}
+	t.Parallel()
+
+	inp := &callbacks.InsufficientPermissionsError{}
 	expectedErrMsg := callbacks.InsufficientPermissionMessage
 
 	if inp.Error() != expectedErrMsg {
@@ -260,8 +292,10 @@ func TestInsufficientPermission_Error(t *testing.T) {
 }
 
 func TestInsufficientPermissions_InGuild(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Guild{Name: mockconstants.TestGuild}
-	inp := &callbacks.InsufficientPermissions{Guild: expected}
+	inp := &callbacks.InsufficientPermissionsError{Guild: expected}
 	actual := inp.InGuild()
 
 	err := deepEqual(actual, expected)
@@ -271,8 +305,10 @@ func TestInsufficientPermissions_InGuild(t *testing.T) {
 }
 
 func TestInsufficientPermissions_ForMember(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Member{User: &discordgo.User{Username: mockconstants.TestUser}}
-	inp := &callbacks.InsufficientPermissions{Member: expected}
+	inp := &callbacks.InsufficientPermissionsError{Member: expected}
 	actual := inp.ForMember()
 
 	err := deepEqual(actual, expected)
@@ -282,8 +318,10 @@ func TestInsufficientPermissions_ForMember(t *testing.T) {
 }
 
 func TestInsufficientPermissions_InChannel(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Channel{Name: mockconstants.TestChannel}
-	inp := &callbacks.InsufficientPermissions{Channel: expected}
+	inp := &callbacks.InsufficientPermissionsError{Channel: expected}
 	actual := inp.InChannel()
 
 	err := deepEqual(actual, expected)
@@ -293,23 +331,27 @@ func TestInsufficientPermissions_InChannel(t *testing.T) {
 }
 
 func TestMaxNumberOfRoles_Is(t *testing.T) {
-	mnr := &callbacks.MaxNumberOfRoles{}
+	t.Parallel()
 
-	if errors.Is(nil, &callbacks.MaxNumberOfRoles{}) {
+	mnr := &callbacks.MaxNumberOfRolesError{}
+
+	if errors.Is(nil, &callbacks.MaxNumberOfRolesError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MaxNumberOfRoles{}) {
+	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MaxNumberOfRolesError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if !errors.Is(mnr, &callbacks.MaxNumberOfRoles{}) {
+	if !errors.Is(mnr, &callbacks.MaxNumberOfRolesError{}) {
 		t.Errorf(invalidErrorAssertion)
 	}
 }
 
 func TestMaxNumberOfRoles_Unwrap(t *testing.T) {
-	mnr := &callbacks.MaxNumberOfRoles{}
+	t.Parallel()
+
+	mnr := &callbacks.MaxNumberOfRolesError{}
 
 	unwrappedErr := mnr.Unwrap()
 
@@ -322,7 +364,9 @@ func TestMaxNumberOfRoles_Unwrap(t *testing.T) {
 }
 
 func TestMaxNumberOfRoles_Error(t *testing.T) {
-	mnr := &callbacks.MaxNumberOfRoles{}
+	t.Parallel()
+
+	mnr := &callbacks.MaxNumberOfRolesError{}
 	expectedErrMsg := callbacks.MaxNumberOfRolesMessage
 
 	if mnr.Error() != expectedErrMsg {
@@ -346,8 +390,10 @@ func TestMaxNumberOfRoles_Error(t *testing.T) {
 }
 
 func TestMaxNumberOfRoles_InGuild(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Guild{Name: mockconstants.TestGuild}
-	mnr := &callbacks.MaxNumberOfRoles{Guild: expected}
+	mnr := &callbacks.MaxNumberOfRolesError{Guild: expected}
 	actual := mnr.InGuild()
 
 	err := deepEqual(actual, expected)
@@ -357,8 +403,10 @@ func TestMaxNumberOfRoles_InGuild(t *testing.T) {
 }
 
 func TestMaxNumberOfRoles_ForMember(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Member{User: &discordgo.User{Username: mockconstants.TestUser}}
-	mnr := &callbacks.MaxNumberOfRoles{Member: expected}
+	mnr := &callbacks.MaxNumberOfRolesError{Member: expected}
 	actual := mnr.ForMember()
 
 	err := deepEqual(actual, expected)
@@ -368,8 +416,10 @@ func TestMaxNumberOfRoles_ForMember(t *testing.T) {
 }
 
 func TestMaxNumberOfRoles_InChannel(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Channel{Name: mockconstants.TestChannel}
-	mnr := &callbacks.MaxNumberOfRoles{Channel: expected}
+	mnr := &callbacks.MaxNumberOfRolesError{Channel: expected}
 	actual := mnr.InChannel()
 
 	err := deepEqual(actual, expected)
@@ -379,23 +429,27 @@ func TestMaxNumberOfRoles_InChannel(t *testing.T) {
 }
 
 func TestDeadlineExceeded_Is(t *testing.T) {
-	mnr := &callbacks.DeadlineExceeded{}
+	t.Parallel()
 
-	if errors.Is(nil, &callbacks.DeadlineExceeded{}) {
+	mnr := &callbacks.DeadlineExceededError{}
+
+	if errors.Is(nil, &callbacks.DeadlineExceededError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.DeadlineExceeded{}) {
+	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.DeadlineExceededError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if !errors.Is(mnr, &callbacks.DeadlineExceeded{}) {
+	if !errors.Is(mnr, &callbacks.DeadlineExceededError{}) {
 		t.Errorf(invalidErrorAssertion)
 	}
 }
 
 func TestDeadlineExceeded_Unwrap(t *testing.T) {
-	mnr := &callbacks.DeadlineExceeded{}
+	t.Parallel()
+
+	mnr := &callbacks.DeadlineExceededError{}
 
 	unwrappedErr := mnr.Unwrap()
 
@@ -408,7 +462,9 @@ func TestDeadlineExceeded_Unwrap(t *testing.T) {
 }
 
 func TestDeadlineExceeded_Error(t *testing.T) {
-	mnr := &callbacks.DeadlineExceeded{}
+	t.Parallel()
+
+	mnr := &callbacks.DeadlineExceededError{}
 	expectedErrMsg := callbacks.DeadlineExceededMessage
 
 	if mnr.Error() != expectedErrMsg {
@@ -432,8 +488,10 @@ func TestDeadlineExceeded_Error(t *testing.T) {
 }
 
 func TestDeadlineExceeded_InGuild(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Guild{Name: mockconstants.TestGuild}
-	mnr := &callbacks.DeadlineExceeded{Guild: expected}
+	mnr := &callbacks.DeadlineExceededError{Guild: expected}
 	actual := mnr.InGuild()
 
 	err := deepEqual(actual, expected)
@@ -443,8 +501,10 @@ func TestDeadlineExceeded_InGuild(t *testing.T) {
 }
 
 func TestDeadlineExceeded_ForMember(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Member{User: &discordgo.User{Username: mockconstants.TestUser}}
-	mnr := &callbacks.DeadlineExceeded{Member: expected}
+	mnr := &callbacks.DeadlineExceededError{Member: expected}
 	actual := mnr.ForMember()
 
 	err := deepEqual(actual, expected)
@@ -454,8 +514,10 @@ func TestDeadlineExceeded_ForMember(t *testing.T) {
 }
 
 func TestDeadlineExceeded_InChannel(t *testing.T) {
+	t.Parallel()
+
 	expected := &discordgo.Channel{Name: mockconstants.TestChannel}
-	mnr := &callbacks.DeadlineExceeded{Channel: expected}
+	mnr := &callbacks.DeadlineExceededError{Channel: expected}
 	actual := mnr.InChannel()
 
 	err := deepEqual(actual, expected)

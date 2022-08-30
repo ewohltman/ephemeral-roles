@@ -13,6 +13,8 @@ import (
 )
 
 func TestGuilds_Monitor(t *testing.T) {
+	t.Parallel()
+
 	mockSession, err := mock.NewSession()
 	if err != nil {
 		t.Fatal(err)

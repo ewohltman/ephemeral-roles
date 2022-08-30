@@ -7,6 +7,7 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/singleflight"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
@@ -15,20 +16,18 @@ import (
 // OperationsGateway is an interface abstraction for processing operations
 // requests.
 type OperationsGateway interface {
-	Process(operations.ResultChannel, *operations.Request)
+	Process(*operations.Request) <-chan singleflight.Result
 }
 
 // Handler contains fields for the callback methods attached to it.
 type Handler struct {
 	Log                     logging.Interface
 	BotName                 string
-	BotKeyword              string
 	RolePrefix              string
 	RoleColor               int
 	JaegerTracer            opentracing.Tracer
 	ContextTimeout          time.Duration
 	ReadyCounter            prometheus.Counter
-	MessageCreateCounter    prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
 	OperationsGateway       OperationsGateway
 }
