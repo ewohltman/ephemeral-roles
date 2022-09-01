@@ -33,6 +33,8 @@ const (
 	ephemeralRoles  = "ephemeral-roles"
 	contextTimeout  = 5 * time.Minute
 	monitorInterval = 10 * time.Second
+
+	intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentGuildMembers | discordgo.IntentGuildPresences
 )
 
 type environmentVariables struct {
@@ -85,7 +87,7 @@ func startSession(
 	session.LogLevel = discordgo.LogInformational
 	session.State.TrackEmojis = false
 	session.State.TrackPresences = false
-	session.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAll)
+	session.Identify.Intents = discordgo.MakeIntent(intents)
 
 	callbackMetrics := monitor.NewMetrics(&monitor.Config{
 		Log:      log,
