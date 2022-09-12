@@ -20,7 +20,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ephemeral-roles
-          image: ewohltman/ephemeral-roles:v1.11.1
+          image: ewohltman/ephemeral-roles:v1.11.2
           imagePullPolicy: Always
           env:
             - name: SHARD_COUNT
@@ -30,7 +30,7 @@ spec:
             - name: LOG_TIMEZONE_LOCATION
               value: "America/New_York"
             - name: JAEGER_SERVICE_NAME
-              value: "ephemeral-roles.ephemeral-roles"
+              value: "jaeger.observability"
             - name: JAEGER_PROPAGATION
               value: "jaeger,b3"
             - name: INSTANCE_NAME
@@ -56,7 +56,7 @@ spec:
             requests:
               memory: "512Mi"
         - name: jaeger-agent
-          image: jaegertracing/jaeger-agent:1.17.1
+          image: jaegertracing/jaeger-agent:1.37.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5775
@@ -93,5 +93,5 @@ spec:
                   apiVersion: v1
                   fieldPath: status.hostIP
           args:
-            - --reporter.grpc.host-port=dns:///jaeger-collector-headless.ephemeral-roles:14250
+            - --reporter.grpc.host-port=dns:///jaeger-collector-headless.observability:14250
             - --reporter.type=grpc
