@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/bwmarrin/discordgo v0.26.1
 	github.com/caarlos0/env v3.5.0+incompatible
-	github.com/ewohltman/discordgo-mock v0.0.8
+	github.com/ewohltman/discordgo-mock v0.0.9
 	github.com/json-iterator/go v1.1.12
 	github.com/kz/discordrus v1.3.0
 	github.com/opentracing/opentracing-go v1.2.0
