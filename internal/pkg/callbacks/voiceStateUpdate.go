@@ -291,7 +291,7 @@ func (handler *Handler) removeEphemeralRoles(metadata *voiceStateUpdateMetadata)
 				continue
 			}
 
-			err = fmt.Errorf("%s: %w", err, removeError)
+			err = fmt.Errorf("%w: %w", err, removeError)
 		}
 	}
 

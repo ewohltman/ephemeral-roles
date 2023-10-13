@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/caarlos0/env"
+	"github.com/caarlos0/env/v9"
 	"github.com/opentracing/opentracing-go"
 	"go.uber.org/automaxprocs/maxprocs"
 

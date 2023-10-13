@@ -44,6 +44,7 @@ linters:
   disable:
     - contextcheck
     - deadcode
+    - depguard
     - exhaustivestruct
     - exhaustruct
     - gci
@@ -60,6 +61,7 @@ linters:
     - scopelint
     - sqlclosecheck
     - structcheck
+    - tagalign
     - tagliatelle
     - varcheck
     - varnamelen
