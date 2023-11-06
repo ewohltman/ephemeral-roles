@@ -18,6 +18,7 @@ import (
 
 const (
 	rolePrefix     = "{eph}"
+	testUserBot    = mockconstants.TestUser + "Bot"
 	largeGuildSize = 3000
 )
 
@@ -37,8 +38,8 @@ func NewSession() (*discordgo.Session, error) {
 	)
 
 	botUser := mockuser.New(
-		mockuser.WithID(mockconstants.TestUser+"Bot"),
-		mockuser.WithUsername(mockconstants.TestUser+"Bot"),
+		mockuser.WithID(testUserBot),
+		mockuser.WithUsername(testUserBot),
 		mockuser.WithBotFlag(true),
 	)
 

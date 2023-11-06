@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/caarlos0/env"
+	"github.com/caarlos0/env/v9"
 	"github.com/opentracing/opentracing-go"
 	"go.uber.org/automaxprocs/maxprocs"
 
@@ -120,9 +120,9 @@ func startSession(
 }
 
 func setupCallbackHandler(session *discordgo.Session, callbackConfig *callbacks.Handler) {
-	session.AddHandler(callbackConfig.ChannelDelete)
 	session.AddHandler(callbackConfig.Ready)
 	session.AddHandler(callbackConfig.VoiceStateUpdate)
+	session.AddHandler(callbackConfig.ChannelDelete)
 }
 
 func startHTTPServer(log logging.Interface, session *discordgo.Session, port string) (httpServer *http.Server, stop chan os.Signal) {

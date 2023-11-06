@@ -167,7 +167,7 @@ func closeResponse(resp *http.Response, err error) error {
 		closeErr = fmt.Errorf("error closing test response body: %w", closeErr)
 
 		if err != nil {
-			return fmt.Errorf("%s: %w", closeErr, err)
+			return fmt.Errorf("%w: %w", closeErr, err)
 		}
 
 		return closeErr

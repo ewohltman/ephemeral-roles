@@ -14,7 +14,7 @@ import (
 
 const (
 	voiceStateUpdate           = "VoiceStateUpdate"
-	voiceStateUpdateEventError = "Unable to process event: " + voiceStateUpdate
+	voiceStateUpdateEventError = unableToProcessEvent + voiceStateUpdate
 )
 
 type voiceStateUpdateMetadata struct {
@@ -291,7 +291,7 @@ func (handler *Handler) removeEphemeralRoles(metadata *voiceStateUpdateMetadata)
 				continue
 			}
 
-			err = fmt.Errorf("%s: %w", err, removeError)
+			err = fmt.Errorf("%w: %w", err, removeError)
 		}
 	}
 
