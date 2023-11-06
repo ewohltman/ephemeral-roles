@@ -4,10 +4,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const (
-	ready           = "Ready"
-	readyEventError = "Unable to process event: " + ready
-)
+const readyEventError = unableToProcessEvent + "Ready"
 
 // Ready is the callback function for the Ready event from Discord.
 func (handler *Handler) Ready(s *discordgo.Session, _ *discordgo.Ready) {

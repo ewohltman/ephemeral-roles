@@ -14,7 +14,7 @@ import (
 
 const (
 	voiceStateUpdate           = "VoiceStateUpdate"
-	voiceStateUpdateEventError = "Unable to process event: " + voiceStateUpdate
+	voiceStateUpdateEventError = unableToProcessEvent + voiceStateUpdate
 )
 
 type voiceStateUpdateMetadata struct {
