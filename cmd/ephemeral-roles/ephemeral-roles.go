@@ -120,9 +120,9 @@ func startSession(
 }
 
 func setupCallbackHandler(session *discordgo.Session, callbackConfig *callbacks.Handler) {
-	session.AddHandler(callbackConfig.ChannelDelete)
 	session.AddHandler(callbackConfig.Ready)
 	session.AddHandler(callbackConfig.VoiceStateUpdate)
+	session.AddHandler(callbackConfig.ChannelDelete)
 }
 
 func startHTTPServer(log logging.Interface, session *discordgo.Session, port string) (httpServer *http.Server, stop chan os.Signal) {
