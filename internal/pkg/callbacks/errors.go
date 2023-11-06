@@ -21,7 +21,7 @@ const (
 // metadata for the error.
 type CallbackError interface {
 	error
-	Is(error) bool
+	Is(err error) bool
 	Unwrap() error
 	InGuild() *discordgo.Guild
 	ForMember() *discordgo.Member

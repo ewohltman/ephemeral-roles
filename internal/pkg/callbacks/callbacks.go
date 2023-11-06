@@ -13,10 +13,12 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
 
+const unableToProcessEvent = "Unable to process event: "
+
 // OperationsGateway is an interface abstraction for processing operations
 // requests.
 type OperationsGateway interface {
-	Process(*operations.Request) <-chan singleflight.Result
+	Process(request *operations.Request) <-chan singleflight.Result
 }
 
 // Handler contains fields for the callback methods attached to it.

@@ -6,10 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const (
-	channelDelete           = "ChannelDelete"
-	channelDeleteEventError = "Unable to process event: " + channelDelete
-)
+const channelDeleteEventError = unableToProcessEvent + "ChannelDelete"
 
 // ChannelDelete is the callback function for the ChannelDelete event from Discord.
 func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *discordgo.ChannelDelete) {
