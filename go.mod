@@ -3,7 +3,7 @@ module github.com/ewohltman/ephemeral-roles
 go 1.21
 
 require (
-	github.com/bwmarrin/discordgo v0.27.1
+	github.com/bwmarrin/discordgo v0.28.1
 	github.com/caarlos0/env/v9 v9.0.0
 	github.com/ewohltman/discordgo-mock v0.0.10
 	github.com/json-iterator/go v1.1.12
