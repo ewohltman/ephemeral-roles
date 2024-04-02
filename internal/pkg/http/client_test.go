@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -85,7 +86,7 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 	}
 
 	if resp.Request.Context() == context.Background() {
-		return fmt.Errorf("request context was not set")
+		return errors.New("request context was not set")
 	}
 
 	resp, err = doContextRequest(context.Background(), client, testServerURL)
@@ -99,7 +100,7 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 	}
 
 	if resp.Request.Context() == context.Background() {
-		return fmt.Errorf("request context was not set")
+		return errors.New("request context was not set")
 	}
 
 	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second)
@@ -116,7 +117,7 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 	}
 
 	if resp.Request.Context() == context.Background() {
-		return fmt.Errorf("request context was not set")
+		return errors.New("request context was not set")
 	}
 
 	return nil

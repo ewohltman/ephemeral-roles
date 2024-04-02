@@ -36,7 +36,7 @@ func TestMemberNotFound_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MemberNotFoundError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.MemberNotFoundError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
@@ -48,7 +48,7 @@ func TestMemberNotFound_Is(t *testing.T) {
 func TestMemberNotFound_Unwrap(t *testing.T) {
 	t.Parallel()
 
-	wrappedErr := fmt.Errorf(wrapMsg)
+	wrappedErr := errors.New(wrapMsg)
 
 	mnf := &callbacks.MemberNotFoundError{Err: wrappedErr}
 
@@ -77,7 +77,7 @@ func TestMemberNotFound_Error(t *testing.T) {
 		)
 	}
 
-	mnf.Err = fmt.Errorf(wrapMsg)
+	mnf.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if mnf.Error() != expectedErrMsg {
@@ -139,7 +139,7 @@ func TestChannelNotFound_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.ChannelNotFoundError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.ChannelNotFoundError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
@@ -151,7 +151,7 @@ func TestChannelNotFound_Is(t *testing.T) {
 func TestChannelNotFound_Unwrap(t *testing.T) {
 	t.Parallel()
 
-	wrappedErr := fmt.Errorf(wrapMsg)
+	wrappedErr := errors.New(wrapMsg)
 
 	cnf := &callbacks.ChannelNotFoundError{Err: wrappedErr}
 
@@ -180,7 +180,7 @@ func TestChannelNotFound_Error(t *testing.T) {
 		)
 	}
 
-	cnf.Err = fmt.Errorf(wrapMsg)
+	cnf.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if cnf.Error() != expectedErrMsg {
@@ -241,7 +241,7 @@ func TestInsufficientPermission_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.InsufficientPermissionsError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.InsufficientPermissionsError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
@@ -279,7 +279,7 @@ func TestInsufficientPermission_Error(t *testing.T) {
 		)
 	}
 
-	inp.Err = fmt.Errorf(wrapMsg)
+	inp.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if inp.Error() != expectedErrMsg {
@@ -339,7 +339,7 @@ func TestMaxNumberOfRoles_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MaxNumberOfRolesError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.MaxNumberOfRolesError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
@@ -377,7 +377,7 @@ func TestMaxNumberOfRoles_Error(t *testing.T) {
 		)
 	}
 
-	mnr.Err = fmt.Errorf(wrapMsg)
+	mnr.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if mnr.Error() != expectedErrMsg {
@@ -437,7 +437,7 @@ func TestDeadlineExceeded_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.DeadlineExceededError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.DeadlineExceededError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
@@ -475,7 +475,7 @@ func TestDeadlineExceeded_Error(t *testing.T) {
 		)
 	}
 
-	mnr.Err = fmt.Errorf(wrapMsg)
+	mnr.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if mnr.Error() != expectedErrMsg {

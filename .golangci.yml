@@ -4,8 +4,6 @@ linters-settings:
     max-complexity: 15
     package-average: 0.0
     skip-tests: true
-  dupl:
-    threshold: 100
   funlen:
     lines: 100
     statements: 50
@@ -19,30 +17,18 @@ linters-settings:
       - opinionated
       - performance
       - style
-    disabled-checks:
-      - hugeParam
-      - paramTypeCombine
-      - rangeValCopy
-      - typeDefFirst
   gocyclo:
     min-complexity: 15
   goimports:
     local-prefixes: github.com/ewohltman/ephemeral-roles
-  golint:
-    min-confidence: 0.8
-  govet:
-    check-shadowing: true
   lll:
     line-length: 140
-  maligned:
-    suggest-new: true
   misspell:
     locale: US
 
 linters:
   enable-all: true
   disable:
-    - contextcheck
     - deadcode
     - depguard
     - exhaustivestruct
@@ -57,27 +43,26 @@ linters:
     - maligned
     - nonamedreturns
     - nosnakecase
-    - rowserrcheck
     - scopelint
-    - sqlclosecheck
     - structcheck
     - tagalign
     - tagliatelle
     - varcheck
     - varnamelen
-    - wastedassign
     - wrapcheck
 
 run:
   timeout: 5m
-  skip-dirs:
-    - .github
-    - build
-    - web
 
 issues:
   max-same-issues: 0
   exclude-use-default: false
+  exclude-dirs:
+    - .github
+    - build
+    - web
+  exclude-files:
+    - zz_generated.*
   exclude-rules:
     - path: _test\.go
       linters:
@@ -89,3 +74,4 @@ issues:
         - forcetypeassert
         - gocyclo
         - gosec
+        - nosnakecase
