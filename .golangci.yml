@@ -1,91 +1,87 @@
----
-linters-settings:
-  cyclop:
-    max-complexity: 15
-    package-average: 0.0
-    skip-tests: true
-  dupl:
-    threshold: 100
-  funlen:
-    lines: 100
-    statements: 50
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - hugeParam
-      - paramTypeCombine
-      - rangeValCopy
-      - typeDefFirst
-  gocyclo:
-    min-complexity: 15
-  goimports:
-    local-prefixes: github.com/ewohltman/ephemeral-roles
-  golint:
-    min-confidence: 0.8
-  govet:
-    check-shadowing: true
-  lll:
-    line-length: 140
-  maligned:
-    suggest-new: true
-  misspell:
-    locale: US
-
+version: "2"
 linters:
-  enable-all: true
+  default: all
   disable:
-    - contextcheck
-    - deadcode
     - depguard
-    - exhaustivestruct
+    - err113
     - exhaustruct
-    - gci
-    - goerr113
-    - gofumpt
-    - golint
-    - ifshort
-    - interfacer
     - ireturn
-    - maligned
+    - noinlineerr
     - nonamedreturns
-    - nosnakecase
-    - rowserrcheck
-    - scopelint
-    - sqlclosecheck
-    - structcheck
-    - tagalign
     - tagliatelle
-    - varcheck
     - varnamelen
-    - wastedassign
     - wrapcheck
-
-run:
-  timeout: 5m
-  skip-dirs:
-    - .github
-    - build
-    - web
-
+    - wsl
+  settings:
+    cyclop:
+      max-complexity: 15
+      package-average: 0
+    funlen:
+      lines: 100
+      statements: 50
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 15
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 4
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - bodyclose
+          - cyclop
+          - dupl
+          - errcheck
+          - errchkjson
+          - forcetypeassert
+          - funlen
+          - gocyclo
+          - gosec
+          - lll
+          - nosnakecase
+    paths:
+      - .idea
+      - builtin$
+      - examples$
+      - third_party$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/ewohltman/ephemeral-roles/
+  exclusions:
+    paths:
+      - .idea
+      - builtin$
+      - examples$
+      - third_party$
 issues:
   max-same-issues: 0
-  exclude-use-default: false
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - bodyclose
-        - cyclop
-        - dupl
-        - errcheck
-        - errchkjson
-        - forcetypeassert
-        - gocyclo
-        - gosec
+  fix: true
+output:
+  formats:
+    text:
+      path: stdout
+      colors: true
+    checkstyle:
+      path: golangci-lint.xml
+  sort-order:
+    - file

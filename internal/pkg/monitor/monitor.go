@@ -24,6 +24,7 @@ type Config struct {
 // Metrics contains fields for tracking and exposing metrics to Prometheus.
 type Metrics struct {
 	*Config
+
 	Guilds                  *Guilds
 	Members                 *Members
 	ReadyCounter            prometheus.Counter

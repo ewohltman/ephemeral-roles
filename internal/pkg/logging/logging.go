@@ -51,6 +51,7 @@ type OptionFunc func(*Logger)
 // Logger wraps a *logrus.Logger instance and provides custom methods.
 type Logger struct {
 	*logrus.Entry
+
 	Location             *time.Location
 	DiscordrusWebHookURL string
 	mutex                *sync.Mutex
@@ -94,7 +95,7 @@ func OptionalOutput(output io.Writer) OptionFunc {
 // shardID field.
 func OptionalShardID(shardID int) OptionFunc {
 	return func(logger *Logger) {
-		logger.Entry = logger.Entry.WithField("shardID", shardID)
+		logger.Entry = logger.WithField("shardID", shardID)
 	}
 }
 
@@ -112,7 +113,7 @@ func OptionalTimezoneLocation(timezoneLocation string) OptionFunc {
 	return func(logger *Logger) {
 		logger.Location = parseTimezoneLocation(logger, timezoneLocation)
 
-		logger.Entry.Logger.Formatter = &Locale{
+		logger.Logger.Formatter = &Locale{
 			Location:  logger.Location,
 			Formatter: &logrus.TextFormatter{},
 		}

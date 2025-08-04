@@ -1,12 +1,10 @@
 # Project-specific files
 .idea/
 
-# Test results
+# Lint and test results
+golangci-lint.xml
 coverage.out
-
-# Deployment config
-deployments/kubernetes/secret.yml
+test-report.json
 
 # Binary
 build/package/ephemeral-roles/ephemeral-roles
-build/package/ephemeral-roles-debug/ephemeral-roles-debug

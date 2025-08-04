@@ -59,13 +59,12 @@ func TestGateway_Process(t *testing.T) {
 	runTestRequestUnknown(t, gateway)
 
 	for _, roleName := range roleNames {
-		roleName := roleName
-
-		for i := 0; i < duplicateRequests; i++ {
+		for range duplicateRequests {
 			waitGroup.Add(1)
 
 			go func() {
 				defer waitGroup.Done()
+
 				runTestRequestCreateRole(t, gateway, roleName)
 			}()
 		}
@@ -169,8 +168,6 @@ func TestIsForbiddenResponse(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
-
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -369,8 +366,6 @@ func runRoleForMemberTestCases(t *testing.T, testCases []*roleForMemberTestCase)
 	t.Helper()
 
 	for _, testCase := range testCases {
-		testCase := testCase
-
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
