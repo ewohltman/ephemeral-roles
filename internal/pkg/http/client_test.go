@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,12 +27,7 @@ func TestNewClient(t *testing.T) {
 		t.Fatalf("Error setting up Jaeger tracer: %s", err)
 	}
 
-	defer func() {
-		closeErr := jaegerCloser.Close()
-		if closeErr != nil {
-			t.Errorf("Error closing Jaeger tracer: %s", closeErr)
-		}
-	}()
+	defer func() { _ = jaegerCloser.Close() }()
 
 	client := internalHTTP.NewClient(internalHTTP.WrapTransport(
 		internalHTTP.NewTransport(),
@@ -46,7 +42,7 @@ func TestNewClient(t *testing.T) {
 		t.Fatal("Unexpected nil http.RoundTripper")
 	}
 
-	err = doTestRequests(client, testServer.URL)
+	err = doTestRequests(t.Context(), client, testServer.URL)
 	if err != nil {
 		t.Fatalf("Error doing test request: %s", err)
 	}
@@ -73,8 +69,8 @@ func testServerHandler() http.HandlerFunc {
 	}
 }
 
-func doTestRequests(client *http.Client, testServerURL string) error {
-	resp, err := doRequest(client, testServerURL)
+func doTestRequests(ctx context.Context, client *http.Client, testServerURL string) error {
+	resp, err := doRequest(ctx, client, testServerURL)
 	if err != nil {
 		return err
 	}
@@ -85,10 +81,10 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 	}
 
 	if resp.Request.Context() == context.Background() {
-		return fmt.Errorf("request context was not set")
+		return errors.New("request context was not set")
 	}
 
-	resp, err = doContextRequest(context.Background(), client, testServerURL)
+	resp, err = doContextRequest(ctx, client, testServerURL)
 	if err != nil {
 		return err
 	}
@@ -99,10 +95,10 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 	}
 
 	if resp.Request.Context() == context.Background() {
-		return fmt.Errorf("request context was not set")
+		return errors.New("request context was not set")
 	}
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancelCtx := context.WithTimeout(ctx, time.Second)
 	defer cancelCtx()
 
 	resp, err = doContextRequest(ctx, client, testServerURL)
@@ -116,14 +112,14 @@ func doTestRequests(client *http.Client, testServerURL string) error {
 	}
 
 	if resp.Request.Context() == context.Background() {
-		return fmt.Errorf("request context was not set")
+		return errors.New("request context was not set")
 	}
 
 	return nil
 }
 
-func doRequest(client *http.Client, testServerURL string) (resp *http.Response, err error) {
-	req, err := http.NewRequest(http.MethodGet, testServerURL, http.NoBody)
+func doRequest(ctx context.Context, client *http.Client, testServerURL string) (resp *http.Response, err error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, testServerURL, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create test request: %w", err)
 	}

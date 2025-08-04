@@ -36,19 +36,19 @@ func TestMemberNotFound_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MemberNotFoundError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.MemberNotFoundError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
 	if !errors.Is(mnf, &callbacks.MemberNotFoundError{}) {
-		t.Errorf(invalidErrorAssertion)
+		t.Error(invalidErrorAssertion)
 	}
 }
 
 func TestMemberNotFound_Unwrap(t *testing.T) {
 	t.Parallel()
 
-	wrappedErr := fmt.Errorf(wrapMsg)
+	wrappedErr := errors.New(wrapMsg)
 
 	mnf := &callbacks.MemberNotFoundError{Err: wrappedErr}
 
@@ -77,7 +77,7 @@ func TestMemberNotFound_Error(t *testing.T) {
 		)
 	}
 
-	mnf.Err = fmt.Errorf(wrapMsg)
+	mnf.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if mnf.Error() != expectedErrMsg {
@@ -139,19 +139,19 @@ func TestChannelNotFound_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.ChannelNotFoundError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.ChannelNotFoundError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
 	if !errors.Is(cnf, &callbacks.ChannelNotFoundError{}) {
-		t.Errorf(invalidErrorAssertion)
+		t.Error(invalidErrorAssertion)
 	}
 }
 
 func TestChannelNotFound_Unwrap(t *testing.T) {
 	t.Parallel()
 
-	wrappedErr := fmt.Errorf(wrapMsg)
+	wrappedErr := errors.New(wrapMsg)
 
 	cnf := &callbacks.ChannelNotFoundError{Err: wrappedErr}
 
@@ -180,7 +180,7 @@ func TestChannelNotFound_Error(t *testing.T) {
 		)
 	}
 
-	cnf.Err = fmt.Errorf(wrapMsg)
+	cnf.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if cnf.Error() != expectedErrMsg {
@@ -241,12 +241,12 @@ func TestInsufficientPermission_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.InsufficientPermissionsError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.InsufficientPermissionsError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
 	if !errors.Is(inp, &callbacks.InsufficientPermissionsError{}) {
-		t.Errorf(invalidErrorAssertion)
+		t.Error(invalidErrorAssertion)
 	}
 }
 
@@ -256,7 +256,6 @@ func TestInsufficientPermission_Unwrap(t *testing.T) {
 	inp := &callbacks.InsufficientPermissionsError{}
 
 	unwrappedErr := inp.Unwrap()
-
 	if unwrappedErr != nil {
 		t.Errorf(
 			"Unexpected wrapped error. Got %s, Expected: nil",
@@ -279,7 +278,7 @@ func TestInsufficientPermission_Error(t *testing.T) {
 		)
 	}
 
-	inp.Err = fmt.Errorf(wrapMsg)
+	inp.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if inp.Error() != expectedErrMsg {
@@ -339,12 +338,12 @@ func TestMaxNumberOfRoles_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.MaxNumberOfRolesError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.MaxNumberOfRolesError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
 	if !errors.Is(mnr, &callbacks.MaxNumberOfRolesError{}) {
-		t.Errorf(invalidErrorAssertion)
+		t.Error(invalidErrorAssertion)
 	}
 }
 
@@ -354,7 +353,6 @@ func TestMaxNumberOfRoles_Unwrap(t *testing.T) {
 	mnr := &callbacks.MaxNumberOfRolesError{}
 
 	unwrappedErr := mnr.Unwrap()
-
 	if unwrappedErr != nil {
 		t.Errorf(
 			"Unexpected wrapped error. Got %s, Expected: nil",
@@ -377,7 +375,7 @@ func TestMaxNumberOfRoles_Error(t *testing.T) {
 		)
 	}
 
-	mnr.Err = fmt.Errorf(wrapMsg)
+	mnr.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if mnr.Error() != expectedErrMsg {
@@ -437,12 +435,12 @@ func TestDeadlineExceeded_Is(t *testing.T) {
 		t.Error(invalidErrorAssertion)
 	}
 
-	if errors.Is(fmt.Errorf(wrapMsg), &callbacks.DeadlineExceededError{}) {
+	if errors.Is(errors.New(wrapMsg), &callbacks.DeadlineExceededError{}) {
 		t.Error(invalidErrorAssertion)
 	}
 
 	if !errors.Is(mnr, &callbacks.DeadlineExceededError{}) {
-		t.Errorf(invalidErrorAssertion)
+		t.Error(invalidErrorAssertion)
 	}
 }
 
@@ -452,7 +450,6 @@ func TestDeadlineExceeded_Unwrap(t *testing.T) {
 	mnr := &callbacks.DeadlineExceededError{}
 
 	unwrappedErr := mnr.Unwrap()
-
 	if unwrappedErr != nil {
 		t.Errorf(
 			"Unexpected wrapped error. Got %s, Expected: nil",
@@ -475,7 +472,7 @@ func TestDeadlineExceeded_Error(t *testing.T) {
 		)
 	}
 
-	mnr.Err = fmt.Errorf(wrapMsg)
+	mnr.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
 	if mnr.Error() != expectedErrMsg {

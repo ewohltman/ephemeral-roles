@@ -118,7 +118,7 @@ func largeGuild(botUser *discordgo.User, role, ephRole *discordgo.Role) *discord
 
 	largeGuildMembers := make([]*discordgo.Member, largeGuildSize)
 
-	for i := 0; i < largeGuildSize; i++ {
+	for i := range largeGuildSize {
 		largeGuildMembers[i] = mockmember.New(
 			mockmember.WithUser(mockuser.New(
 				mockuser.WithID(fmt.Sprintf("%s%d", mockconstants.TestUser, i)),

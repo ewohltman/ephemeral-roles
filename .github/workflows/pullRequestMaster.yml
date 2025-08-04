@@ -12,43 +12,25 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Set up Go 1.21
-        uses: actions/setup-go@v4
+      - name: Set up Go 1.24
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: stable
           check-latest: true
 
       - name: Download dependencies
-        run: |
-          go mod tidy
-          go mod download
+        run: make tidy
 
       - name: Run go vet
-        run: go vet ./...
+        run: make vet
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.55
+          version: v2.3
 
       - name: Run tests
         run: make test
-
-      - name: Run test coverage
-        env:
-          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PATH="${PATH}:$(go env GOPATH)/bin"
-          GO111MODULE=off go get -u github.com/mattn/goveralls
-          goveralls -coverprofile=coverage.out -service=github
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: go
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
 
       - name: Build binary
         run: make build

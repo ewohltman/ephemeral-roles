@@ -1,7 +1,4 @@
-FROM alpine:latest as base
-
-RUN apk --no-cache add tzdata
-
+FROM gcr.io/distroless/static as base
 FROM scratch
 
 COPY --from=base /etc/ssl/certs /etc/ssl/certs

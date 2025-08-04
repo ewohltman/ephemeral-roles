@@ -118,7 +118,7 @@ func guildsHandler(log logging.Interface, session *discordgo.Session) http.Handl
 }
 
 func rootHandler(log logging.Interface) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(_ http.ResponseWriter, r *http.Request) {
 		drainCloseRequest(log, r)
 	}
 }

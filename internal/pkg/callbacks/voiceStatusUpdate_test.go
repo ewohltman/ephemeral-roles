@@ -102,8 +102,6 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 	mutex := &sync.Mutex{}
 
 	for _, tc := range testCases {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
