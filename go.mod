@@ -1,6 +1,6 @@
 module github.com/ewohltman/ephemeral-roles
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/bwmarrin/discordgo v0.29.0
@@ -14,7 +14,7 @@ require (
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible
 	go.uber.org/automaxprocs v1.6.0
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.19.0
 )
 
 require (
