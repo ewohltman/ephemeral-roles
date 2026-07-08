@@ -60,13 +60,9 @@ func TestGateway_Process(t *testing.T) {
 
 	for _, roleName := range roleNames {
 		for range duplicateRequests {
-			waitGroup.Add(1)
-
-			go func() {
-				defer waitGroup.Done()
-
+			waitGroup.Go(func() {
 				runTestRequestCreateRole(t, gateway, roleName)
-			}()
+			})
 		}
 	}
 
