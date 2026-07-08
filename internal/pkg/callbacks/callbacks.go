@@ -3,7 +3,6 @@ package callbacks
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,7 +12,7 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
 
-const unableToProcessEvent = "Unable to process event: "
+const unableToProcessEvent = "unable to process event: "
 
 // OperationsGateway is an interface abstraction for processing operations
 // requests.
@@ -24,11 +23,9 @@ type OperationsGateway interface {
 // Handler contains fields for the callback methods attached to it.
 type Handler struct {
 	Log                     logging.Interface
-	BotName                 string
 	RolePrefix              string
 	RoleColor               int
 	JaegerTracer            opentracing.Tracer
-	ContextTimeout          time.Duration
 	ReadyCounter            prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
 	OperationsGateway       OperationsGateway

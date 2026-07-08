@@ -51,7 +51,6 @@ import (
 
 const (
 	rolePrefix = "{eph}"
-	botName    = "Ephemeral Roles (driver)"
 	roleColor  = 16753920
 )
 
@@ -88,11 +87,9 @@ func main() {
 
 	handler := &callbacks.Handler{
 		Log:                     log,
-		BotName:                 botName,
 		RolePrefix:              rolePrefix,
 		RoleColor:               roleColor,
 		JaegerTracer:            jaegerTracer,
-		ContextTimeout:          time.Minute,
 		ReadyCounter:            metrics.ReadyCounter,
 		VoiceStateUpdateCounter: metrics.VoiceStateUpdateCounter,
 		OperationsGateway:       operations.NewGateway(session),

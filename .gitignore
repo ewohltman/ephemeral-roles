@@ -1,5 +1,6 @@
 # Project-specific files
 .idea/
+TODO.md
 
 # Lint and test results
 golangci-lint.xml
