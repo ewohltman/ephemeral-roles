@@ -150,7 +150,7 @@ func IsDeadlineExceeded(err error) bool {
 // to http.StatusForbidden.
 func IsForbiddenResponse(err error) bool {
 	if restErr, ok := errors.AsType[*discordgo.RESTError](err); ok {
-		if restErr.Response.StatusCode == http.StatusForbidden {
+		if restErr.Response != nil && restErr.Response.StatusCode == http.StatusForbidden {
 			return true
 		}
 	}
@@ -163,8 +163,8 @@ func IsForbiddenResponse(err error) bool {
 // to http.StatusBadRequest and the error code is 30005.
 func IsMaxGuildsResponse(err error) bool {
 	if restErr, ok := errors.AsType[*discordgo.RESTError](err); ok {
-		if restErr.Response.StatusCode == http.StatusBadRequest {
-			return restErr.Message.Code == APIErrorCodeMaxRoles
+		if restErr.Response != nil && restErr.Response.StatusCode == http.StatusBadRequest {
+			return restErr.Message != nil && restErr.Message.Code == APIErrorCodeMaxRoles
 		}
 	}
 
