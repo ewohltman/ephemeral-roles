@@ -1,135 +1,202 @@
 package logging_test
 
 import (
+	"bytes"
 	"io"
-	"strings"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/kz/discordrus"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
-const updateError = "Failed update logging level"
-
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	testLogger()
-}
-
-func TestLogger_WrappedLogger(t *testing.T) {
-	t.Parallel()
-
-	log := testLogger().WrappedLogger()
+	buf := &bytes.Buffer{}
+	log := logging.New(logging.OptionalOutput(buf))
 
 	require.NotNil(t, log)
+
+	log.Info("hello world")
+
+	assert.Contains(t, buf.String(), "hello world")
 }
 
 func TestLogger_UpdateLevel(t *testing.T) {
 	t.Parallel()
 
-	log := testLogger()
+	buf := &bytes.Buffer{}
+	log := logging.New(
+		logging.OptionalOutput(buf),
+		logging.OptionalLogLevel(logging.InfoLevel),
+	)
 
-	testLevels := []logrus.Level{
-		logrus.DebugLevel,
-		logrus.InfoLevel,
-		logrus.WarnLevel,
-		logrus.ErrorLevel,
-		logrus.FatalLevel,
-		logrus.PanicLevel,
-	}
+	log.Debug("debug-hidden")
+	assert.NotContains(t, buf.String(), "debug-hidden")
 
-	for _, testLevel := range testLevels {
-		log.UpdateLevel(testLevel.String())
+	log.UpdateLevel(logging.DebugLevel)
 
-		assert.Equal(t, testLevel, log.Logger.Level, updateError)
-	}
-
-	log.DiscordrusWebHookURL = ""
-
-	log.UpdateLevel(logrus.DebugLevel.String())
-
-	assert.Equal(t, logrus.DebugLevel, log.Logger.Level, updateError)
+	log.Debug("debug-shown")
+	assert.Contains(t, buf.String(), "debug-shown")
 }
 
-func TestLogger_UpdateDiscordrus(t *testing.T) {
+func TestLogger_LevelParsing(t *testing.T) {
 	t.Parallel()
 
-	const expected = "updateTest"
+	testCases := []struct {
+		name     string
+		logLevel string
+		belowMsg string
+		belowFn  func(log *logging.Logger, msg string)
+		atMsg    string
+		atFn     func(log *logging.Logger, msg string)
+	}{
+		{
+			name:     "debug emits debug",
+			logLevel: logging.DebugLevel,
+			atMsg:    "debug-at",
+			atFn:     func(log *logging.Logger, msg string) { log.Debug(msg) },
+		},
+		{
+			name:     "warning suppresses info",
+			logLevel: logging.WarningLevel,
+			belowMsg: "info-below",
+			belowFn:  func(log *logging.Logger, msg string) { log.Info(msg) },
+			atMsg:    "warn-at",
+			atFn:     func(log *logging.Logger, msg string) { log.Warn(msg) },
+		},
+		{
+			name:     "error suppresses warn",
+			logLevel: logging.ErrorLevel,
+			belowMsg: "warn-below",
+			belowFn:  func(log *logging.Logger, msg string) { log.Warn(msg) },
+			atMsg:    "error-at",
+			atFn:     func(log *logging.Logger, msg string) { log.Error(msg) },
+		},
+		{
+			name:     "fatal maps to error and suppresses warn",
+			logLevel: logging.FatalLevel,
+			belowMsg: "warn-below-fatal",
+			belowFn:  func(log *logging.Logger, msg string) { log.Warn(msg) },
+			atMsg:    "error-at-fatal",
+			atFn:     func(log *logging.Logger, msg string) { log.Error(msg) },
+		},
+		{
+			name:     "unknown defaults to info",
+			logLevel: "bogus",
+			belowMsg: "debug-below",
+			belowFn:  func(log *logging.Logger, msg string) { log.Debug(msg) },
+			atMsg:    "info-at",
+			atFn:     func(log *logging.Logger, msg string) { log.Info(msg) },
+		},
+	}
 
-	log := testLogger()
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 
-	log.DiscordrusWebHookURL = ""
-	log.UpdateDiscordrus()
+			buf := &bytes.Buffer{}
+			log := logging.New(
+				logging.OptionalOutput(buf),
+				logging.OptionalLogLevel(testCase.logLevel),
+			)
 
-	assert.Empty(t, log.Logger.Hooks)
+			if testCase.belowFn != nil {
+				testCase.belowFn(log, testCase.belowMsg)
+				assert.NotContains(t, buf.String(), testCase.belowMsg)
+			}
 
-	log.DiscordrusWebHookURL = expected
-	log.UpdateDiscordrus()
+			testCase.atFn(log, testCase.atMsg)
+			assert.Contains(t, buf.String(), testCase.atMsg)
+		})
+	}
+}
 
-	hook := log.Logger.Hooks[logrus.InfoLevel][0].(*discordrus.Hook)
+func TestLogger_ShardIDAndTimezone(t *testing.T) {
+	t.Parallel()
 
-	assert.Equal(t, expected, hook.WebhookURL)
+	buf := &bytes.Buffer{}
+	log := logging.New(
+		logging.OptionalOutput(buf),
+		logging.OptionalShardID(7),
+		logging.OptionalTimezoneLocation("America/New_York"),
+	)
+
+	log.Info("hello")
+
+	out := buf.String()
+	assert.Contains(t, out, "shardID=7")
+	assert.NotContains(t, out, "error parsing timezone location")
+}
+
+func TestLogger_InvalidTimezoneWarns(t *testing.T) {
+	t.Parallel()
+
+	buf := &bytes.Buffer{}
+
+	logging.New(
+		logging.OptionalOutput(buf),
+		logging.OptionalTimezoneLocation("not-a-timezone"),
+	)
+
+	out := buf.String()
+	assert.Contains(t, out, "error parsing timezone location")
+	assert.Contains(t, out, "not-a-timezone")
 }
 
 func TestLogger_DiscordGoLogf(t *testing.T) {
 	t.Parallel()
 
-	log := testLogger()
-	log.DiscordrusWebHookURL = ""
-	log.UpdateDiscordrus()
-	log.UpdateLevel(logrus.InfoLevel.String())
+	buf := &bytes.Buffer{}
+	log := logging.New(
+		logging.OptionalOutput(buf),
+		logging.OptionalLogLevel(logging.DebugLevel),
+	)
 
-	logLevels := []int{
-		discordgo.LogError,
-		discordgo.LogWarning,
-		discordgo.LogInformational,
-		discordgo.LogDebug,
-	}
+	log.DiscordGoLogf(0, 0, "Test: %d", 123)
 
-	for _, logLevel := range logLevels {
-		log.DiscordGoLogf(logLevel, 0, "Test: %d", 123)
-	}
+	assert.Contains(t, buf.String(), "Test: 123")
 }
 
-func TestLocale_Format(t *testing.T) {
+func TestLogger_FanoutToStdoutAndDiscord(t *testing.T) {
 	t.Parallel()
 
-	const expectedFormat = `time="0001-01-01T00:00:00Z" level=panic shardID=0`
+	received := make(chan string, 1)
 
-	log := testLogger()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
 
-	locale := &logging.Locale{
-		Location:  nil,
-		Formatter: &logrus.TextFormatter{},
-	}
+		select {
+		case received <- string(body):
+		default:
+		}
 
-	_, err := locale.Format(log.Entry)
-	require.NoError(t, err)
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
 
-	locale.Location = time.UTC
-
-	actualFormat, err := locale.Format(log.Entry)
-	require.NoError(t, err)
-
-	actualFormatString := strings.TrimSpace(string(actualFormat))
-
-	assert.Equal(t, expectedFormat, actualFormatString)
-}
-
-func testLogger() *logging.Logger {
-	return logging.New(
-		logging.OptionalOutput(io.Discard),
-		logging.OptionalShardID(0),
-		logging.OptionalLogLevel("info"),
-		logging.OptionalTimezoneLocation("xyz"),
-		logging.OptionalTimezoneLocation("America/New_York"),
-		logging.OptionalDiscordrus("test"),
+	buf := &bytes.Buffer{}
+	log := logging.New(
+		logging.OptionalOutput(buf),
+		logging.OptionalLogLevel(logging.InfoLevel),
+		logging.OptionalDiscordWebhook(server.URL),
 	)
+
+	log.Info("fanout-message", "marker", "unique-marker-value")
+
+	assert.Contains(t, buf.String(), "fanout-message")
+	assert.Contains(t, buf.String(), "unique-marker-value")
+
+	select {
+	case body := <-received:
+		assert.Contains(t, body, "fanout-message")
+		assert.Contains(t, body, "unique-marker-value")
+	case <-time.After(2 * time.Second):
+		require.Fail(t, "discord webhook did not receive the log record")
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -82,10 +83,12 @@ func run() error {
 		logging.OptionalShardID(ev.shardID),
 		logging.OptionalLogLevel(ev.LogLevel),
 		logging.OptionalTimezoneLocation(ev.LogTimezoneLocation),
-		logging.OptionalDiscordrus(ev.DiscordWebhookURL),
+		logging.OptionalDiscordWebhook(ev.DiscordWebhookURL),
 	)
 
-	log.Infof("%s starting up", ev.BotName)
+	log.Info("starting up", "bot", ev.BotName)
+
+	discordgo.Logger = log.DiscordGoLogf
 
 	jaegerTracer, jaegerCloser, err := tracer.New(ephemeralRoles)
 	if err != nil {
@@ -100,25 +103,23 @@ func run() error {
 		internalHTTP.NewTransport(),
 	))
 
-	session, err := startSession(ctx, log, ev, client, jaegerTracer)
+	session, err := startSession(ctx, log.Logger, ev, client, jaegerTracer)
 	if err != nil {
 		return fmt.Errorf("error starting Discord session: %w", err)
 	}
 
 	defer func() { _ = session.Close() }()
 
-	return runServer(ctx, log, session, ev.Port)
+	return runServer(ctx, log.Logger, session, ev.Port)
 }
 
 func startSession(
 	ctx context.Context,
-	log logging.Interface,
+	log *slog.Logger,
 	envVars *environmentVariables,
 	client *http.Client,
 	jaegerTracer opentracing.Tracer,
 ) (*discordgo.Session, error) {
-	discordgo.Logger = log.DiscordGoLogf
-
 	session, err := discordgo.New("Bot " + envVars.BotToken)
 	if err != nil {
 		return nil, err
@@ -167,7 +168,7 @@ func addCallbackHandlers(session *discordgo.Session, callbackConfig *callbacks.H
 
 func runServer(
 	ctx context.Context,
-	log logging.Interface,
+	log *slog.Logger,
 	session *discordgo.Session,
 	port string,
 ) error {
@@ -176,7 +177,7 @@ func runServer(
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
-				log.WithError(err).Error("HTTP server error")
+				log.Error("HTTP server error", "error", err)
 			}
 		}
 	}()

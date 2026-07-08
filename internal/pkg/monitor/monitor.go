@@ -5,20 +5,19 @@ package monitor
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 const prometheusNamespace = "ephemeral_roles"
 
 // Config contains fields for configuring Metrics.
 type Config struct {
-	Log      logging.Interface
+	Log      *slog.Logger
 	Session  *discordgo.Session
 	Interval time.Duration
 }
@@ -87,10 +86,8 @@ func ReadyCounter(config *Config) prometheus.Counter {
 		},
 	)
 
-	err := prometheus.Register(prometheusReadyCounter)
-	if err != nil && !alreadyRegisteredError(err) {
-		config.Log.WithError(err).Error("Unable to register Ready events metric with Prometheus")
-
+	if err := prometheus.Register(prometheusReadyCounter); err != nil && !alreadyRegisteredError(err) {
+		config.Log.Error("Unable to register Ready events metric with Prometheus", "error", err)
 		return nil
 	}
 
@@ -108,10 +105,8 @@ func VoiceStateUpdateCounter(config *Config) prometheus.Counter {
 		},
 	)
 
-	err := prometheus.Register(prometheusVoiceStateUpdateCounter)
-	if err != nil && !alreadyRegisteredError(err) {
-		config.Log.WithError(err).Error("Unable to register VoiceStateUpdate events metric with Prometheus")
-
+	if err := prometheus.Register(prometheusVoiceStateUpdateCounter); err != nil && !alreadyRegisteredError(err) {
+		config.Log.Error("Unable to register VoiceStateUpdate events metric with Prometheus", "error", err)
 		return nil
 	}
 
@@ -129,10 +124,8 @@ func GuildsGauge(config *Config) prometheus.Gauge {
 		},
 	)
 
-	err := prometheus.Register(prometheusGuildsGauge)
-	if err != nil && !alreadyRegisteredError(err) {
-		config.Log.WithError(err).Error("Unable to register Guilds gauge with Prometheus")
-
+	if err := prometheus.Register(prometheusGuildsGauge); err != nil && !alreadyRegisteredError(err) {
+		config.Log.Error("Unable to register Guilds gauge with Prometheus", "error", err)
 		return nil
 	}
 
@@ -150,10 +143,8 @@ func MembersGauge(config *Config) prometheus.Gauge {
 		},
 	)
 
-	err := prometheus.Register(prometheusMembersGauge)
-	if err != nil && !alreadyRegisteredError(err) {
-		config.Log.WithError(err).Error("Unable to register Members gauge with Prometheus")
-
+	if err := prometheus.Register(prometheusMembersGauge); err != nil && !alreadyRegisteredError(err) {
+		config.Log.Error("Unable to register Members gauge with Prometheus", "error", err)
 		return nil
 	}
 

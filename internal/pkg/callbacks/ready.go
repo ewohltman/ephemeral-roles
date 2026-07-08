@@ -24,8 +24,7 @@ func (handler *Handler) Ready(s *discordgo.Session, _ *discordgo.Ready) {
 		Status: "online",
 	}
 
-	err := s.UpdateStatusComplex(usd)
-	if err != nil {
-		handler.Log.WithError(err).Error(readyEventError)
+	if err := s.UpdateStatusComplex(usd); err != nil {
+		handler.Log.Error(readyEventError, "error", err)
 	}
 }

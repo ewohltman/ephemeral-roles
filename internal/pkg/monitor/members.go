@@ -2,19 +2,18 @@ package monitor
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 // Members contains fields for monitoring the number of members in the guilds
 // the bot belongs to.
 type Members struct {
-	Log             logging.Interface
+	Log             *slog.Logger
 	Session         *discordgo.Session
 	Interval        time.Duration
 	PrometheusGauge prometheus.Gauge

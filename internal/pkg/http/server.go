@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 	"io"
-	stdLog "log"
+	"log/slog"
 	"net/http"
 	"net/http/pprof"
 	"sort"
@@ -11,9 +11,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 // Supported endpoints.
@@ -61,10 +58,10 @@ func (guilds SortableGuilds) Swap(i, j int) {
 }
 
 // NewServer returns a new pre-configured *http.Server..
-func NewServer(log logging.Interface, session *discordgo.Session, port string) *http.Server {
+func NewServer(log *slog.Logger, session *discordgo.Session, port string) *http.Server {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc(RootEndpoint, rootHandler(log))
+	mux.HandleFunc(RootEndpoint, rootHandler())
 	mux.HandleFunc(GuildsEndpoint, guildsHandler(log, session))
 	mux.HandleFunc(pprofIndexEndpoint, pprof.Index)
 	mux.HandleFunc(pprofCmdlineEndpoint, pprof.Cmdline)
@@ -73,19 +70,28 @@ func NewServer(log logging.Interface, session *discordgo.Session, port string) *
 	mux.HandleFunc(pprofTraceEndpoint, pprof.Trace)
 	mux.Handle(metricsEndpoint, promhttp.Handler())
 
-	errorLog := stdLog.New(log.WrappedLogger().WriterLevel(logrus.ErrorLevel), "", 0)
-
 	return &http.Server{
 		Addr:              "0.0.0.0:" + port,
 		Handler:           mux,
 		ReadHeaderTimeout: readHeaderTimeout,
-		ErrorLog:          errorLog,
+		ErrorLog:          slog.NewLogLogger(log.Handler(), slog.LevelError),
 	}
 }
 
-func guildsHandler(log logging.Interface, session *discordgo.Session) http.HandlerFunc {
+func rootHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer drainCloseRequest(log, r)
+		_, _ = io.Copy(io.Discard, r.Body)
+		_ = r.Body.Close()
+		_, _ = w.Write(nil)
+	}
+}
+
+func guildsHandler(log *slog.Logger, session *discordgo.Session) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			_, _ = io.Copy(io.Discard, r.Body)
+			_ = r.Body.Close()
+		}()
 
 		sortedGuilds := make(SortableGuilds, len(session.State.Guilds))
 
@@ -100,34 +106,14 @@ func guildsHandler(log logging.Interface, session *discordgo.Session) http.Handl
 
 		sortedGuildsJSON, err := json.MarshalIndent(sortedGuilds, "", "    ")
 		if err != nil {
-			log.WithError(err).Errorf("Error marshaling sorted guilds to JSON")
-
+			log.Error("Error marshaling sorted guilds to JSON", "error", err)
 			return
 		}
 
 		_, err = w.Write(sortedGuildsJSON)
 		if err != nil {
-			log.WithError(err).Errorf("Error writing sorted guilds response")
-
+			log.Error("Error writing sorted guilds response", "error", err)
 			return
 		}
-	}
-}
-
-func rootHandler(log logging.Interface) http.HandlerFunc {
-	return func(_ http.ResponseWriter, r *http.Request) {
-		drainCloseRequest(log, r)
-	}
-}
-
-func drainCloseRequest(log logging.Interface, r *http.Request) {
-	_, err := io.Copy(io.Discard, r.Body)
-	if err != nil {
-		log.WithError(err).Warn("Internal HTTP server error draining request body")
-	}
-
-	err = r.Body.Close()
-	if err != nil {
-		log.WithError(err).Warn("Internal HTTP server error closing request body")
 	}
 }

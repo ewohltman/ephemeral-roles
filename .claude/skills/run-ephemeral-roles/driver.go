@@ -29,6 +29,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -59,17 +60,17 @@ func main() {
 	serve := flag.Bool("serve", true, "keep the HTTP server running after the callback demo (SIGINT/SIGTERM to stop)")
 	flag.Parse()
 
-	log := logging.New(logging.OptionalLogLevel("info"))
+	log := logging.New(logging.OptionalLogLevel("info")).Logger
 
 	jaegerTracer, jaegerCloser, err := tracer.New("ephemeral-roles-driver")
 	if err != nil {
-		log.WithError(err).Fatal("Error creating Jaeger tracer")
+		fatal(log, "Error creating Jaeger tracer", err)
 	}
 	defer func() { _ = jaegerCloser.Close() }()
 
 	session, err := mock.NewSession()
 	if err != nil {
-		log.WithError(err).Fatal("Error creating mock session")
+		fatal(log, "Error creating mock session", err)
 	}
 	defer func() { _ = session.Close() }()
 
@@ -104,6 +105,13 @@ func main() {
 	serveHTTP(log, session, *addr)
 }
 
+// fatal logs an error and exits. It is a helper so callers stay a single line
+// and os.Exit is not called directly alongside deferred cleanup.
+func fatal(log *slog.Logger, msg string, err error) {
+	log.Error(msg, "error", err)
+	os.Exit(1)
+}
+
 // runCallbackDemo fires one real VoiceStateUpdate (a member joining a voice
 // channel) and prints the guild's role count and the member's assigned roles
 // before and after, so the core role-creation/assignment flow is observable
@@ -115,13 +123,13 @@ func main() {
 // So expect the guild role count to grow by one and the member's role set to
 // change. (The new role shows an empty name — see Gotchas in SKILL.md: the mock
 // REST layer ignores the role-create request body.)
-func runCallbackDemo(log logging.Interface, session *discordgo.Session, handler *callbacks.Handler) {
+func runCallbackDemo(log *slog.Logger, session *discordgo.Session, handler *callbacks.Handler) {
 	guildID := mockconstants.TestGuild
 	userID := mockconstants.TestUser
 	channelID := mockconstants.TestChannel2
 
-	log.Infof("=== VoiceStateUpdate demo: user %q joins voice channel %q in guild %q ===", userID, channelID, guildID)
-	log.Infof("BEFORE: guild roles=%d, member roles=%s", guildRoleCount(session, guildID), memberRoles(session, guildID, userID))
+	log.Info(fmt.Sprintf("=== VoiceStateUpdate demo: user %q joins voice channel %q in guild %q ===", userID, channelID, guildID))
+	log.Info(fmt.Sprintf("BEFORE: guild roles=%d, member roles=%s", guildRoleCount(session, guildID), memberRoles(session, guildID, userID)))
 
 	handler.VoiceStateUpdate(session, &discordgo.VoiceStateUpdate{
 		VoiceState: &discordgo.VoiceState{
@@ -131,7 +139,7 @@ func runCallbackDemo(log logging.Interface, session *discordgo.Session, handler 
 		},
 	})
 
-	log.Infof("AFTER:  guild roles=%d, member roles=%s", guildRoleCount(session, guildID), memberRoles(session, guildID, userID))
+	log.Info(fmt.Sprintf("AFTER:  guild roles=%d, member roles=%s", guildRoleCount(session, guildID), memberRoles(session, guildID, userID)))
 	log.Info("=== VoiceStateUpdate demo complete: guild gained a role and the member was assigned it => create+assign flow ran ===")
 }
 
@@ -177,7 +185,7 @@ func memberRoles(session *discordgo.Session, guildID, userID string) string {
 
 // serveHTTP starts the production HTTP server against the mock session and
 // blocks until SIGINT/SIGTERM.
-func serveHTTP(log logging.Interface, session *discordgo.Session, addr string) {
+func serveHTTP(log *slog.Logger, session *discordgo.Session, addr string) {
 	host, port, ok := strings.Cut(addr, ":")
 	if !ok {
 		host, port = "127.0.0.1", addr
@@ -190,11 +198,11 @@ func serveHTTP(log logging.Interface, session *discordgo.Session, addr string) {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Infof("HTTP server listening on http://%s  (endpoints: / , /guilds , /metrics , /debug/pprof/)", server.Addr)
+		log.Info(fmt.Sprintf("HTTP server listening on http://%s  (endpoints: / , /guilds , /metrics , /debug/pprof/)", server.Addr))
 
 		listenErr := server.ListenAndServe()
 		if listenErr != nil && listenErr != http.ErrServerClosed {
-			log.WithError(listenErr).Error("HTTP server error")
+			log.Error("HTTP server error", "error", listenErr)
 
 			stop <- syscall.SIGTERM
 		}
@@ -206,7 +214,7 @@ func serveHTTP(log logging.Interface, session *discordgo.Session, addr string) {
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.WithError(err).Error("Error shutting down HTTP server")
+		log.Error("Error shutting down HTTP server", "error", err)
 	}
 
 	log.Info("HTTP server stopped")

@@ -3,13 +3,12 @@ module github.com/ewohltman/ephemeral-roles
 go 1.26.0
 
 require (
+	github.com/Bufferoverflovv/slog-discord v1.0.0
 	github.com/bwmarrin/discordgo v0.29.0
 	github.com/caarlos0/env/v11 v11.4.1
 	github.com/ewohltman/discordgo-mock v0.0.11
-	github.com/kz/discordrus v1.3.0
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible
