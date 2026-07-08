@@ -3,11 +3,11 @@ package callbacks_test
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 )
@@ -96,10 +96,7 @@ func TestMemberNotFound_InGuild(t *testing.T) {
 	mnf := &callbacks.MemberNotFoundError{Guild: expected}
 	actual := mnf.InGuild()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestMemberNotFound_ForMember(t *testing.T) {
@@ -110,10 +107,7 @@ func TestMemberNotFound_ForMember(t *testing.T) {
 	mnf := &callbacks.MemberNotFoundError{}
 	actual := mnf.ForMember()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestMemberNotFound_InChannel(t *testing.T) {
@@ -124,10 +118,7 @@ func TestMemberNotFound_InChannel(t *testing.T) {
 	mnf := &callbacks.MemberNotFoundError{}
 	actual := mnf.InChannel()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestChannelNotFound_Is(t *testing.T) {
@@ -199,10 +190,7 @@ func TestChannelNotFound_InGuild(t *testing.T) {
 	cnf := &callbacks.ChannelNotFoundError{Guild: expected}
 	actual := cnf.InGuild()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestChannelNotFound_ForMember(t *testing.T) {
@@ -212,10 +200,7 @@ func TestChannelNotFound_ForMember(t *testing.T) {
 	cnf := &callbacks.ChannelNotFoundError{Member: expected}
 	actual := cnf.ForMember()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestChannelNotFound_InChannel(t *testing.T) {
@@ -226,10 +211,7 @@ func TestChannelNotFound_InChannel(t *testing.T) {
 	cnf := &callbacks.ChannelNotFoundError{}
 	actual := cnf.InChannel()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestInsufficientPermission_Is(t *testing.T) {
@@ -297,10 +279,7 @@ func TestInsufficientPermissions_InGuild(t *testing.T) {
 	inp := &callbacks.InsufficientPermissionsError{Guild: expected}
 	actual := inp.InGuild()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestInsufficientPermissions_ForMember(t *testing.T) {
@@ -310,10 +289,7 @@ func TestInsufficientPermissions_ForMember(t *testing.T) {
 	inp := &callbacks.InsufficientPermissionsError{Member: expected}
 	actual := inp.ForMember()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestInsufficientPermissions_InChannel(t *testing.T) {
@@ -323,10 +299,7 @@ func TestInsufficientPermissions_InChannel(t *testing.T) {
 	inp := &callbacks.InsufficientPermissionsError{Channel: expected}
 	actual := inp.InChannel()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestMaxNumberOfRoles_Is(t *testing.T) {
@@ -394,10 +367,7 @@ func TestMaxNumberOfRoles_InGuild(t *testing.T) {
 	mnr := &callbacks.MaxNumberOfRolesError{Guild: expected}
 	actual := mnr.InGuild()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestMaxNumberOfRoles_ForMember(t *testing.T) {
@@ -407,10 +377,7 @@ func TestMaxNumberOfRoles_ForMember(t *testing.T) {
 	mnr := &callbacks.MaxNumberOfRolesError{Member: expected}
 	actual := mnr.ForMember()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestMaxNumberOfRoles_InChannel(t *testing.T) {
@@ -420,10 +387,7 @@ func TestMaxNumberOfRoles_InChannel(t *testing.T) {
 	mnr := &callbacks.MaxNumberOfRolesError{Channel: expected}
 	actual := mnr.InChannel()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestDeadlineExceeded_Is(t *testing.T) {
@@ -491,10 +455,7 @@ func TestDeadlineExceeded_InGuild(t *testing.T) {
 	mnr := &callbacks.DeadlineExceededError{Guild: expected}
 	actual := mnr.InGuild()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestDeadlineExceeded_ForMember(t *testing.T) {
@@ -504,10 +465,7 @@ func TestDeadlineExceeded_ForMember(t *testing.T) {
 	mnr := &callbacks.DeadlineExceededError{Member: expected}
 	actual := mnr.ForMember()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, expected, actual)
 }
 
 func TestDeadlineExceeded_InChannel(t *testing.T) {
@@ -517,20 +475,5 @@ func TestDeadlineExceeded_InChannel(t *testing.T) {
 	mnr := &callbacks.DeadlineExceededError{Channel: expected}
 	actual := mnr.InChannel()
 
-	err := deepEqual(actual, expected)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func deepEqual(actual, expected interface{}) error {
-	if !reflect.DeepEqual(actual, expected) {
-		return fmt.Errorf(
-			"unexpected result. Got: %+v, Expected: %+v",
-			actual,
-			expected,
-		)
-	}
-
-	return nil
+	require.Equal(t, expected, actual)
 }
