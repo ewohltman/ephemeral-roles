@@ -3,10 +3,11 @@ package callbacks_test
 import (
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
@@ -19,30 +20,21 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 	t.Parallel()
 
 	jaegerTracer, jaegerCloser, err := tracer.New("test")
-	if err != nil {
-		t.Fatalf("Error creating Jaeger tracer: %s", err)
-	}
+	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		closeErr := jaegerCloser.Close()
-		if closeErr != nil {
-			t.Errorf("Error closing Jaeger tracer: %s", err)
-		}
+		assert.NoError(t, jaegerCloser.Close())
 	})
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	log := mock.NewLogger()
 
 	handler := &callbacks.Handler{
 		Log:                     log,
-		BotName:                 testBotName,
 		RolePrefix:              rolePrefix,
 		JaegerTracer:            jaegerTracer,
-		ContextTimeout:          time.Second,
 		VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(&monitor.Config{Log: log}),
 		OperationsGateway:       operations.NewGateway(session),
 	}

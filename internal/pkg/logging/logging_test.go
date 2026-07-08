@@ -9,6 +9,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/kz/discordrus"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
@@ -26,9 +28,7 @@ func TestLogger_WrappedLogger(t *testing.T) {
 
 	log := testLogger().WrappedLogger()
 
-	if log == nil {
-		t.Fatal("Unexpected nil wrapped *logrus.Logger")
-	}
+	require.NotNil(t, log)
 }
 
 func TestLogger_UpdateLevel(t *testing.T) {
@@ -48,18 +48,14 @@ func TestLogger_UpdateLevel(t *testing.T) {
 	for _, testLevel := range testLevels {
 		log.UpdateLevel(testLevel.String())
 
-		if log.Logger.Level != testLevel {
-			t.Error(updateError)
-		}
+		assert.Equal(t, testLevel, log.Logger.Level, updateError)
 	}
 
 	log.DiscordrusWebHookURL = ""
 
 	log.UpdateLevel(logrus.DebugLevel.String())
 
-	if log.Logger.Level != logrus.DebugLevel {
-		t.Error(updateError)
-	}
+	assert.Equal(t, logrus.DebugLevel, log.Logger.Level, updateError)
 }
 
 func TestLogger_UpdateDiscordrus(t *testing.T) {
@@ -72,22 +68,14 @@ func TestLogger_UpdateDiscordrus(t *testing.T) {
 	log.DiscordrusWebHookURL = ""
 	log.UpdateDiscordrus()
 
-	if len(log.Logger.Hooks) != 0 {
-		t.Errorf("Unexpected number of hooks: %d", len(log.Logger.Hooks))
-	}
+	assert.Empty(t, log.Logger.Hooks)
 
 	log.DiscordrusWebHookURL = expected
 	log.UpdateDiscordrus()
 
 	hook := log.Logger.Hooks[logrus.InfoLevel][0].(*discordrus.Hook)
 
-	if hook.WebhookURL != expected {
-		t.Errorf(
-			"Unexpected webhook URL: %s, expected: %s",
-			hook.WebhookURL,
-			expected,
-		)
-	}
+	assert.Equal(t, expected, hook.WebhookURL)
 }
 
 func TestLogger_DiscordGoLogf(t *testing.T) {
@@ -123,26 +111,16 @@ func TestLocale_Format(t *testing.T) {
 	}
 
 	_, err := locale.Format(log.Entry)
-	if err != nil {
-		t.Errorf("Error formating entry: %s", err)
-	}
+	require.NoError(t, err)
 
 	locale.Location = time.UTC
 
 	actualFormat, err := locale.Format(log.Entry)
-	if err != nil {
-		t.Fatalf("Error formating entry: %s", err)
-	}
+	require.NoError(t, err)
 
 	actualFormatString := strings.TrimSpace(string(actualFormat))
 
-	if actualFormatString != expectedFormat {
-		t.Fatalf(
-			"Unexpected format. Got: %s, Expected: %s",
-			string(actualFormat),
-			expectedFormat,
-		)
-	}
+	assert.Equal(t, expectedFormat, actualFormatString)
 }
 
 func testLogger() *logging.Logger {

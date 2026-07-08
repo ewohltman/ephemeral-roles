@@ -5,6 +5,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 )
@@ -13,9 +15,7 @@ func TestMembers_Monitor(t *testing.T) {
 	t.Parallel()
 
 	mockSession, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	log := mock.NewLogger()
 

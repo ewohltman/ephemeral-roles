@@ -10,6 +10,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
@@ -38,9 +40,7 @@ const duplicateRequests = 5
 func TestNewGateway(t *testing.T) {
 	t.Parallel()
 
-	if operations.NewGateway(nil) == nil {
-		t.Error("unexpected nil queue")
-	}
+	assert.NotNil(t, operations.NewGateway(nil))
 }
 
 func TestGateway_Process(t *testing.T) {
@@ -49,9 +49,7 @@ func TestGateway_Process(t *testing.T) {
 	roleNames := []string{mockconstants.TestRole, mockconstants.TestRole + "2"}
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	gateway := operations.NewGateway(session)
 	waitGroup := &sync.WaitGroup{}
@@ -73,28 +71,20 @@ func TestLookupGuild(t *testing.T) {
 	t.Parallel()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	_, err = operations.LookupGuild(session, mockconstants.TestGuild)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	_, err = operations.LookupGuild(session, mockconstants.TestGuildLarge)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 }
 
 func TestAddRoleToMember(t *testing.T) {
 	t.Parallel()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	getSession := func() *discordgo.Session { return session }
 
@@ -105,9 +95,7 @@ func TestRemoveRoleFromMember(t *testing.T) {
 	t.Parallel()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	getSession := func() *discordgo.Session { return session }
 
@@ -117,13 +105,8 @@ func TestRemoveRoleFromMember(t *testing.T) {
 func TestIsDeadlineExceeded(t *testing.T) {
 	t.Parallel()
 
-	if operations.IsDeadlineExceeded(io.EOF) {
-		t.Errorf("Unexpected success")
-	}
-
-	if !operations.IsDeadlineExceeded(&callbacks.DeadlineExceededError{Err: context.DeadlineExceeded}) {
-		t.Errorf("Unexpected failure")
-	}
+	assert.False(t, operations.IsDeadlineExceeded(io.EOF))
+	assert.True(t, operations.IsDeadlineExceeded(&callbacks.DeadlineExceededError{Err: context.DeadlineExceeded}))
 }
 
 func TestIsForbiddenResponse(t *testing.T) {
@@ -167,11 +150,7 @@ func TestIsForbiddenResponse(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := operations.IsForbiddenResponse(testCase.err)
-
-			if actual != testCase.expected {
-				t.Errorf("unexpected forbidden response: %t", actual)
-			}
+			assert.Equal(t, testCase.expected, operations.IsForbiddenResponse(testCase.err))
 		})
 	}
 }
@@ -179,59 +158,40 @@ func TestIsForbiddenResponse(t *testing.T) {
 func TestIsMaxGuildsResponse(t *testing.T) {
 	t.Parallel()
 
-	if operations.IsMaxGuildsResponse(io.EOF) {
-		t.Errorf("Unexpected success")
-	}
+	assert.False(t, operations.IsMaxGuildsResponse(io.EOF))
 
 	maxGuildsResponse := &discordgo.RESTError{
 		Response: &http.Response{StatusCode: http.StatusBadRequest},
 		Message:  &discordgo.APIErrorMessage{Code: operations.APIErrorCodeMaxRoles},
 	}
 
-	if !operations.IsMaxGuildsResponse(maxGuildsResponse) {
-		t.Errorf("Unexpected failure")
-	}
+	assert.True(t, operations.IsMaxGuildsResponse(maxGuildsResponse))
 }
 
 func TestShouldLogDebug(t *testing.T) {
 	t.Parallel()
 
-	if operations.ShouldLogDebug(io.EOF) {
-		t.Errorf("Unexpected success")
-	}
-
-	if !operations.ShouldLogDebug(&callbacks.DeadlineExceededError{Err: context.DeadlineExceeded}) {
-		t.Errorf("Unexpected failure")
-	}
+	assert.False(t, operations.ShouldLogDebug(io.EOF))
+	assert.True(t, operations.ShouldLogDebug(&callbacks.DeadlineExceededError{Err: context.DeadlineExceeded}))
 }
 
 func TestBotHasChannelPermission(t *testing.T) {
 	t.Parallel()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	testChannelWithPermission, err := session.State.Channel(mockconstants.TestChannel)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	testChannelWithoutPermission, err := session.State.Channel(mockconstants.TestPrivateChannel)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	err = operations.BotHasChannelPermission(session, testChannelWithPermission)
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	err = operations.BotHasChannelPermission(session, testChannelWithoutPermission)
-	if err == nil {
-		t.Error("unexpected nil error")
-	}
+	require.Error(t, err)
 }
 
 func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
@@ -246,9 +206,7 @@ func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
 			RoleName: "",
 		},
 	})
-	if (err != nil) != true {
-		t.Errorf("unexpected success for request type %q", requestType)
-	}
+	require.Error(t, err, "unexpected success for request type %q", requestType)
 }
 
 func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
@@ -261,9 +219,7 @@ func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway,
 			RoleName: roleName,
 		},
 	})
-	if (err != nil) != false {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 }
 
 func runTest(gateway callbacks.OperationsGateway, request *operations.Request) error {
@@ -346,15 +302,9 @@ func roleForMember(
 
 	switch add {
 	case true:
-		err := operations.AddRoleToMember(session, guildID, userID, roleID)
-		if err != nil {
-			t.Errorf("unexpected error adding role to member: %s", err)
-		}
+		require.NoError(t, operations.AddRoleToMember(session, guildID, userID, roleID))
 	case false:
-		err := operations.RemoveRoleFromMember(session, guildID, userID, roleID)
-		if err != nil {
-			t.Errorf("unexpected error removing role from member: %s", err)
-		}
+		require.NoError(t, operations.RemoveRoleFromMember(session, guildID, userID, roleID))
 	}
 }
 

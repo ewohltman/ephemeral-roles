@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
@@ -13,9 +14,7 @@ func TestNewLogger(t *testing.T) {
 
 	log := mock.NewLogger()
 
-	if log == nil {
-		t.Fatal("unexpected nil Logger")
-	}
+	require.NotNil(t, log)
 }
 
 func TestLogger_WrappedLogger(t *testing.T) {
@@ -23,9 +22,7 @@ func TestLogger_WrappedLogger(t *testing.T) {
 
 	log := mock.NewLogger().WrappedLogger()
 
-	if log == nil {
-		t.Fatal("unexpected nil wrapped *logrus.Logger")
-	}
+	require.NotNil(t, log)
 }
 
 func TestLogger_UpdateLevel(t *testing.T) {

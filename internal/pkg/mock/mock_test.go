@@ -5,8 +5,9 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 )
@@ -20,30 +21,15 @@ func TestNewMirrorRoundTripper(t *testing.T) {
 	reqBody := bytes.NewReader(reqBodyContent)
 
 	req, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, "", reqBody)
-	if err != nil {
-		t.Fatalf("Error creating test request: %s", err)
-	}
+	require.NoError(t, err)
 
 	resp, err := mirror.RoundTrip(req)
-	if err != nil {
-		t.Fatalf("Error performing round trip: %s", err)
-	}
+	require.NoError(t, err)
 
 	respBodyContent, err := io.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatalf("Error reading test response body: %s", err)
-	}
+	require.NoError(t, err)
 
-	err = resp.Body.Close()
-	if err != nil {
-		t.Fatalf("Error closing test response body: %s", err)
-	}
+	require.NoError(t, resp.Body.Close())
 
-	if !reflect.DeepEqual(respBodyContent, reqBodyContent) {
-		t.Fatalf(
-			"Unexpected response body content. Expected: %s, Got: %s",
-			string(reqBodyContent),
-			string(respBodyContent),
-		)
-	}
+	require.Equal(t, reqBodyContent, respBodyContent)
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
@@ -14,15 +15,12 @@ func TestHandler_Ready(t *testing.T) {
 	t.Parallel()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	log := mock.NewLogger()
 
 	handler := &callbacks.Handler{
 		Log:          log,
-		BotName:      testBotName,
 		RolePrefix:   "testRolePrefix",
 		ReadyCounter: monitor.ReadyCounter(&monitor.Config{Log: log}),
 	}

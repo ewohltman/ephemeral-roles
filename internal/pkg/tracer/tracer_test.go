@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
@@ -26,58 +27,36 @@ func TestRoundTripperFunc_RoundTrip(t *testing.T) {
 	mirrorRT := mock.NewMirrorRoundTripper()
 
 	respBodyContent, err := doRoundTrip(mirrorRT, reqBody)
-	if err != nil {
-		t.Fatalf("Error performing round trip: %s", err)
-	}
+	require.NoError(t, err)
 
-	if !reflect.DeepEqual(respBodyContent, reqBodyContent) {
-		t.Fatalf(
-			"Unexpected response body content. Expected: %s, Got: %s",
-			string(reqBodyContent),
-			string(respBodyContent),
-		)
-	}
+	assert.Equal(t, reqBodyContent, respBodyContent)
 }
 
 func TestNew(t *testing.T) {
 	t.Parallel()
 
 	testTracer, closer, err := newTestTracer()
-	if err != nil {
-		t.Fatalf("Error creating test tracer: %s", err)
-	}
+	require.NoError(t, err)
 
 	defer func() {
-		closeErr := closer.Close()
-		if closeErr != nil {
-			t.Errorf("Error closing test tracer: %s", err)
-		}
+		assert.NoError(t, closer.Close())
 	}()
 
-	if testTracer == nil {
-		t.Fatal("Unexpected nil tracer")
-	}
+	require.NotNil(t, testTracer)
 }
 
 func TestRoundTripper(t *testing.T) {
 	t.Parallel()
 
 	jaegerTracer, closer, err := newTestTracer()
-	if err != nil {
-		t.Fatalf("Error creating test tracer: %s", err)
-	}
+	require.NoError(t, err)
 
 	defer func() {
-		closeErr := closer.Close()
-		if closeErr != nil {
-			t.Errorf("Error closing test tracer: %s", err)
-		}
+		assert.NoError(t, closer.Close())
 	}()
 
 	_, err = doRoundTrip(tracer.RoundTripper(jaegerTracer, "", mock.NewMirrorRoundTripper()), nil)
-	if err != nil {
-		t.Fatalf("Error performing round trip: %s", err)
-	}
+	require.NoError(t, err)
 }
 
 func doRoundTrip(roundTripper http.RoundTripper, reqBody io.Reader) ([]byte, error) {

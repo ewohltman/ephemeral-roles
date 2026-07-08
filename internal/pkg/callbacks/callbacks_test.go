@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 )
@@ -21,7 +22,5 @@ func TestHandler_RoleNameFromChannel(t *testing.T) {
 	expected := fmt.Sprintf("%s %s", rolePrefix, mockconstants.TestChannel)
 	actual := handler.RoleNameFromChannel(mockconstants.TestChannel)
 
-	if actual != expected {
-		t.Errorf("unexpected role name: %s", actual)
-	}
+	assert.Equal(t, expected, actual)
 }
