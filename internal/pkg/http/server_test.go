@@ -52,7 +52,7 @@ func TestNewServer(t *testing.T) {
 	testRootEndpoint(t, client)
 	testGuildsEndpoint(t, client)
 
-	ctx, cancelContext := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancelContext := context.WithTimeout(t.Context(), time.Second)
 	defer cancelContext()
 
 	require.NoError(t, testServer.Shutdown(ctx))

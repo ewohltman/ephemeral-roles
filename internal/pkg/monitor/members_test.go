@@ -27,7 +27,7 @@ func TestMembers_Monitor(t *testing.T) {
 		Cache:           &monitor.MembersCache{Mutex: &sync.Mutex{}},
 	}
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
+	ctx, cancelCtx := context.WithTimeout(t.Context(), testTimeout)
 	defer cancelCtx()
 
 	go func() {

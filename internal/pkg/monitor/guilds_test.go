@@ -29,7 +29,7 @@ func TestGuilds_Monitor(t *testing.T) {
 		Cache:           &monitor.GuildsCache{Mutex: &sync.Mutex{}},
 	}
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
+	ctx, cancelCtx := context.WithTimeout(t.Context(), testTimeout)
 	defer cancelCtx()
 
 	go func() {

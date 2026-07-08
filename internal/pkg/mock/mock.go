@@ -31,7 +31,6 @@ func NewMirrorRoundTripper() http.RoundTripper {
 		if req.Body == nil {
 			resp.ContentLength = 0
 			resp.Body = io.NopCloser(bytes.NewReader([]byte{}))
-
 			return resp, nil
 		}
 
@@ -40,8 +39,7 @@ func NewMirrorRoundTripper() http.RoundTripper {
 			return nil, err
 		}
 
-		err = req.Body.Close()
-		if err != nil {
+		if err := req.Body.Close(); err != nil {
 			return nil, err
 		}
 

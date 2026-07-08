@@ -41,7 +41,7 @@ func TestMonitor(t *testing.T) {
 	session, err := mock.NewSession()
 	require.NoError(t, err)
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
+	ctx, cancelCtx := context.WithTimeout(t.Context(), testTimeout)
 	defer cancelCtx()
 
 	monitor.NewMetrics(&monitor.Config{

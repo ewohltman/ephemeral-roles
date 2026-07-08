@@ -149,7 +149,6 @@ func TestIsForbiddenResponse(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-
 			assert.Equal(t, testCase.expected, operations.IsForbiddenResponse(testCase.err))
 		})
 	}
@@ -187,11 +186,8 @@ func TestBotHasChannelPermission(t *testing.T) {
 	testChannelWithoutPermission, err := session.State.Channel(mockconstants.TestPrivateChannel)
 	require.NoError(t, err)
 
-	err = operations.BotHasChannelPermission(session, testChannelWithPermission)
-	require.NoError(t, err)
-
-	err = operations.BotHasChannelPermission(session, testChannelWithoutPermission)
-	require.Error(t, err)
+	require.NoError(t, operations.BotHasChannelPermission(session, testChannelWithPermission))
+	require.Error(t, operations.BotHasChannelPermission(session, testChannelWithoutPermission))
 }
 
 func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
@@ -212,19 +208,17 @@ func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
 func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
 	t.Helper()
 
-	err := runTest(gateway, &operations.Request{
+	require.NoError(t, runTest(gateway, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
 			Guild:    &discordgo.Guild{ID: mockconstants.TestGuild},
 			RoleName: roleName,
 		},
-	})
-	require.NoError(t, err)
+	}))
 }
 
 func runTest(gateway callbacks.OperationsGateway, request *operations.Request) error {
 	result := <-gateway.Process(request)
-
 	return result.Err
 }
 
@@ -276,7 +270,6 @@ func addNewRoleToMember(
 	guildID, userID, roleID string,
 ) {
 	t.Helper()
-
 	roleForMember(t, getSession, guildID, userID, roleID, true)
 }
 
@@ -286,7 +279,6 @@ func removeRoleFromMember(
 	guildID, userID, roleID string,
 ) {
 	t.Helper()
-
 	roleForMember(t, getSession, guildID, userID, roleID, false)
 }
 
@@ -314,7 +306,6 @@ func runRoleForMemberTestCases(t *testing.T, testCases []*roleForMemberTestCase)
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-
 			testCase.testFunc(t, testCase.getSession, testCase.guildID, testCase.userID, testCase.roleID)
 		})
 	}

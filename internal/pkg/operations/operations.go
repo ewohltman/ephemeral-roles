@@ -58,7 +58,7 @@ type CreateRoleRequest struct {
 
 // Gateway is a centralized construct to process operation requests by
 // de-duplicating identical simultaneous requests and providing the result to
-// all of the callers.
+// all the callers.
 type Gateway struct {
 	Session *discordgo.Session
 	group   *singleflight.Group
@@ -131,8 +131,7 @@ func AddRoleToMember(session *discordgo.Session, guildID, userID, roleID string)
 // from the user associated with the provided userID, in the guild associated
 // with the provided guildID.
 func RemoveRoleFromMember(session *discordgo.Session, guildID, userID, roleID string) error {
-	err := session.GuildMemberRoleRemove(guildID, userID, roleID)
-	if err != nil {
+	if err := session.GuildMemberRoleRemove(guildID, userID, roleID); err != nil {
 		return fmt.Errorf("unable to remove ephemeral role: %w", err)
 	}
 
@@ -224,8 +223,7 @@ func updateStateGuilds(session *discordgo.Session, guildID string) (*discordgo.G
 	guild.Members = members
 	guild.MemberCount = len(members)
 
-	err = session.State.GuildAdd(guild)
-	if err != nil {
+	if err := session.State.GuildAdd(guild); err != nil {
 		return nil, fmt.Errorf("unable to add guild to state cache: %w", err)
 	}
 
@@ -248,8 +246,7 @@ func createRole(
 		return nil, fmt.Errorf("unable to create ephemeral role: %w", err)
 	}
 
-	err = session.State.RoleAdd(guild.ID, role)
-	if err != nil {
+	if err := session.State.RoleAdd(guild.ID, role); err != nil {
 		return nil, fmt.Errorf("unable to add ephemeral role to state cache: %w", err)
 	}
 
