@@ -60,8 +60,8 @@ The startup log (`/tmp/er-driver.log`) shows the core role flow — a member
 joining a voice channel triggers create + assign:
 
 ```
-BEFORE: guild roles=2, member roles=[testRole(testRo), {eph} testChannel({eph} )]
-AFTER:  guild roles=3, member roles=[<unnamed>(VlKZOR), testRole(testRo), {eph} testChannel({eph} )]
+time=... level=INFO msg="BEFORE: guild roles=2, member roles=[testRole(testRo), {eph} testChannel({eph} )]"
+time=... level=INFO msg="AFTER:  guild roles=3, member roles=[<unnamed>(VlKZOR), testRole(testRo), {eph} testChannel({eph} )]"
 ```
 
 Verified endpoint output:
@@ -94,7 +94,7 @@ out to Discord's gateway — it exits immediately in this container:
 
 ```bash
 BOT_TOKEN=fake ./build/package/ephemeral-roles/ephemeral-roles
-# -> level=fatal msg="Error starting Discord session" error="websocket: close 4004: Authentication failed."
+# -> fatal error: error starting Discord session: websocket: close 4004: Authentication failed.
 ```
 
 Not usable headless; use the driver instead.

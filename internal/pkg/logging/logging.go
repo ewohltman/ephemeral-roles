@@ -168,8 +168,7 @@ func (l *Logger) build() {
 	l.Logger = slogLogger
 }
 
-// replaceAttr rewrites the record timestamp into the configured location,
-// replacing the timezone handling the logrus formatter previously provided.
+// replaceAttr rewrites the record timestamp into the configured location.
 func (l *Logger) replaceAttr(_ []string, attr slog.Attr) slog.Attr {
 	if l.location != nil && attr.Key == slog.TimeKey && attr.Value.Kind() == slog.KindTime {
 		attr.Value = slog.TimeValue(attr.Value.Time().In(l.location))

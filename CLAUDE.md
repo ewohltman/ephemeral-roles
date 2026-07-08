@@ -28,7 +28,7 @@ Run a single test package/test the normal Go way, e.g.:
 go test ./internal/pkg/callbacks/... -run TestHandler_VoiceStateUpdate -race
 ```
 
-CI (`.github/workflows/pullRequest.yml`) runs `make tidy`, `make vet`, `golangci-lint` (v2.3 action), `make test`,
+CI (`.github/workflows/pullRequest.yml`) runs `make tidy`, `make vet`, `golangci-lint` (golangci-lint-action v9, golangci-lint v2.12.2), `make test`,
 `make build`, `make image` on every PR targeting non-master branches. `pullRequestMaster.yml` covers PRs into
 master. Development happens on `develop` (the repo's default branch); contributions target `develop` per
 CONTRIBUTING.md, and merges to `master` auto-deploy.
@@ -39,7 +39,7 @@ Entry point: `cmd/ephemeral-roles/ephemeral-roles.go`. On startup it: parses env
 see `environmentVariables` struct), derives a shard ID from `INSTANCE_NAME` (expects a trailing
 `-<N>` from the StatefulSet pod name), builds a `logging.Logger`, a Jaeger tracer, an HTTP client wrapped
 with tracing middleware, opens the `discordgo.Session`, registers callback handlers, starts Prometheus
-monitoring goroutines, and starts the HTTP server. Shutdown is on SIGTERM.
+monitoring goroutines, and starts the HTTP server. Shutdown is on SIGINT/SIGTERM.
 
 Package layout under `internal/pkg/`:
 
@@ -62,15 +62,19 @@ Package layout under `internal/pkg/`:
   update Prometheus gauges/counters (guild count, member count, Ready/VoiceStateUpdate event totals),
   namespaced `ephemeral_roles`.
 - **http** — the bot's own HTTP server (`NewServer`): `/` health root, `/guilds` (JSON list of guilds
-  sorted by member count), `/metrics` (Prometheus), and pprof endpoints. Also provides an outbound
-  `http.Client`/`RoundTripper` wrapping helper (`WrapTransport`) used to attach the Jaeger tracing
-  round tripper to Discord API calls.
-- **logging** — wraps `logrus`; `Interface` is the logging abstraction passed around the codebase
-  (not `*logrus.Logger` directly). Supports runtime log-level updates and an optional Discordrus webhook
-  hook for posting logs to a Discord channel. Also adapts `discordgo`'s own logger to this interface.
+  sorted by member count), `/metrics` (Prometheus), and pprof endpoints. Also provides the outbound
+  `http.Client`/`http.Transport` constructors (`NewClient`, `NewTransport`) for Discord API calls — the
+  Jaeger tracing round tripper is layered on via `tracer.RoundTripper` in `cmd` — plus `ErrorLogger`, an
+  `slog`-backed `*log.Logger` used for the server's `ErrorLog`.
+- **logging** — wraps the standard library `log/slog`. `New` returns a `*Logger` (embedding
+  `*slog.Logger`) built on a custom fan-out `slog.Handler` that writes to stdout and, when a webhook URL
+  is configured, also to Discord via `github.com/Bufferoverflovv/slog-discord`. Supports runtime
+  log-level updates (through a shared `slog.LevelVar`), a configurable timezone (a `ReplaceAttr` hook),
+  and adapts `discordgo`'s own logger through `DiscordGoLogf`. A concrete `*slog.Logger` (not an
+  interface) is passed around the codebase.
 - **tracer** — Jaeger/OpenTracing setup and an `http.RoundTripper` middleware that wraps outbound calls
   in spans.
-- **mock** — test doubles: a mirror `RoundTripper`, a fake `logging.Interface` logger, and (`session.go`)
+- **mock** — test doubles: a mirror `RoundTripper`, a discarding `*slog.Logger` (`NewLogger`), and (`session.go`)
   a pre-populated `*discordgo.Session` builder built on the separate `github.com/ewohltman/discordgo-mock`
   module (guild/role/member/channel/state mocks), used across `_test.go` files instead of hitting the
   real Discord API.
@@ -84,7 +88,7 @@ graph.
 - Errors are wrapped with `%w` and typed where callers need to branch on them (see `callbacks/errors.go`
   for the pattern: struct holds context like `Guild`/`Member`/`Channel` plus `Err`, implements
   `Error()`/`Is()`/`Unwrap()`).
-- `logging.Interface` is threaded through constructors rather than a global logger.
+- A concrete `*slog.Logger` is threaded through constructors rather than a global logger.
 - golangci-lint runs with `default: all` linters and an explicit `disable` list in `.golangci.yml` — when
   adding code, prefer satisfying the stricter defaults (e.g. `wsl_v5` whitespace/cuddling rules, `cyclop`/
   `gocyclo` complexity limits of 15, `funlen` of 100 lines/50 statements, `lll` at 140 chars) rather than
