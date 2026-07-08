@@ -7,24 +7,20 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 )
 
-const (
-	wrapMsg               = "wrapped error"
-	invalidErrorAssertion = "Invalid error assertion"
-)
+const wrapMsg = "wrapped error"
 
 func TestRoleNotFound_Error(t *testing.T) {
 	t.Parallel()
 
 	rnf := &callbacks.RoleNotFoundError{}
 
-	if rnf.Error() == "" {
-		t.Error("unexpected empty error message")
-	}
+	assert.NotEmpty(t, rnf.Error())
 }
 
 func TestMemberNotFound_Is(t *testing.T) {
@@ -32,17 +28,9 @@ func TestMemberNotFound_Is(t *testing.T) {
 
 	mnf := &callbacks.MemberNotFoundError{}
 
-	if errors.Is(nil, &callbacks.MemberNotFoundError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if errors.Is(errors.New(wrapMsg), &callbacks.MemberNotFoundError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if !errors.Is(mnf, &callbacks.MemberNotFoundError{}) {
-		t.Error(invalidErrorAssertion)
-	}
+	require.NotErrorIs(t, nil, &callbacks.MemberNotFoundError{})
+	require.NotErrorIs(t, errors.New(wrapMsg), &callbacks.MemberNotFoundError{})
+	require.ErrorIs(t, mnf, &callbacks.MemberNotFoundError{})
 }
 
 func TestMemberNotFound_Unwrap(t *testing.T) {
@@ -52,15 +40,7 @@ func TestMemberNotFound_Unwrap(t *testing.T) {
 
 	mnf := &callbacks.MemberNotFoundError{Err: wrappedErr}
 
-	unwrappedErr := mnf.Unwrap()
-
-	if !errors.Is(unwrappedErr, wrappedErr) {
-		t.Errorf(
-			"Unexpected wrapped error. Got %s, Expected: %s",
-			unwrappedErr,
-			wrappedErr,
-		)
-	}
+	require.ErrorIs(t, mnf.Unwrap(), wrappedErr)
 }
 
 func TestMemberNotFound_Error(t *testing.T) {
@@ -69,24 +49,12 @@ func TestMemberNotFound_Error(t *testing.T) {
 	mnf := &callbacks.MemberNotFoundError{}
 	expectedErrMsg := callbacks.MemberNotFoundMessage
 
-	if mnf.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			mnf.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, mnf, expectedErrMsg)
 
 	mnf.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
-	if mnf.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			mnf.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, mnf, expectedErrMsg)
 }
 
 func TestMemberNotFound_InGuild(t *testing.T) {
@@ -126,17 +94,9 @@ func TestChannelNotFound_Is(t *testing.T) {
 
 	cnf := &callbacks.ChannelNotFoundError{}
 
-	if errors.Is(nil, &callbacks.ChannelNotFoundError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if errors.Is(errors.New(wrapMsg), &callbacks.ChannelNotFoundError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if !errors.Is(cnf, &callbacks.ChannelNotFoundError{}) {
-		t.Error(invalidErrorAssertion)
-	}
+	require.NotErrorIs(t, nil, &callbacks.ChannelNotFoundError{})
+	require.NotErrorIs(t, errors.New(wrapMsg), &callbacks.ChannelNotFoundError{})
+	require.ErrorIs(t, cnf, &callbacks.ChannelNotFoundError{})
 }
 
 func TestChannelNotFound_Unwrap(t *testing.T) {
@@ -146,15 +106,7 @@ func TestChannelNotFound_Unwrap(t *testing.T) {
 
 	cnf := &callbacks.ChannelNotFoundError{Err: wrappedErr}
 
-	unwrappedErr := cnf.Unwrap()
-
-	if !errors.Is(unwrappedErr, wrappedErr) {
-		t.Errorf(
-			"Unexpected wrapped error. Got %s, Expected: %s",
-			unwrappedErr,
-			wrappedErr,
-		)
-	}
+	require.ErrorIs(t, cnf.Unwrap(), wrappedErr)
 }
 
 func TestChannelNotFound_Error(t *testing.T) {
@@ -163,24 +115,12 @@ func TestChannelNotFound_Error(t *testing.T) {
 	cnf := &callbacks.ChannelNotFoundError{}
 	expectedErrMsg := callbacks.ChannelNotFoundMessage
 
-	if cnf.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			cnf.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, cnf, expectedErrMsg)
 
 	cnf.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
-	if cnf.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			cnf.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, cnf, expectedErrMsg)
 }
 
 func TestChannelNotFound_InGuild(t *testing.T) {
@@ -219,17 +159,9 @@ func TestInsufficientPermission_Is(t *testing.T) {
 
 	inp := &callbacks.InsufficientPermissionsError{}
 
-	if errors.Is(nil, &callbacks.InsufficientPermissionsError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if errors.Is(errors.New(wrapMsg), &callbacks.InsufficientPermissionsError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if !errors.Is(inp, &callbacks.InsufficientPermissionsError{}) {
-		t.Error(invalidErrorAssertion)
-	}
+	require.NotErrorIs(t, nil, &callbacks.InsufficientPermissionsError{})
+	require.NotErrorIs(t, errors.New(wrapMsg), &callbacks.InsufficientPermissionsError{})
+	require.ErrorIs(t, inp, &callbacks.InsufficientPermissionsError{})
 }
 
 func TestInsufficientPermission_Unwrap(t *testing.T) {
@@ -237,13 +169,7 @@ func TestInsufficientPermission_Unwrap(t *testing.T) {
 
 	inp := &callbacks.InsufficientPermissionsError{}
 
-	unwrappedErr := inp.Unwrap()
-	if unwrappedErr != nil {
-		t.Errorf(
-			"Unexpected wrapped error. Got %s, Expected: nil",
-			unwrappedErr,
-		)
-	}
+	require.NoError(t, inp.Unwrap())
 }
 
 func TestInsufficientPermission_Error(t *testing.T) {
@@ -252,24 +178,12 @@ func TestInsufficientPermission_Error(t *testing.T) {
 	inp := &callbacks.InsufficientPermissionsError{}
 	expectedErrMsg := callbacks.InsufficientPermissionMessage
 
-	if inp.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			inp.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, inp, expectedErrMsg)
 
 	inp.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
-	if inp.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			inp.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, inp, expectedErrMsg)
 }
 
 func TestInsufficientPermissions_InGuild(t *testing.T) {
@@ -307,17 +221,9 @@ func TestMaxNumberOfRoles_Is(t *testing.T) {
 
 	mnr := &callbacks.MaxNumberOfRolesError{}
 
-	if errors.Is(nil, &callbacks.MaxNumberOfRolesError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if errors.Is(errors.New(wrapMsg), &callbacks.MaxNumberOfRolesError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if !errors.Is(mnr, &callbacks.MaxNumberOfRolesError{}) {
-		t.Error(invalidErrorAssertion)
-	}
+	require.NotErrorIs(t, nil, &callbacks.MaxNumberOfRolesError{})
+	require.NotErrorIs(t, errors.New(wrapMsg), &callbacks.MaxNumberOfRolesError{})
+	require.ErrorIs(t, mnr, &callbacks.MaxNumberOfRolesError{})
 }
 
 func TestMaxNumberOfRoles_Unwrap(t *testing.T) {
@@ -325,13 +231,7 @@ func TestMaxNumberOfRoles_Unwrap(t *testing.T) {
 
 	mnr := &callbacks.MaxNumberOfRolesError{}
 
-	unwrappedErr := mnr.Unwrap()
-	if unwrappedErr != nil {
-		t.Errorf(
-			"Unexpected wrapped error. Got %s, Expected: nil",
-			unwrappedErr,
-		)
-	}
+	require.NoError(t, mnr.Unwrap())
 }
 
 func TestMaxNumberOfRoles_Error(t *testing.T) {
@@ -340,24 +240,12 @@ func TestMaxNumberOfRoles_Error(t *testing.T) {
 	mnr := &callbacks.MaxNumberOfRolesError{}
 	expectedErrMsg := callbacks.MaxNumberOfRolesMessage
 
-	if mnr.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			mnr.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, mnr, expectedErrMsg)
 
 	mnr.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
-	if mnr.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			mnr.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, mnr, expectedErrMsg)
 }
 
 func TestMaxNumberOfRoles_InGuild(t *testing.T) {
@@ -395,17 +283,9 @@ func TestDeadlineExceeded_Is(t *testing.T) {
 
 	mnr := &callbacks.DeadlineExceededError{}
 
-	if errors.Is(nil, &callbacks.DeadlineExceededError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if errors.Is(errors.New(wrapMsg), &callbacks.DeadlineExceededError{}) {
-		t.Error(invalidErrorAssertion)
-	}
-
-	if !errors.Is(mnr, &callbacks.DeadlineExceededError{}) {
-		t.Error(invalidErrorAssertion)
-	}
+	require.NotErrorIs(t, nil, &callbacks.DeadlineExceededError{})
+	require.NotErrorIs(t, errors.New(wrapMsg), &callbacks.DeadlineExceededError{})
+	require.ErrorIs(t, mnr, &callbacks.DeadlineExceededError{})
 }
 
 func TestDeadlineExceeded_Unwrap(t *testing.T) {
@@ -413,13 +293,7 @@ func TestDeadlineExceeded_Unwrap(t *testing.T) {
 
 	mnr := &callbacks.DeadlineExceededError{}
 
-	unwrappedErr := mnr.Unwrap()
-	if unwrappedErr != nil {
-		t.Errorf(
-			"Unexpected wrapped error. Got %s, Expected: nil",
-			unwrappedErr,
-		)
-	}
+	require.NoError(t, mnr.Unwrap())
 }
 
 func TestDeadlineExceeded_Error(t *testing.T) {
@@ -428,24 +302,12 @@ func TestDeadlineExceeded_Error(t *testing.T) {
 	mnr := &callbacks.DeadlineExceededError{}
 	expectedErrMsg := callbacks.DeadlineExceededMessage
 
-	if mnr.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			mnr.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, mnr, expectedErrMsg)
 
 	mnr.Err = errors.New(wrapMsg)
 	expectedErrMsg = fmt.Sprintf("%s: %s", expectedErrMsg, wrapMsg)
 
-	if mnr.Error() != expectedErrMsg {
-		t.Errorf(
-			"Unexpected error message. Got %s, Expected: %s",
-			mnr.Error(),
-			expectedErrMsg,
-		)
-	}
+	require.EqualError(t, mnr, expectedErrMsg)
 }
 
 func TestDeadlineExceeded_InGuild(t *testing.T) {

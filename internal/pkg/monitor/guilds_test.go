@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
@@ -16,9 +17,7 @@ func TestGuilds_Monitor(t *testing.T) {
 	t.Parallel()
 
 	mockSession, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	log := mock.NewLogger()
 
@@ -30,7 +29,7 @@ func TestGuilds_Monitor(t *testing.T) {
 		Cache:           &monitor.GuildsCache{Mutex: &sync.Mutex{}},
 	}
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
+	ctx, cancelCtx := context.WithTimeout(t.Context(), testTimeout)
 	defer cancelCtx()
 
 	go func() {

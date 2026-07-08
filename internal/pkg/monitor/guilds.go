@@ -2,18 +2,17 @@ package monitor
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
 // Guilds contains fields for monitoring the guilds the bot belongs to.
 type Guilds struct {
-	Log             logging.Interface
+	Log             *slog.Logger
 	Session         *discordgo.Session
 	Interval        time.Duration
 	PrometheusGauge prometheus.Gauge
@@ -34,10 +33,10 @@ func (guilds *Guilds) Monitor(ctx context.Context) {
 
 	for {
 		select {
-		case <-updateTicker.C:
-			guilds.update()
 		case <-ctx.Done():
 			return
+		case <-updateTicker.C:
+			guilds.update()
 		}
 	}
 }
@@ -55,7 +54,7 @@ func (guilds *Guilds) update() {
 	case newCount > originalCount && originalCount != 0:
 		botName := guilds.Session.State.User.Username
 		newGuild := guilds.Session.State.Guilds[newCount-1]
-		guilds.Log.WithField("guild", newGuild.Name).Info(botName + " joined new guild")
+		guilds.Log.Info(botName+" joined new guild", "guild", newGuild.Name)
 	case newCount < originalCount:
 		botName := guilds.Session.State.User.Username
 		guilds.Log.Info(botName + " removed from guild")

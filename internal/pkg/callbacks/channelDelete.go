@@ -16,8 +16,7 @@ func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *disco
 
 	guild, err := session.State.Guild(channel.GuildID)
 	if err != nil {
-		handler.Log.WithError(err).Error(channelDeleteEventError)
-
+		handler.Log.Error(channelDeleteEventError, "error", err)
 		return
 	}
 
@@ -26,17 +25,13 @@ func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *disco
 			continue
 		}
 
-		err = session.GuildRoleDelete(channel.GuildID, role.ID)
-		if err != nil {
-			handler.Log.WithError(err).Error(channelDeleteEventError)
-
+		if err := session.GuildRoleDelete(channel.GuildID, role.ID); err != nil {
+			handler.Log.Error(channelDeleteEventError, "error", err)
 			return
 		}
 
-		err = session.State.RoleRemove(channel.GuildID, role.ID)
-		if err != nil && !errors.Is(err, discordgo.ErrStateNotFound) {
-			handler.Log.WithError(err).Error(channelDeleteEventError)
-
+		if err := session.State.RoleRemove(channel.GuildID, role.ID); err != nil && !errors.Is(err, discordgo.ErrStateNotFound) {
+			handler.Log.Error(channelDeleteEventError, "error", err)
 			return
 		}
 

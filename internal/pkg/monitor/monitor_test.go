@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 )
@@ -19,9 +22,7 @@ func TestMetrics(t *testing.T) {
 	t.Parallel()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	metrics := monitor.NewMetrics(&monitor.Config{
 		Log:      mock.NewLogger(),
@@ -29,28 +30,18 @@ func TestMetrics(t *testing.T) {
 		Interval: testMonitorInterval,
 	})
 
-	if metrics == nil {
-		t.Fatal("Unexpected nil metrics")
-	}
-
-	if metrics.ReadyCounter == nil {
-		t.Error("Unexpected nil Ready counter")
-	}
-
-	if metrics.VoiceStateUpdateCounter == nil {
-		t.Error("Unexpected nil VoiceStateUpdate counter")
-	}
+	require.NotNil(t, metrics)
+	assert.NotNil(t, metrics.ReadyCounter)
+	assert.NotNil(t, metrics.VoiceStateUpdateCounter)
 }
 
 func TestMonitor(t *testing.T) {
 	t.Parallel()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	ctx, cancelCtx := context.WithTimeout(context.Background(), testTimeout)
+	ctx, cancelCtx := context.WithTimeout(t.Context(), testTimeout)
 	defer cancelCtx()
 
 	monitor.NewMetrics(&monitor.Config{

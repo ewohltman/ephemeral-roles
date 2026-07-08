@@ -1,18 +1,20 @@
-// Package logging provides a logrus logging implementation. Configuration
-// is determined via environment variables upon startup and logging level may
-// be changed at runtime.
+// Package logging provides a log/slog logging implementation. Configuration is
+// determined via environment variables upon startup and the logging level may
+// be changed at runtime. Logs are written to stdout and, when a Discord webhook
+// is configured, to Discord as well.
 package logging
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/kz/discordrus"
-	"github.com/sirupsen/logrus"
+	slogdiscord "github.com/Bufferoverflovv/slog-discord"
 )
 
 // Logging level strings.
@@ -35,213 +37,228 @@ const (
 	FatalColor   = 13631488
 )
 
-// Interface wraps the logrus.FieldLogger interface and includes custom
-// methods.
-type Interface interface {
-	logrus.FieldLogger
-	WrappedLogger() *logrus.Logger
-	UpdateLevel(level string)
-	UpdateDiscordrus()
-	DiscordGoLogf(discordgoLevel, caller int, format string, arguments ...any)
-}
-
 // OptionFunc is used to configure options for a *Logger.
 type OptionFunc func(*Logger)
 
-// Logger wraps a *logrus.Logger instance and provides custom methods.
+// Logger owns the slog logging configuration and exposes an embedded
+// *slog.Logger that fans out to stdout and, when configured, a Discord webhook.
 type Logger struct {
-	*logrus.Entry
+	*slog.Logger
 
-	Location             *time.Location
-	DiscordrusWebHookURL string
-	mutex                *sync.Mutex
+	level       *slog.LevelVar
+	location    *time.Location
+	webhookURL  string
+	baseAttrs   []any
+	badTimezone string
+	output      io.Writer
 }
 
 // New returns a new *Logger instance configured with the OptionFunc arguments
 // provided.
 func New(options ...OptionFunc) *Logger {
-	localeFormatter := &Locale{
-		Location:  time.UTC,
-		Formatter: &logrus.TextFormatter{},
+	log := &Logger{
+		level:    &slog.LevelVar{},
+		location: time.UTC,
+		output:   os.Stdout,
 	}
 
-	logger := &Logger{
-		Entry: logrus.NewEntry(&logrus.Logger{
-			Out:       os.Stdout,
-			Hooks:     make(logrus.LevelHooks),
-			Formatter: localeFormatter,
-			Level:     logrus.InfoLevel,
-		}),
-		Location: localeFormatter.Location,
-		mutex:    &sync.Mutex{},
-	}
+	log.level.Set(slog.LevelInfo)
 
 	for _, option := range options {
-		option(logger)
+		option(log)
 	}
 
-	return logger
+	log.build()
+
+	if log.badTimezone != "" {
+		log.Warn("error parsing timezone location", "location", log.badTimezone)
+	}
+
+	return log
 }
 
 // OptionalOutput returns an OptionFunc to configure a *Logger to set where log
 // messages should output to.
 func OptionalOutput(output io.Writer) OptionFunc {
-	return func(logger *Logger) {
-		logger.Logger.SetOutput(output)
+	return func(log *Logger) {
+		log.output = output
 	}
 }
 
 // OptionalShardID returns an OptionFunc to configure a *Logger to include a
 // shardID field.
 func OptionalShardID(shardID int) OptionFunc {
-	return func(logger *Logger) {
-		logger.Entry = logger.WithField("shardID", shardID)
+	return func(log *Logger) {
+		log.baseAttrs = append(log.baseAttrs, slog.Int("shardID", shardID))
 	}
 }
 
 // OptionalLogLevel returns an OptionFunc to configure a *Logger log level.
 func OptionalLogLevel(logLevel string) OptionFunc {
-	return func(logger *Logger) {
-		logger.UpdateLevel(logLevel)
-		logger.UpdateDiscordrus()
+	return func(log *Logger) {
+		log.level.Set(parseLevel(logLevel))
 	}
 }
 
 // OptionalTimezoneLocation returns an OptionFunc to configure a *Logger
 // timezone location.
 func OptionalTimezoneLocation(timezoneLocation string) OptionFunc {
-	return func(logger *Logger) {
-		logger.Location = parseTimezoneLocation(logger, timezoneLocation)
+	return func(log *Logger) {
+		location, err := time.LoadLocation(timezoneLocation)
+		if err != nil {
+			log.badTimezone = timezoneLocation
+			log.location = time.UTC
+			return
+		}
 
-		logger.Logger.Formatter = &Locale{
-			Location:  logger.Location,
-			Formatter: &logrus.TextFormatter{},
+		log.location = location
+	}
+}
+
+// OptionalDiscordWebhook returns an OptionFunc to configure a *Logger to also
+// log to a Discord webhook URL.
+func OptionalDiscordWebhook(webhookURL string) OptionFunc {
+	return func(log *Logger) {
+		log.webhookURL = webhookURL
+	}
+}
+
+// UpdateLevel allows for runtime updates of the logging level. It adjusts the
+// stdout handler live; the Discord handler keeps its startup level.
+func (l *Logger) UpdateLevel(level string) {
+	l.level.Set(parseLevel(level))
+}
+
+// DiscordGoLogf is an adapter for plugging into DiscordGo's logging system. All
+// discordgo log levels are emitted at debug so they only surface when debug
+// logging is enabled.
+func (l *Logger) DiscordGoLogf(_, _ int, format string, arguments ...any) {
+	l.Debug(fmt.Sprintf(format, arguments...))
+}
+
+// build (re)constructs the fan-out *slog.Logger from the current configuration.
+func (l *Logger) build() {
+	handlers := []slog.Handler{
+		slog.NewTextHandler(l.output, &slog.HandlerOptions{
+			Level:       l.level,
+			ReplaceAttr: l.replaceAttr,
+		}),
+	}
+
+	if l.webhookURL != "" {
+		handlers = append(handlers, slogdiscord.NewDiscordHandler(slogdiscord.DiscordWebhookConfig{
+			WebhookURL: l.webhookURL,
+			MinLevel:   l.level.Level(),
+			LevelColors: slogdiscord.LevelColors{
+				slog.LevelDebug.String(): DebugColor,
+				slog.LevelInfo.String():  InfoColor,
+				slog.LevelWarn.String():  WarningColor,
+				slog.LevelError.String(): ErrorColor,
+			},
+			CustomEmbed: discordEmbed,
+		}))
+	}
+
+	slogLogger := slog.New(&fanoutHandler{handlers: handlers})
+
+	if len(l.baseAttrs) > 0 {
+		slogLogger = slogLogger.With(l.baseAttrs...)
+	}
+
+	l.Logger = slogLogger
+}
+
+// replaceAttr rewrites the record timestamp into the configured location.
+func (l *Logger) replaceAttr(_ []string, attr slog.Attr) slog.Attr {
+	if l.location != nil && attr.Key == slog.TimeKey && attr.Value.Kind() == slog.KindTime {
+		attr.Value = slog.TimeValue(attr.Value.Time().In(l.location))
+	}
+
+	return attr
+}
+
+// fanoutHandler is a slog.Handler that dispatches each record to every wrapped
+// handler, so a single logger can write to both stdout and Discord.
+type fanoutHandler struct {
+	handlers []slog.Handler
+}
+
+// Enabled reports whether any wrapped handler is enabled for the level.
+func (f *fanoutHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, handler := range f.handlers {
+		if handler.Enabled(ctx, level) {
+			return true
 		}
 	}
+
+	return false
 }
 
-// OptionalDiscordrus returns an OptionFunc to configure a *Logger to use a
-// Discordrus webhook URL.
-func OptionalDiscordrus(webhookURL string) OptionFunc {
-	return func(logger *Logger) {
-		logger.DiscordrusWebHookURL = webhookURL
-		logger.UpdateDiscordrus()
-	}
-}
+// Handle dispatches the record to every wrapped handler that is enabled for it.
+//
+//nolint:gocritic // slog.Handler requires slog.Record to be passed by value.
+func (f *fanoutHandler) Handle(ctx context.Context, record slog.Record) error {
+	var errs []error
 
-// WrappedLogger returns the wrapped *logrus.Logger instance.
-func (logger *Logger) WrappedLogger() *logrus.Logger {
-	logger.mutex.Lock()
-	defer logger.mutex.Unlock()
+	for _, handler := range f.handlers {
+		if !handler.Enabled(ctx, record.Level) {
+			continue
+		}
 
-	return logger.Logger
-}
-
-// UpdateLevel allows for runtime updates of the logging level.
-func (logger *Logger) UpdateLevel(level string) {
-	logger.mutex.Lock()
-	defer logger.mutex.Unlock()
-
-	logger.Logger.SetLevel(parseLevel(level))
-}
-
-// UpdateDiscordrus updates the Discordrus integration to use the *Logger
-// configuration.
-func (logger *Logger) UpdateDiscordrus() {
-	logger.mutex.Lock()
-	defer logger.mutex.Unlock()
-
-	if logger.DiscordrusWebHookURL == "" {
-		logger.Logger.Hooks = make(logrus.LevelHooks)
-
-		return
+		if err := handler.Handle(ctx, record.Clone()); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
-	logger.Logger.Hooks = make(logrus.LevelHooks)
-
-	logger.Logger.AddHook(
-		discordrus.NewHook(
-			logger.DiscordrusWebHookURL,
-			logger.Logger.Level,
-			&discordrus.Opts{
-				EnableCustomColors: true,
-				CustomLevelColors: &discordrus.LevelColors{
-					Debug: DebugColor,
-					Info:  InfoColor,
-					Warn:  WarningColor,
-					Error: ErrorColor,
-					Panic: PanicColor,
-					Fatal: FatalColor,
-				},
-				TimestampFormat: "Jan 2 15:04:05.00000 MST",
-				TimestampLocale: logger.Location,
-			},
-		),
-	)
+	return errors.Join(errs...)
 }
 
-// DiscordGoLogf is an adapter for plugging into DiscordGo's logging system.
-func (logger *Logger) DiscordGoLogf(discordgoLevel, _ int, format string, arguments ...any) {
-	logger.mutex.Lock()
-	defer logger.mutex.Unlock()
+// WithAttrs returns a new fanoutHandler with the attributes applied to each
+// wrapped handler.
+func (f *fanoutHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	handlers := make([]slog.Handler, len(f.handlers))
 
-	switch discordgoLevel {
-	case discordgo.LogError:
-		logger.Debugf(format, arguments...)
-	case discordgo.LogWarning:
-		logger.Debugf(format, arguments...)
-	case discordgo.LogInformational:
-		logger.Debugf(format, arguments...)
-	case discordgo.LogDebug:
-		logger.Debugf(format, arguments...)
-	}
-}
-
-// Locale is used for formatting logs for a locale.
-type Locale struct {
-	*time.Location
-	logrus.Formatter
-}
-
-// Format satisfies the logrus.Formatter interface.
-func (locale *Locale) Format(log *logrus.Entry) ([]byte, error) {
-	if locale.Location == nil {
-		return locale.Formatter.Format(log)
+	for i, handler := range f.handlers {
+		handlers[i] = handler.WithAttrs(attrs)
 	}
 
-	log.Time = log.Time.In(locale.Location)
-
-	return locale.Formatter.Format(log)
+	return &fanoutHandler{handlers: handlers}
 }
 
-func parseTimezoneLocation(logger *Logger, location string) *time.Location {
-	timezoneLocation, err := time.LoadLocation(location)
-	if err != nil {
-		logger.WithError(err).Warnf("Error parsing timezone location: %s", location)
+// WithGroup returns a new fanoutHandler with the group applied to each wrapped
+// handler.
+func (f *fanoutHandler) WithGroup(name string) slog.Handler {
+	handlers := make([]slog.Handler, len(f.handlers))
 
-		return time.UTC
+	for i, handler := range f.handlers {
+		handlers[i] = handler.WithGroup(name)
 	}
 
-	return timezoneLocation
+	return &fanoutHandler{handlers: handlers}
 }
 
-func parseLevel(level string) logrus.Level {
-	logLevel := logrus.InfoLevel
+// discordEmbed builds the Discord embed for a record. The library's default
+// embed drops the log message, so it is set as the embed description here.
+//
+//nolint:gocritic // slogdiscord.CustomEmbed requires slog.Record by value.
+func discordEmbed(record slog.Record, levelColors slogdiscord.LevelColors) *slogdiscord.DiscordEmbed {
+	embed := slogdiscord.DefaultEmbed(record, levelColors)
+	embed.Description = record.Message
 
+	return embed
+}
+
+func parseLevel(level string) slog.Level {
 	switch strings.ToLower(strings.TrimSpace(level)) {
 	case DebugLevel:
-		logLevel = logrus.DebugLevel
+		return slog.LevelDebug
 	case InfoLevel:
-		logLevel = logrus.InfoLevel
+		return slog.LevelInfo
 	case WarningLevel:
-		logLevel = logrus.WarnLevel
-	case ErrorLevel:
-		logLevel = logrus.ErrorLevel
-	case FatalLevel:
-		logLevel = logrus.FatalLevel
-	case PanicLevel:
-		logLevel = logrus.PanicLevel
+		return slog.LevelWarn
+	case ErrorLevel, FatalLevel, PanicLevel:
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
 	}
-
-	return logLevel
 }

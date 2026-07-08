@@ -3,7 +3,6 @@
 package tracer
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -44,15 +43,10 @@ func New(serviceName string) (opentracing.Tracer, io.Closer, error) {
 		},
 	}
 
-	tracer, closer, err := cfg.NewTracer(
+	return cfg.NewTracer(
 		config.Logger(jaeger.NullLogger),
 		config.Metrics(metrics.NullFactory),
 	)
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not initialize Jaeger tracer: %w", err)
-	}
-
-	return tracer, closer, nil
 }
 
 // RoundTripper is http.RoundTripper middleware to add Jaeger tracing to all
@@ -73,7 +67,6 @@ func RoundTripper(jaegerTracer opentracing.Tracer, instanceName string, next htt
 		resp, err := next.RoundTrip(req.Clone(traceCtx))
 		if err != nil {
 			span.SetTag("error", err.Error())
-
 			return resp, err
 		}
 

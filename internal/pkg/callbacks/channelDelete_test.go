@@ -2,10 +2,10 @@ package callbacks_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
@@ -15,38 +15,26 @@ func TestHandler_ChannelDelete(t *testing.T) {
 	t.Parallel()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	log := mock.NewLogger()
 
 	handler := &callbacks.Handler{
-		Log:            log,
-		BotName:        testBotName,
-		RolePrefix:     rolePrefix,
-		ContextTimeout: time.Second,
+		Log:        log,
+		RolePrefix: rolePrefix,
 	}
 
 	guild, err := session.State.Guild(mockconstants.TestGuild)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	channel, err := session.State.Channel(mockconstants.TestChannel)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if !foundRole(handler, guild, channel) {
-		t.Fatalf("Unable to find ephemeral role for channel %s", channel.Name)
-	}
+	require.True(t, foundRole(handler, guild, channel), "Unable to find ephemeral role for channel %s", channel.Name)
 
 	handler.ChannelDelete(session, &discordgo.ChannelDelete{Channel: channel})
 
-	if foundRole(handler, guild, channel) {
-		t.Fatalf("Ephemeral role remains for channel %s", channel.Name)
-	}
+	require.False(t, foundRole(handler, guild, channel), "Ephemeral role remains for channel %s", channel.Name)
 }
 
 func foundRole(handler *callbacks.Handler, guild *discordgo.Guild, channel *discordgo.Channel) bool {

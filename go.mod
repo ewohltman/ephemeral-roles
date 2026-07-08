@@ -3,18 +3,15 @@ module github.com/ewohltman/ephemeral-roles
 go 1.26.0
 
 require (
+	github.com/Bufferoverflovv/slog-discord v1.0.0
 	github.com/bwmarrin/discordgo v0.29.0
-	github.com/caarlos0/env/v9 v9.0.0
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/ewohltman/discordgo-mock v0.0.11
-	github.com/json-iterator/go v1.1.12
-	github.com/kz/discordrus v1.3.0
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible
-	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/sync v0.21.0
 )
 
@@ -26,8 +23,6 @@ require (
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

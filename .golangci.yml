@@ -36,6 +36,8 @@ linters:
       line-length: 140
     misspell:
       locale: US
+    nlreturn:
+      block-size: 4
     wsl_v5:
       allow-first-in-block: true
       allow-whole-block: false

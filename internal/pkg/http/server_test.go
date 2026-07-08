@@ -2,15 +2,15 @@ package http_test
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"net/http"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	jsoniter "github.com/json-iterator/go"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
@@ -22,11 +22,8 @@ const (
 
 	serverStartupDelay = 50 * time.Millisecond
 
-	expectedGuildsFile = "testdata/guilds.json"
+	expectedGuildsFilePath = "testdata/guilds.json"
 )
-
-//nolint:gochecknoglobals // override stdlib json package
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func TestNewServer(t *testing.T) {
 	t.Parallel()
@@ -34,9 +31,7 @@ func TestNewServer(t *testing.T) {
 	log := mock.NewLogger()
 
 	session, err := mock.NewSession()
-	if err != nil {
-		t.Fatalf("Error obtaining mock session: %s", err)
-	}
+	require.NoError(t, err)
 
 	session.State.Guilds = append(
 		session.State.Guilds,
@@ -47,10 +42,7 @@ func TestNewServer(t *testing.T) {
 	testServer := internalHTTP.NewServer(log, session, testPort)
 
 	go func() {
-		serverErr := testServer.ListenAndServe()
-		if !errors.Is(serverErr, http.ErrServerClosed) {
-			t.Errorf("Test server error: %s", serverErr)
-		}
+		assert.ErrorIs(t, testServer.ListenAndServe(), http.ErrServerClosed)
 	}()
 
 	time.Sleep(serverStartupDelay)
@@ -60,66 +52,39 @@ func TestNewServer(t *testing.T) {
 	testRootEndpoint(t, client)
 	testGuildsEndpoint(t, client)
 
-	ctx, cancelContext := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancelContext := context.WithTimeout(t.Context(), time.Second)
 	defer cancelContext()
 
-	err = testServer.Shutdown(ctx)
-	if err != nil {
-		t.Errorf("Error closing test server: %s", err)
-	}
+	require.NoError(t, testServer.Shutdown(ctx))
 }
 
 func testRootEndpoint(t *testing.T, client *http.Client) {
 	t.Helper()
 
-	resp, err := doContextRequest(context.Background(), client, testURL+internalHTTP.RootEndpoint)
-	if err != nil {
-		t.Fatal(err)
-	}
+	resp, err := doRequest(t.Context(), client, testURL+internalHTTP.RootEndpoint)
+	require.NoError(t, err)
 
-	err = drainCloseResponse(resp)
-	if err != nil {
-		t.Fatal(err)
-	}
+	drainCloseResponse(resp)
 }
 
 func testGuildsEndpoint(t *testing.T, client *http.Client) {
 	t.Helper()
 
-	expectedGuildsBytes, err := os.ReadFile(expectedGuildsFile)
-	if err != nil {
-		t.Fatal(err)
-	}
+	expectedGuildsFile, err := os.Open(expectedGuildsFilePath)
+	require.NoError(t, err)
+
+	defer func() { _ = expectedGuildsFile.Close() }()
 
 	expectedGuilds := make(internalHTTP.SortableGuilds, 0)
+	require.NoError(t, json.NewDecoder(expectedGuildsFile).Decode(&expectedGuilds))
 
-	err = json.Unmarshal(expectedGuildsBytes, &expectedGuilds)
-	if err != nil {
-		t.Fatalf("Error unmarshaling expected guild data: %s", err)
-	}
+	resp, err := doRequest(t.Context(), client, testURL+internalHTTP.GuildsEndpoint)
+	require.NoError(t, err)
 
-	resp, err := doContextRequest(context.Background(), client, testURL+internalHTTP.GuildsEndpoint)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	actualGuildsBytes, err := readCloseResponse(resp)
-	if err != nil {
-		t.Fatal(err)
-	}
+	defer func() { _ = resp.Body.Close() }()
 
 	actualGuilds := make(internalHTTP.SortableGuilds, 0)
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&actualGuilds))
 
-	err = json.Unmarshal(actualGuildsBytes, &actualGuilds)
-	if err != nil {
-		t.Fatalf("Error unmarshaling actual guild data: %s", err)
-	}
-
-	if !reflect.DeepEqual(actualGuilds, expectedGuilds) {
-		t.Errorf(
-			"Unexpected response:\nGot:\n%s\n\nExpected:\n%s",
-			string(actualGuildsBytes),
-			string(expectedGuildsBytes),
-		)
-	}
+	assert.Equal(t, expectedGuilds, actualGuilds)
 }

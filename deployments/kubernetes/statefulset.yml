@@ -20,7 +20,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ephemeral-roles
-          image: ewohltman/ephemeral-roles:v1.13.0
+          image: ewohltman/ephemeral-roles:v1.14.0
           imagePullPolicy: Always
           env:
             - name: SHARD_COUNT
@@ -42,7 +42,7 @@ spec:
                 secretKeyRef:
                   name: ephemeral-roles
                   key: bot-token
-            - name: DISCORDRUS_WEBHOOK_URL
+            - name: DISCORD_WEBHOOK_URL
               valueFrom:
                 secretKeyRef:
                   name: ephemeral-roles
@@ -50,11 +50,6 @@ spec:
           ports:
             - name: http
               containerPort: 8081
-          resources:
-            limits:
-              memory: "512Mi"
-            requests:
-              memory: "512Mi"
         - name: jaeger-agent
           image: jaegertracing/jaeger-agent:1.37.0
           imagePullPolicy: IfNotPresent
@@ -74,13 +69,6 @@ spec:
             - containerPort: 14271
               name: admin-http
               protocol: TCP
-          resources:
-            limits:
-              cpu: "100m"
-              memory: "256Mi"
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
           env:
             - name: POD_NAME
               valueFrom:

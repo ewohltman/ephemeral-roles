@@ -3,12 +3,12 @@ package callbacks
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"sort"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/sirupsen/logrus"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
@@ -36,15 +36,12 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 	metadata, err := handler.parseEvent(session, voiceState)
 	if err != nil {
 		handler.handleParseEventError(session, err)
-
 		return
 	}
 
-	log := handler.Log.WithFields(
-		logrus.Fields{
-			"guild":  metadata.Guild.Name,
-			"member": metadata.Member.User.Username,
-		},
+	log := handler.Log.With(
+		"guild", metadata.Guild.Name,
+		"member", metadata.Member.User.Username,
 	)
 
 	if metadata.EphemeralRole != nil {
@@ -53,24 +50,21 @@ func (handler *Handler) VoiceStateUpdate(session *discordgo.Session, voiceState 
 		}
 	}
 
-	err = handler.removeEphemeralRoles(metadata)
-	if err != nil {
-		log.WithError(err).Error(voiceStateUpdateEventError)
+	if err := handler.removeEphemeralRoles(metadata); err != nil {
+		log.Error(voiceStateUpdateEventError, "error", err)
 	}
 
 	if metadata.Channel == nil {
 		return
 	}
 
-	err = handler.addEphemeralRole(metadata)
-	if err != nil {
+	if err := handler.addEphemeralRole(metadata); err != nil {
 		if operations.ShouldLogDebug(err) {
-			log.WithError(err).Debug(voiceStateUpdateEventError)
-
+			log.Debug(voiceStateUpdateEventError, "error", err)
 			return
 		}
 
-		log.WithError(err).Error(voiceStateUpdateEventError)
+		log.Error(voiceStateUpdateEventError, "error", err)
 
 		return
 	}
@@ -167,7 +161,7 @@ func (handler *Handler) handleParseEventError(session *discordgo.Session, err er
 	case errors.As(err, &deadlineExceededErr):
 		handler.logParseEventError(deadlineExceededErr)
 	default:
-		handler.Log.WithError(err).Error(voiceStateUpdateEventError)
+		handler.Log.Error(voiceStateUpdateEventError, "error", err)
 	}
 }
 
@@ -177,7 +171,7 @@ func (handler *Handler) logCleanup(session *discordgo.Session, callbackError Cal
 }
 
 func (handler *Handler) logParseEventError(callbackError CallbackError) {
-	handler.newCallbackErrorLogger(callbackError).WithError(callbackError).Debug(voiceStateUpdateEventError)
+	handler.newCallbackErrorLogger(callbackError).Debug(voiceStateUpdateEventError, "error", callbackError)
 }
 
 func (handler *Handler) cleanupParseEventError(session *discordgo.Session, callbackError CallbackError) {
@@ -191,28 +185,27 @@ func (handler *Handler) cleanupParseEventError(session *discordgo.Session, callb
 		return
 	}
 
-	err := handler.removeEphemeralRoles(metadata)
-	if err != nil {
-		handler.newCallbackErrorLogger(callbackError).WithError(err).Debug(voiceStateUpdateEventError)
+	if err := handler.removeEphemeralRoles(metadata); err != nil {
+		handler.newCallbackErrorLogger(callbackError).Debug(voiceStateUpdateEventError, "error", err)
 	}
 }
 
-func (handler *Handler) newCallbackErrorLogger(callbackError CallbackError) *logrus.Entry {
-	log := logrus.NewEntry(handler.Log.WrappedLogger())
+func (handler *Handler) newCallbackErrorLogger(callbackError CallbackError) *slog.Logger {
+	log := handler.Log
 
 	guild := callbackError.InGuild()
 	if guild != nil {
-		log = log.WithField("guild", guild.Name)
+		log = log.With("guild", guild.Name)
 	}
 
 	member := callbackError.ForMember()
 	if member != nil {
-		log = log.WithField("member", member.User.Username)
+		log = log.With("member", member.User.Username)
 	}
 
 	channel := callbackError.InChannel()
 	if channel != nil {
-		log = log.WithField("channel", channel.Name)
+		log = log.With("channel", channel.Name)
 	}
 
 	return log
@@ -282,16 +275,7 @@ func (handler *Handler) removeEphemeralRoles(metadata *voiceStateUpdateMetadata)
 	var err error
 
 	for _, roleID := range metadata.Member.Roles {
-		removeError := handler.removeEphemeralRole(metadata, roleID)
-		if removeError != nil {
-			if err == nil {
-				err = removeError
-
-				continue
-			}
-
-			err = fmt.Errorf("%w: %w", err, removeError)
-		}
+		err = errors.Join(err, handler.removeEphemeralRole(metadata, roleID))
 	}
 
 	return err
@@ -311,8 +295,7 @@ func (handler *Handler) removeEphemeralRole(metadata *voiceStateUpdateMetadata, 
 		return nil
 	}
 
-	err = operations.RemoveRoleFromMember(metadata.Session, metadata.Guild.ID, metadata.Member.User.ID, role.ID)
-	if err != nil {
+	if err := operations.RemoveRoleFromMember(metadata.Session, metadata.Guild.ID, metadata.Member.User.ID, role.ID); err != nil {
 		if !operations.IsForbiddenResponse(err) {
 			return err
 		}
