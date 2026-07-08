@@ -20,7 +20,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: ephemeral-roles
-          image: ewohltman/ephemeral-roles:v1.13.0
+          image: ewohltman/ephemeral-roles:v1.14.0
           imagePullPolicy: Always
           env:
             - name: SHARD_COUNT
