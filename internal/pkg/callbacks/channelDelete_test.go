@@ -23,8 +23,8 @@ func TestHandler_ChannelDelete(t *testing.T) {
 
 	handler := &callbacks.Handler{
 		Log:            log,
-		BotName:        "testBot",
-		RolePrefix:     "{eph}",
+		BotName:        testBotName,
+		RolePrefix:     rolePrefix,
 		ContextTimeout: time.Second,
 	}
 

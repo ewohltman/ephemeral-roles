@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go list *)",
+      "Bash(make tidy)",
+      "Bash(make fmt)",
+      "Bash(make vet)",
+      "Bash(make lint)",
+      "Bash(make test)",
+      "Bash(make build)",
+      "Bash(make nochanges)"
+    ]
+  }
+}

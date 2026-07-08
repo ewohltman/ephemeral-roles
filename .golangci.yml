@@ -5,6 +5,7 @@ linters:
     - depguard
     - err113
     - exhaustruct
+    - gomodguard
     - ireturn
     - noinlineerr
     - nonamedreturns
@@ -53,7 +54,6 @@ linters:
           - gocyclo
           - gosec
           - lll
-          - nosnakecase
     paths:
       - .idea
       - builtin$

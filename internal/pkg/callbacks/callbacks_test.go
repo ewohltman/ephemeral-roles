@@ -9,7 +9,10 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 )
 
-const rolePrefix = "{eph}"
+const (
+	rolePrefix  = "{eph}"
+	testBotName = "testBot"
+)
 
 func TestHandler_RoleNameFromChannel(t *testing.T) {
 	t.Parallel()

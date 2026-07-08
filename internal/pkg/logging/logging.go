@@ -42,7 +42,7 @@ type Interface interface {
 	WrappedLogger() *logrus.Logger
 	UpdateLevel(level string)
 	UpdateDiscordrus()
-	DiscordGoLogf(discordgoLevel, caller int, format string, arguments ...interface{})
+	DiscordGoLogf(discordgoLevel, caller int, format string, arguments ...any)
 }
 
 // OptionFunc is used to configure options for a *Logger.
@@ -181,7 +181,7 @@ func (logger *Logger) UpdateDiscordrus() {
 }
 
 // DiscordGoLogf is an adapter for plugging into DiscordGo's logging system.
-func (logger *Logger) DiscordGoLogf(discordgoLevel, _ int, format string, arguments ...interface{}) {
+func (logger *Logger) DiscordGoLogf(discordgoLevel, _ int, format string, arguments ...any) {
 	logger.mutex.Lock()
 	defer logger.mutex.Unlock()
 

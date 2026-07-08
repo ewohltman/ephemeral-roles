@@ -14,7 +14,7 @@ endif
 
 GOIMPORTS := go tool -modfile=tools/go.mod goimports -local $(MODULE)/ -w
 GOLANGCI_LINT := go tool -modfile=tools/go.mod golangci-lint run ./...
-GOTESTSUM := go tool -modfile=tools/go.mod gotestsum --jsonfile test-report.json -- $(GO_TEST_RACE_FLAG) -coverprofile=coverage.out
+GOTESTSUM := go tool -modfile=tools/go.mod gotestsum --format-icons hivis --jsonfile test-report.json -- $(GO_TEST_RACE_FLAG) -coverprofile=coverage.out
 
 .PHONY: tidy
 tidy:

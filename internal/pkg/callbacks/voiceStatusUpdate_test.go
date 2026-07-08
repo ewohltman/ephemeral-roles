@@ -39,8 +39,8 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 
 	handler := &callbacks.Handler{
 		Log:                     log,
-		BotName:                 "testBot",
-		RolePrefix:              "{eph}",
+		BotName:                 testBotName,
+		RolePrefix:              rolePrefix,
 		JaegerTracer:            jaegerTracer,
 		ContextTimeout:          time.Second,
 		VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(&monitor.Config{Log: log}),

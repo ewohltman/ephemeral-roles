@@ -3,6 +3,7 @@ package callbacks
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -222,9 +223,7 @@ func (*Handler) memberHasRole(member *discordgo.Member, role *discordgo.Role) bo
 
 	copy(memberRoles, member.Roles)
 
-	sort.Slice(memberRoles, func(i, j int) bool {
-		return memberRoles[i] < memberRoles[j]
-	})
+	slices.Sort(memberRoles)
 
 	index := sort.Search(len(memberRoles), func(i int) bool {
 		return memberRoles[i] >= role.ID

@@ -149,10 +149,8 @@ func IsDeadlineExceeded(err error) bool {
 // If it does, IsForbiddenResponse returns true if the response code is equal
 // to http.StatusForbidden.
 func IsForbiddenResponse(err error) bool {
-	var restErr *discordgo.RESTError
-
-	if errors.As(err, &restErr) {
-		if restErr.Response.StatusCode == http.StatusForbidden {
+	if restErr, ok := errors.AsType[*discordgo.RESTError](err); ok {
+		if restErr.Response != nil && restErr.Response.StatusCode == http.StatusForbidden {
 			return true
 		}
 	}
@@ -164,11 +162,9 @@ func IsForbiddenResponse(err error) bool {
 // If it does, IsMaxGuildsResponse returns true if the response code is equal
 // to http.StatusBadRequest and the error code is 30005.
 func IsMaxGuildsResponse(err error) bool {
-	var restErr *discordgo.RESTError
-
-	if errors.As(err, &restErr) {
-		if restErr.Response.StatusCode == http.StatusBadRequest {
-			return restErr.Message.Code == APIErrorCodeMaxRoles
+	if restErr, ok := errors.AsType[*discordgo.RESTError](err); ok {
+		if restErr.Response != nil && restErr.Response.StatusCode == http.StatusBadRequest {
+			return restErr.Message != nil && restErr.Message.Code == APIErrorCodeMaxRoles
 		}
 	}
 
@@ -245,8 +241,8 @@ func createRole(
 	role, err := session.GuildRoleCreate(guild.ID, &discordgo.RoleParams{
 		Name:        roleName,
 		Color:       &roleColor,
-		Hoist:       pointerTo(roleHoist),
-		Mentionable: pointerTo(roleMention),
+		Hoist:       new(roleHoist),
+		Mentionable: new(roleMention),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create ephemeral role: %w", err)
@@ -285,8 +281,4 @@ func recursiveGuildMembers(
 	}
 
 	return append(guildMembers, nextGuildMembers...), nil
-}
-
-func pointerTo[T any](v T) *T {
-	return &v
 }

@@ -22,7 +22,7 @@ func TestHandler_Ready(t *testing.T) {
 
 	handler := &callbacks.Handler{
 		Log:          log,
-		BotName:      "testBot",
+		BotName:      testBotName,
 		RolePrefix:   "testRolePrefix",
 		ReadyCounter: monitor.ReadyCounter(&monitor.Config{Log: log}),
 	}

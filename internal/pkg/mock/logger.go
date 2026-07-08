@@ -42,6 +42,6 @@ func (*Logger) UpdateDiscordrus() {
 }
 
 // DiscordGoLogf is a mock stub of the *logging.Logger DiscordGoLogf method.
-func (*Logger) DiscordGoLogf(_, _ int, _ string, _ ...interface{}) {
+func (*Logger) DiscordGoLogf(_, _ int, _ string, _ ...any) {
 	// Nop
 }
