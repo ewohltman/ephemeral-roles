@@ -14,6 +14,8 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 )
 
+const prometheusNamespace = "ephemeral_roles"
+
 // Config contains fields for configuring Metrics.
 type Config struct {
 	Log      logging.Interface
@@ -79,7 +81,7 @@ func (metrics *Metrics) newMembers() {
 func ReadyCounter(config *Config) prometheus.Counter {
 	prometheusReadyCounter := prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: "ephemeral_roles",
+			Namespace: prometheusNamespace,
 			Name:      "ready_events_total",
 			Help:      "Total Ready events",
 		},
@@ -100,7 +102,7 @@ func ReadyCounter(config *Config) prometheus.Counter {
 func VoiceStateUpdateCounter(config *Config) prometheus.Counter {
 	prometheusVoiceStateUpdateCounter := prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Namespace: "ephemeral_roles",
+			Namespace: prometheusNamespace,
 			Name:      "voice_state_update_events_total",
 			Help:      "Total VoiceStateUpdate events",
 		},
@@ -121,7 +123,7 @@ func VoiceStateUpdateCounter(config *Config) prometheus.Counter {
 func GuildsGauge(config *Config) prometheus.Gauge {
 	prometheusGuildsGauge := prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Namespace: "ephemeral_roles",
+			Namespace: prometheusNamespace,
 			Name:      "guilds",
 			Help:      "Total Guilds count",
 		},
@@ -142,7 +144,7 @@ func GuildsGauge(config *Config) prometheus.Gauge {
 func MembersGauge(config *Config) prometheus.Gauge {
 	prometheusMembersGauge := prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Namespace: "ephemeral_roles",
+			Namespace: prometheusNamespace,
 			Name:      "members",
 			Help:      "Total Members count",
 		},
