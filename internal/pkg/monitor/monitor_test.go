@@ -50,7 +50,7 @@ func TestMonitor(t *testing.T) {
 	ctx, cancelCtx := context.WithTimeout(t.Context(), testTimeout)
 	defer cancelCtx()
 
-	monitor.NewMetrics(&monitor.Config{
+	go monitor.NewMetrics(&monitor.Config{
 		Log:      mock.NewLogger(),
 		Client:   session,
 		Interval: testMonitorInterval,

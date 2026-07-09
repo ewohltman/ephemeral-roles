@@ -78,7 +78,7 @@ func main() {
 		Client:   session,
 		Interval: time.Second,
 	})
-	metrics.Monitor(ctx)
+	go metrics.Monitor(ctx)
 
 	handler := &callbacks.Handler{
 		Log:                     log,

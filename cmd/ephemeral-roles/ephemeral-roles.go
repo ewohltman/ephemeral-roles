@@ -161,7 +161,7 @@ func startSession(
 		return nil, err
 	}
 
-	callbackMetrics.Monitor(ctx)
+	go callbackMetrics.Monitor(ctx)
 
 	return client, nil
 }

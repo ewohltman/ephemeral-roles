@@ -49,23 +49,22 @@ func NewMetrics(config *Config) *Metrics {
 	}
 }
 
-// Monitor starts a goroutine that periodically polls the client cache and
-// updates the guild and member gauges until the context is canceled.
+// Monitor periodically polls the client cache and updates the guild and member
+// gauges until the context is canceled. It blocks, so callers should invoke it
+// in its own goroutine (go metrics.Monitor(ctx)).
 func (metrics *Metrics) Monitor(ctx context.Context) {
-	go func() {
-		updateTicker := time.NewTicker(metrics.Interval)
-		defer updateTicker.Stop()
+	updateTicker := time.NewTicker(metrics.Interval)
+	defer updateTicker.Stop()
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-updateTicker.C:
-				metrics.updateGuilds()
-				metrics.updateMembers()
-			}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-updateTicker.C:
+			metrics.updateGuilds()
+			metrics.updateMembers()
 		}
-	}()
+	}
 }
 
 func (metrics *Metrics) updateGuilds() {
