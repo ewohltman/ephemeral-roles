@@ -1,32 +1,27 @@
 package callbacks_test
 
 import (
+	"context"
+	"io"
+	"net/http"
 	"sync"
 	"testing"
 
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
 func TestHandler_VoiceStateUpdate(t *testing.T) {
 	t.Parallel()
-
-	jaegerTracer, jaegerCloser, err := tracer.New("test")
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		assert.NoError(t, jaegerCloser.Close())
-	})
 
 	session, err := mock.NewSession()
 	require.NoError(t, err)
@@ -36,7 +31,6 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 	handler := &callbacks.Handler{
 		Log:                     log,
 		RolePrefix:              rolePrefix,
-		JaegerTracer:            jaegerTracer,
 		VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(&monitor.Config{Log: log}),
 		OperationsGateway:       operations.NewGateway(session),
 	}
@@ -74,6 +68,67 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 			t.Parallel()
 
 			sendUpdate(mutex, session, handler, &tc.member, tc.channelID)
+		})
+	}
+}
+
+type errorGateway struct {
+	err error
+}
+
+func (gateway *errorGateway) CreateRole(snowflake.ID, string, int) (discord.Role, error) {
+	return discord.Role{}, gateway.err
+}
+
+func TestHandler_VoiceStateUpdate_createRoleErrors(t *testing.T) {
+	t.Parallel()
+
+	log := mock.NewLogger()
+
+	testCases := []struct {
+		err  error
+		name string
+	}{
+		{
+			name: "deadline exceeded",
+			err:  context.DeadlineExceeded,
+		},
+		{
+			name: "forbidden",
+			err:  &rest.Error{Response: &http.Response{StatusCode: http.StatusForbidden}},
+		},
+		{
+			name: "max number of roles",
+			err:  &rest.Error{Code: operations.APIErrorCodeMaxRoles},
+		},
+		{
+			name: "unclassified",
+			err:  io.EOF,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			session, err := mock.NewSession()
+			require.NoError(t, err)
+
+			handler := &callbacks.Handler{
+				Log:                     log,
+				RolePrefix:              rolePrefix,
+				VoiceStateUpdateCounter: monitor.VoiceStateUpdateCounter(&monitor.Config{Log: log}),
+				OperationsGateway:       &errorGateway{err: testCase.err},
+			}
+
+			member, ok := session.Caches.Member(mock.TestGuild, mock.TestUser)
+			require.True(t, ok)
+
+			// mock.TestChannel2 has no pre-existing ephemeral role, forcing
+			// the role-creation path to surface the gateway error.
+			channelID := mock.TestChannel2
+
+			sendUpdate(&sync.Mutex{}, session, handler, &member, &channelID)
 		})
 	}
 }

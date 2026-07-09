@@ -32,9 +32,6 @@ type voiceStateUpdateMetadata struct {
 func (handler *Handler) VoiceStateUpdate(event *events.GuildVoiceStateUpdate) {
 	handler.VoiceStateUpdateCounter.Inc()
 
-	span := handler.JaegerTracer.StartSpan(voiceStateUpdate)
-	defer span.Finish()
-
 	metadata, err := handler.parseEvent(event.Client(), event.VoiceState, &event.Member)
 	if err != nil {
 		handler.handleParseEventError(event.Client(), err)
@@ -46,10 +43,8 @@ func (handler *Handler) VoiceStateUpdate(event *events.GuildVoiceStateUpdate) {
 		"member", metadata.Member.User.Username,
 	)
 
-	if metadata.EphemeralRole != nil {
-		if handler.memberHasRole(metadata.Member, metadata.EphemeralRole) {
-			return
-		}
+	if metadata.EphemeralRole != nil && slices.Contains(metadata.Member.RoleIDs, metadata.EphemeralRole.ID) {
+		return
 	}
 
 	if err := handler.removeEphemeralRoles(metadata); err != nil {
@@ -67,8 +62,6 @@ func (handler *Handler) VoiceStateUpdate(event *events.GuildVoiceStateUpdate) {
 		}
 
 		log.Error(voiceStateUpdateEventError, "error", err)
-
-		return
 	}
 }
 
@@ -92,37 +85,16 @@ func (handler *Handler) parseEvent(
 
 	channel, ok := client.Caches.Channel(*voiceState.ChannelID)
 	if !ok {
-		return nil, &ChannelNotFoundError{
-			Guild:  &guild,
-			Member: member,
-		}
+		return nil, &EventError{Kind: KindChannelNotFound, Guild: &guild, Member: member}
 	}
 
-	err = operations.BotHasChannelPermission(client, channel)
+	if err := operations.BotHasChannelPermission(client, channel); err != nil {
+		return nil, &EventError{Kind: KindInsufficientPermissions, Guild: &guild, Member: member, Channel: channel, Err: err}
+	}
+
+	ephemeralRole, err := handler.ephemeralRoleForChannel(client, &guild, member, channel)
 	if err != nil {
-		return nil, &InsufficientPermissionsError{
-			Guild:   &guild,
-			Member:  member,
-			Channel: channel,
-			Err:     err,
-		}
-	}
-
-	ephemeralRole, err := handler.lookupGuildRole(client, guild.ID, channel)
-	if _, ok := errors.AsType[*RoleNotFoundError](err); ok {
-		ephemeralRole, err = handler.createRole(guild.ID, handler.RoleNameFromChannel(channel.Name()))
-		if err != nil {
-			switch {
-			case operations.IsDeadlineExceeded(err):
-				return nil, &DeadlineExceededError{Guild: &guild, Member: member, Channel: channel, Err: err}
-			case operations.IsForbiddenResponse(err):
-				return nil, &InsufficientPermissionsError{Guild: &guild, Member: member, Channel: channel, Err: err}
-			case operations.IsMaxGuildsResponse(err):
-				return nil, &MaxNumberOfRolesError{Guild: &guild, Member: member, Channel: channel, Err: err}
-			default:
-				return nil, err
-			}
-		}
+		return nil, err
 	}
 
 	return &voiceStateUpdateMetadata{
@@ -134,106 +106,91 @@ func (handler *Handler) parseEvent(
 	}, nil
 }
 
+func (handler *Handler) ephemeralRoleForChannel(
+	client *bot.Client,
+	guild *discord.Guild,
+	member *discord.Member,
+	channel discord.GuildChannel,
+) (*discord.Role, error) {
+	ephemeralRoleName := handler.RoleNameFromChannel(channel.Name())
+
+	if role, ok := lookupGuildRole(client, guild.ID, ephemeralRoleName); ok {
+		return &role, nil
+	}
+
+	role, err := handler.OperationsGateway.CreateRole(guild.ID, ephemeralRoleName, handler.RoleColor)
+	if err != nil {
+		eventErr := &EventError{Guild: guild, Member: member, Channel: channel, Err: err}
+
+		switch {
+		case operations.IsDeadlineExceeded(err):
+			eventErr.Kind = KindDeadlineExceeded
+		case operations.IsForbiddenResponse(err):
+			eventErr.Kind = KindInsufficientPermissions
+		case operations.IsMaxGuildsResponse(err):
+			eventErr.Kind = KindMaxNumberOfRoles
+		default:
+			return nil, err
+		}
+
+		return nil, eventErr
+	}
+
+	return &role, nil
+}
+
 func (handler *Handler) handleParseEventError(client *bot.Client, err error) {
-	if channelNotFoundErr, ok := errors.AsType[*ChannelNotFoundError](err); ok {
-		handler.logCleanup(client, channelNotFoundErr)
-	} else if insufficientPermissionsErr, ok := errors.AsType[*InsufficientPermissionsError](err); ok {
-		handler.logCleanup(client, insufficientPermissionsErr)
-	} else if maxNumberOfRolesErr, ok := errors.AsType[*MaxNumberOfRolesError](err); ok {
-		handler.logCleanup(client, maxNumberOfRolesErr)
-	} else if deadlineExceededErr, ok := errors.AsType[*DeadlineExceededError](err); ok {
-		handler.logParseEventError(deadlineExceededErr)
-	} else {
+	eventErr, ok := errors.AsType[*EventError](err)
+	if !ok {
 		handler.Log.Error(voiceStateUpdateEventError, "error", err)
-	}
-}
-
-func (handler *Handler) logCleanup(client *bot.Client, callbackError CallbackError) {
-	handler.logParseEventError(callbackError)
-	handler.cleanupParseEventError(client, callbackError)
-}
-
-func (handler *Handler) logParseEventError(callbackError CallbackError) {
-	handler.newCallbackErrorLogger(callbackError).Debug(voiceStateUpdateEventError, "error", callbackError)
-}
-
-func (handler *Handler) cleanupParseEventError(client *bot.Client, callbackError CallbackError) {
-	metadata := &voiceStateUpdateMetadata{
-		Client: client,
-		Guild:  callbackError.InGuild(),
-		Member: callbackError.ForMember(),
-	}
-
-	if metadata.Member == nil {
 		return
 	}
 
+	log := handler.newEventErrorLogger(eventErr)
+
+	log.Debug(voiceStateUpdateEventError, "error", eventErr)
+
+	if eventErr.Kind == KindDeadlineExceeded || eventErr.Member == nil {
+		return
+	}
+
+	metadata := &voiceStateUpdateMetadata{
+		Client: client,
+		Guild:  eventErr.Guild,
+		Member: eventErr.Member,
+	}
+
 	if err := handler.removeEphemeralRoles(metadata); err != nil {
-		handler.newCallbackErrorLogger(callbackError).Debug(voiceStateUpdateEventError, "error", err)
+		log.Debug(voiceStateUpdateEventError, "error", err)
 	}
 }
 
-func (handler *Handler) newCallbackErrorLogger(callbackError CallbackError) *slog.Logger {
+func (handler *Handler) newEventErrorLogger(eventErr *EventError) *slog.Logger {
 	log := handler.Log
 
-	guild := callbackError.InGuild()
-	if guild != nil {
-		log = log.With("guild", guild.Name)
+	if eventErr.Guild != nil {
+		log = log.With("guild", eventErr.Guild.Name)
 	}
 
-	member := callbackError.ForMember()
-	if member != nil {
-		log = log.With("member", member.User.Username)
+	if eventErr.Member != nil {
+		log = log.With("member", eventErr.Member.User.Username)
 	}
 
-	channel := callbackError.InChannel()
-	if channel != nil {
-		log = log.With("channel", channel.Name())
+	if eventErr.Channel != nil {
+		log = log.With("channel", eventErr.Channel.Name())
 	}
 
 	return log
 }
 
-func (*Handler) memberHasRole(member *discord.Member, role *discord.Role) bool {
-	return slices.Contains(member.RoleIDs, role.ID)
-}
-
-func (handler *Handler) lookupGuildRole(
-	client *bot.Client,
-	guildID snowflake.ID,
-	channel discord.GuildChannel,
-) (*discord.Role, error) {
-	ephemeralRoleName := handler.RoleNameFromChannel(channel.Name())
-
+func lookupGuildRole(client *bot.Client, guildID snowflake.ID, roleName string) (discord.Role, bool) {
 	for role := range client.Caches.Roles(guildID) {
-		if role.Name == ephemeralRoleName {
-			foundRole := role
-			return &foundRole, nil
+		if role.Name == roleName {
+			return role, true
 		}
 	}
 
-	return nil, &RoleNotFoundError{}
-}
-
-func (handler *Handler) createRole(guildID snowflake.ID, roleName string) (*discord.Role, error) {
-	result := <-handler.OperationsGateway.Process(&operations.Request{
-		Type: operations.CreateRole,
-		CreateRole: &operations.CreateRoleRequest{
-			GuildID:   guildID,
-			RoleName:  roleName,
-			RoleColor: handler.RoleColor,
-		},
-	})
-	if result.Err != nil {
-		return nil, result.Err
-	}
-
-	val, ok := result.Val.(discord.Role)
-	if !ok {
-		return nil, fmt.Errorf("unrecognized operations result type: %T", result.Val)
-	}
-
-	return &val, nil
+	return discord.Role{}, false
 }
 
 func (*Handler) addEphemeralRole(metadata *voiceStateUpdateMetadata) error {
