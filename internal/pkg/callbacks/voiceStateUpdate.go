@@ -150,7 +150,7 @@ func (handler *Handler) handleParseEventError(client *bot.Client, err error) {
 
 	log.Debug(voiceStateUpdateEventError, "error", eventErr)
 
-	if eventErr.Kind == KindDeadlineExceeded || eventErr.Member == nil {
+	if eventErr.Kind == KindDeadlineExceeded || eventErr.Guild == nil || eventErr.Member == nil {
 		return
 	}
 
