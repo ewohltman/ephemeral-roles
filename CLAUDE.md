@@ -35,49 +35,56 @@ CONTRIBUTING.md, and merges to `master` auto-deploy.
 
 ## Architecture
 
+The Discord library is `github.com/disgoorg/disgo` (a `*bot.Client` composed of `gateway`/`sharding`/
+`cache`/`rest`/`events` subpackages; IDs are `snowflake.ID`, not strings). The client is threaded through
+constructors in place of a session.
+
 Entry point: `cmd/ephemeral-roles/ephemeral-roles.go`. On startup it: parses env vars (via `caarlos0/env`,
 see `environmentVariables` struct), derives a shard ID from `INSTANCE_NAME` (expects a trailing
-`-<N>` from the StatefulSet pod name), builds a `logging.Logger`, a Jaeger tracer, an HTTP client wrapped
-with tracing middleware, opens the `discordgo.Session`, registers callback handlers, starts Prometheus
-monitoring goroutines, and starts the HTTP server. Shutdown is on SIGINT/SIGTERM.
+`-<N>` from the StatefulSet pod name), builds a `logging.Logger` and an HTTP client, builds the disgo
+`*bot.Client` (`disgo.New` with sharding config, gateway intents — only `IntentGuilds`,
+`IntentGuildVoiceStates`, and `IntentGuildMembers` — cache flags, the HTTP client, and the
+`logging.Logger` via `bot.WithLogger`), registers callback event listeners, opens the shard manager,
+starts the Prometheus monitoring goroutine, and starts the HTTP server. Shutdown is on SIGINT/SIGTERM.
 
 Package layout under `internal/pkg/`:
 
-- **callbacks** — `Handler` holds bot config/dependencies and the Discord event callback methods
-  (`Ready`, `VoiceStateUpdate`, `ChannelDelete`). `VoiceStateUpdate` is the core flow: look up
-  guild/member/channel from `session.State`, resolve or create the `{prefix} <channel name>` role,
-  remove any other ephemeral roles the member holds (by prefix match), then add the new one. Errors from
-  this parse/lookup step are typed (`MemberNotFoundError`, `ChannelNotFoundError`, `RoleNotFoundError`,
-  `InsufficientPermissionsError`, `MaxNumberOfRolesError`, `DeadlineExceededError` in `errors.go`), all
-  implementing a shared `CallbackError` interface (`Is`/`Unwrap`/`InGuild`/`ForMember`/`InChannel`) so the
-  handler can branch on error type and attach structured log fields without repeating guild/member/channel
-  plumbing.
-- **operations** — `Gateway` (backed by `golang.org/x/sync/singleflight`) centralizes and de-duplicates
-  Discord API-mutating requests (currently `CreateRole`) so concurrent `VoiceStateUpdate` callbacks racing
-  to create the same role collapse into a single API call. Also holds guild/role/member lookup and
-  permission-check helpers used directly by callbacks (`LookupGuild`, `AddRoleToMember`,
-  `RemoveRoleFromMember`, `BotHasChannelPermission`), plus classifiers for specific Discord REST errors
-  (`IsForbiddenResponse`, `IsMaxGuildsResponse`, `IsDeadlineExceeded`, `ShouldLogDebug`).
-- **monitor** — background goroutines (`Guilds`, `Members`) that periodically poll session state and
-  update Prometheus gauges/counters (guild count, member count, Ready/VoiceStateUpdate event totals),
+- **callbacks** — `Handler` holds bot config/dependencies and the Discord event listener methods
+  (`Ready`, `VoiceStateUpdate`, `ChannelDelete`), registered via `bot.NewListenerFunc`. Each takes a single
+  `*events.*` argument and reaches the client through `event.Client()`. `VoiceStateUpdate` is the core flow:
+  the `*events.GuildVoiceStateUpdate` carries the `discord.Member`; look up guild/channel/role from the
+  client cache (`client.Caches`), resolve or create the `{prefix} <channel name>` role, remove any other
+  ephemeral roles the member holds (by prefix match), then add the new one. Errors from this parse/lookup
+  step are wrapped in `EventError` (`errors.go`), which carries an `ErrorKind` enum (member/channel not
+  found, insufficient permissions, max roles, deadline exceeded) plus the guild/member/channel context
+  available at the failure point, so the handler can branch on `Kind` and attach structured log fields
+  without repeating plumbing.
+- **operations** — `Gateway` (backed by `golang.org/x/sync/singleflight`) de-duplicates Discord
+  API-mutating requests: `Gateway.CreateRole` collapses concurrent `VoiceStateUpdate` callbacks racing to
+  create the same role into a single API call. Also holds guild/role/member lookup and permission-check
+  helpers used directly by callbacks (`LookupGuild`, `AddRoleToMember`, `RemoveRoleFromMember`,
+  `BotHasChannelPermission` via the disgo cache), plus classifiers for specific Discord REST errors
+  (`IsForbiddenResponse`, `IsMaxGuildsResponse`, `IsDeadlineExceeded`, `ShouldLogDebug`) based on
+  `*rest.Error` and its `JSONErrorCode`. Guild data comes from the disgo gateway-populated cache (there is
+  no manual state repopulation).
+- **monitor** — `Metrics.Monitor` starts a background goroutine that periodically polls the client cache
+  and updates Prometheus gauges/counters (guild count, member count, Ready/VoiceStateUpdate event totals),
   namespaced `ephemeral_roles`.
 - **http** — the bot's own HTTP server (`NewServer`): `/` health root, `/guilds` (JSON list of guilds
   sorted by member count), `/metrics` (Prometheus), and pprof endpoints. Also provides the outbound
-  `http.Client`/`http.Transport` constructors (`NewClient`, `NewTransport`) for Discord API calls — the
-  Jaeger tracing round tripper is layered on via `tracer.RoundTripper` in `cmd` — plus `ErrorLogger`, an
-  `slog`-backed `*log.Logger` used for the server's `ErrorLog`.
+  `http.Client`/`http.Transport` constructors (`NewClient`, `NewTransport`) for Discord API calls, plus
+  `ErrorLogger`, an `slog`-backed `*log.Logger` used for the server's `ErrorLog`.
 - **logging** — wraps the standard library `log/slog`. `New` returns a `*Logger` (embedding
   `*slog.Logger`) built on a custom fan-out `slog.Handler` that writes to stdout and, when a webhook URL
   is configured, also to Discord via `github.com/Bufferoverflovv/slog-discord`. Supports runtime
-  log-level updates (through a shared `slog.LevelVar`), a configurable timezone (a `ReplaceAttr` hook),
-  and adapts `discordgo`'s own logger through `DiscordGoLogf`. A concrete `*slog.Logger` (not an
-  interface) is passed around the codebase.
-- **tracer** — Jaeger/OpenTracing setup and an `http.RoundTripper` middleware that wraps outbound calls
-  in spans.
-- **mock** — test doubles: a mirror `RoundTripper`, a discarding `*slog.Logger` (`NewLogger`), and (`session.go`)
-  a pre-populated `*discordgo.Session` builder built on the separate `github.com/ewohltman/discordgo-mock`
-  module (guild/role/member/channel/state mocks), used across `_test.go` files instead of hitting the
-  real Discord API.
+  log-level updates (through a shared `slog.LevelVar`), a configurable timezone (a `ReplaceAttr` hook).
+  disgo is slog-native and receives the `*slog.Logger` directly via `bot.WithLogger`. A concrete
+  `*slog.Logger` (not an interface) is passed around the codebase.
+- **mock** — test doubles: a discarding `*slog.Logger` (`NewLogger`), and
+  (`session.go`/`rest.go`) `NewSession`, a disgo-native `*bot.Client` builder with a pre-populated
+  `cache.Caches` (guilds/roles/members/channels/voice states) and a fake `rest.Rest` (`mockRest`, which
+  serves the handful of REST calls the bot makes from that cache). Used across `_test.go` files instead of
+  hitting the real Discord API; fixture IDs/names are exported constants (`TestGuild`, `TestChannel`, …).
 
 `tools/` is an independent Go module (own `go.mod`) that pins developer tooling (`goimports`,
 `golangci-lint`, `gotestsum`) via `go tool`, keeping those versions out of the main module's dependency
@@ -86,8 +93,8 @@ graph.
 ## Conventions
 
 - Errors are wrapped with `%w` and typed where callers need to branch on them (see `callbacks/errors.go`
-  for the pattern: struct holds context like `Guild`/`Member`/`Channel` plus `Err`, implements
-  `Error()`/`Is()`/`Unwrap()`).
+  for the pattern: `EventError` holds a `Kind` enum plus `Guild`/`Member`/`Channel`/`Err` context and
+  implements `Error()`/`Unwrap()`).
 - A concrete `*slog.Logger` is threaded through constructors rather than a global logger.
 - golangci-lint runs with `default: all` linters and an explicit `disable` list in `.golangci.yml` — when
   adding code, prefer satisfying the stricter defaults (e.g. `wsl_v5` whitespace/cuddling rules, `cyclop`/

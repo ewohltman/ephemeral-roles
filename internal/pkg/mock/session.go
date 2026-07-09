@@ -1,138 +1,218 @@
+// Package mock provides implementations for mocking objects and endpoints for
+// unit testing.
 package mock
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/discordgo-mock/mockchannel"
-	"github.com/ewohltman/discordgo-mock/mockconstants"
-	"github.com/ewohltman/discordgo-mock/mockguild"
-	"github.com/ewohltman/discordgo-mock/mockmember"
-	"github.com/ewohltman/discordgo-mock/mockrest"
-	"github.com/ewohltman/discordgo-mock/mockrole"
-	"github.com/ewohltman/discordgo-mock/mocksession"
-	"github.com/ewohltman/discordgo-mock/mockstate"
-	"github.com/ewohltman/discordgo-mock/mockuser"
+	"github.com/disgoorg/disgo"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 )
 
+// Fixture snowflake IDs used to build the mock cache. They replace the string
+// identifiers previously provided by github.com/ewohltman/discordgo-mock.
 const (
-	rolePrefix     = "{eph}"
-	testUserBot    = mockconstants.TestUser + "Bot"
+	TestGuild          snowflake.ID = 1000
+	TestGuildLarge     snowflake.ID = 2000
+	TestChannel        snowflake.ID = 1001
+	TestChannel2       snowflake.ID = 1002
+	TestPrivateChannel snowflake.ID = 1003
+	TestRole           snowflake.ID = 1004
+	TestEphemeralRole  snowflake.ID = 1005
+	TestUser           snowflake.ID = 1006
+	TestUserBot        snowflake.ID = 1007
+)
+
+// Fixture names used to build the mock cache.
+const (
+	rolePrefix = "{eph}"
+
+	TestGuildName          = "testGuild"
+	TestGuildLargeName     = "testGuildLarge"
+	TestChannelName        = "testChannel"
+	TestChannel2Name       = "testChannel2"
+	TestPrivateChannelName = "testPrivateChannel"
+	TestRoleName           = "testRole"
+	TestUserName           = "testUser"
+	TestUserBotName        = "testUserBot"
+
+	// EphemeralRoleName is the name of the ephemeral role associated with
+	// TestChannel.
+	EphemeralRoleName = rolePrefix + " " + TestChannelName
+
 	largeGuildSize = 3000
 )
 
-// NewSession provides a *discordgo.Session instance to be used in unit
-// testing with pre-populated initial state.
-func NewSession() (*discordgo.Session, error) {
-	role := mockrole.New(
-		mockrole.WithID(mockconstants.TestRole),
-		mockrole.WithName(mockconstants.TestRole),
-		mockrole.WithPermissions(discordgo.PermissionViewChannel),
-	)
+// NewSession provides a *bot.Client instance to be used in unit testing with a
+// pre-populated cache and a fake REST client.
+func NewSession() (*bot.Client, error) {
+	caches := cache.New(cache.WithCaches(
+		cache.FlagGuilds,
+		cache.FlagChannels,
+		cache.FlagRoles,
+		cache.FlagVoiceStates,
+		cache.FlagMembers,
+	))
 
-	ephRole := mockrole.New(
-		mockrole.WithID(fmt.Sprintf("%s %s", rolePrefix, mockconstants.TestChannel)),
-		mockrole.WithName(fmt.Sprintf("%s %s", rolePrefix, mockconstants.TestChannel)),
-		mockrole.WithPermissions(discordgo.PermissionViewChannel),
-	)
+	caches.SetSelfUser(discord.OAuth2User{
+		User: discord.User{
+			ID:       TestUserBot,
+			Username: TestUserBotName,
+			Bot:      true,
+		},
+	})
 
-	botUser := mockuser.New(
-		mockuser.WithID(testUserBot),
-		mockuser.WithUsername(testUserBot),
-		mockuser.WithBotFlag(true),
-	)
+	if err := addGuild(caches, TestGuild, TestGuildName, false); err != nil {
+		return nil, err
+	}
 
-	state, err := mockstate.New(
-		mockstate.WithUser(botUser),
-		mockstate.WithGuilds(
-			smallGuild(botUser, role, ephRole),
-			largeGuild(botUser, role, ephRole),
-		),
+	if err := addGuild(caches, TestGuildLarge, TestGuildLargeName, true); err != nil {
+		return nil, err
+	}
+
+	client, err := disgo.New(mockToken(),
+		bot.WithCaches(caches),
+		bot.WithRest(newMockRest(caches)),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return mocksession.New(
-		mocksession.WithState(state),
-		mocksession.WithClient(&http.Client{
-			Transport: mockrest.NewTransport(state),
-		}),
-	)
+	return client, nil
 }
 
-func smallGuild(botUser *discordgo.User, role, ephRole *discordgo.Role) *discordgo.Guild {
-	botMember := mockmember.New(
-		mockmember.WithUser(botUser),
-		mockmember.WithGuildID(mockconstants.TestGuild),
-		mockmember.WithRoles(role, ephRole),
-	)
+// mockToken builds a syntactically valid bot token. disgo derives the
+// application ID from the token's first '.'-separated segment, which must be
+// the raw-standard base64 encoding of the application ID's string form.
+func mockToken() string {
+	appID := base64.RawStdEncoding.EncodeToString([]byte(TestUserBot.String()))
 
-	userMember := mockmember.New(
-		mockmember.WithUser(mockuser.New(
-			mockuser.WithID(mockconstants.TestUser),
-			mockuser.WithUsername(mockconstants.TestUser),
-		)),
-		mockmember.WithGuildID(mockconstants.TestGuild),
-		mockmember.WithRoles(role, ephRole),
-	)
-
-	channel1 := mockchannel.New(
-		mockchannel.WithID(mockconstants.TestChannel),
-		mockchannel.WithGuildID(mockconstants.TestGuild),
-		mockchannel.WithName(mockconstants.TestChannel),
-		mockchannel.WithType(discordgo.ChannelTypeGuildVoice),
-	)
-
-	channel2 := mockchannel.New(
-		mockchannel.WithID(mockconstants.TestChannel2),
-		mockchannel.WithGuildID(mockconstants.TestGuild),
-		mockchannel.WithName(mockconstants.TestChannel2),
-		mockchannel.WithType(discordgo.ChannelTypeGuildVoice),
-	)
-
-	privateChannel := mockchannel.New(
-		mockchannel.WithID(mockconstants.TestPrivateChannel),
-		mockchannel.WithGuildID(mockconstants.TestGuild),
-		mockchannel.WithName(mockconstants.TestPrivateChannel),
-		mockchannel.WithType(discordgo.ChannelTypeGuildVoice),
-		mockchannel.WithPermissionOverwrites(&discordgo.PermissionOverwrite{
-			ID:   botMember.User.ID,
-			Type: discordgo.PermissionOverwriteTypeMember,
-			Deny: discordgo.PermissionViewChannel,
-		}),
-	)
-
-	return mockguild.New(
-		mockguild.WithID(mockconstants.TestGuild),
-		mockguild.WithName(mockconstants.TestGuild),
-		mockguild.WithRoles(role, ephRole),
-		mockguild.WithChannels(channel1, channel2, privateChannel),
-		mockguild.WithMembers(botMember, userMember),
-	)
+	return appID + ".mock.token"
 }
 
-func largeGuild(botUser *discordgo.User, role, ephRole *discordgo.Role) *discordgo.Guild {
-	guild := smallGuild(botUser, role, ephRole)
+func addGuild(caches cache.Caches, guildID snowflake.ID, guildName string, large bool) error {
+	addRoles(caches, guildID)
+	addMembers(caches, guildID, large)
 
-	largeGuildMembers := make([]*discordgo.Member, largeGuildSize)
+	if err := addChannels(caches, guildID); err != nil {
+		return err
+	}
+
+	memberCount := 2
+	if large {
+		memberCount += largeGuildSize
+	}
+
+	caches.AddGuild(discord.Guild{
+		ID:          guildID,
+		Name:        guildName,
+		MemberCount: memberCount,
+	})
+
+	return nil
+}
+
+func addRoles(caches cache.Caches, guildID snowflake.ID) {
+	// The role whose ID equals the guild ID is the @everyone role; its
+	// permissions form the base permissions of every member.
+	caches.AddRole(discord.Role{
+		ID:          guildID,
+		GuildID:     guildID,
+		Name:        "@everyone",
+		Permissions: discord.PermissionViewChannel,
+	})
+
+	caches.AddRole(discord.Role{
+		ID:          TestRole,
+		GuildID:     guildID,
+		Name:        TestRoleName,
+		Permissions: discord.PermissionViewChannel,
+	})
+
+	caches.AddRole(discord.Role{
+		ID:          TestEphemeralRole,
+		GuildID:     guildID,
+		Name:        EphemeralRoleName,
+		Permissions: discord.PermissionViewChannel,
+	})
+}
+
+func addMembers(caches cache.Caches, guildID snowflake.ID, large bool) {
+	roleIDs := []snowflake.ID{TestRole, TestEphemeralRole}
+
+	caches.AddMember(discord.Member{
+		GuildID: guildID,
+		User:    discord.User{ID: TestUserBot, Username: TestUserBotName, Bot: true},
+		RoleIDs: roleIDs,
+	})
+
+	caches.AddMember(discord.Member{
+		GuildID: guildID,
+		User:    discord.User{ID: TestUser, Username: TestUserName},
+		RoleIDs: roleIDs,
+	})
+
+	if !large {
+		return
+	}
 
 	for i := range largeGuildSize {
-		largeGuildMembers[i] = mockmember.New(
-			mockmember.WithUser(mockuser.New(
-				mockuser.WithID(fmt.Sprintf("%s%d", mockconstants.TestUser, i)),
-				mockuser.WithUsername(fmt.Sprintf("%s%d", mockconstants.TestUser, i)),
-			)),
-			mockmember.WithGuildID(mockconstants.TestGuildLarge),
-			mockmember.WithRoles(role, ephRole),
+		memberID := snowflake.ID(uint64(TestUser) + uint64(i) + 1)
+
+		caches.AddMember(discord.Member{
+			GuildID: guildID,
+			User:    discord.User{ID: memberID, Username: fmt.Sprintf("%s%d", TestUserName, i)},
+			RoleIDs: roleIDs,
+		})
+	}
+}
+
+func addChannels(caches cache.Caches, guildID snowflake.ID) error {
+	channels := []struct {
+		id      snowflake.ID
+		name    string
+		denyBot bool
+	}{
+		{TestChannel, TestChannelName, false},
+		{TestChannel2, TestChannel2Name, false},
+		{TestPrivateChannel, TestPrivateChannelName, true},
+	}
+
+	for _, ch := range channels {
+		channel, err := newVoiceChannel(ch.id, guildID, ch.name, ch.denyBot)
+		if err != nil {
+			return err
+		}
+
+		caches.AddChannel(channel)
+	}
+
+	return nil
+}
+
+func newVoiceChannel(id, guildID snowflake.ID, name string, denyBot bool) (discord.GuildVoiceChannel, error) {
+	overwrites := ""
+	if denyBot {
+		overwrites = fmt.Sprintf(
+			`,"permission_overwrites":[{"type":%d,"id":"%d","allow":"0","deny":"%d"}]`,
+			discord.PermissionOverwriteTypeMember, TestUserBot, discord.PermissionViewChannel,
 		)
 	}
 
-	guild.ID = mockconstants.TestGuildLarge
-	guild.Name = mockconstants.TestGuildLarge
-	guild.Members = append(guild.Members, largeGuildMembers...)
-	guild.MemberCount = len(guild.Members)
+	raw := fmt.Sprintf(
+		`{"id":"%d","guild_id":"%d","name":%q,"type":%d%s}`,
+		id, guildID, name, discord.ChannelTypeGuildVoice, overwrites,
+	)
 
-	return guild
+	var channel discord.GuildVoiceChannel
+	if err := json.Unmarshal([]byte(raw), &channel); err != nil {
+		return discord.GuildVoiceChannel{}, fmt.Errorf("unable to build mock voice channel: %w", err)
+	}
+
+	return channel, nil
 }

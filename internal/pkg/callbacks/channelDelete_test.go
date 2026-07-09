@@ -3,8 +3,10 @@ package callbacks_test
 import (
 	"testing"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
@@ -24,24 +26,30 @@ func TestHandler_ChannelDelete(t *testing.T) {
 		RolePrefix: rolePrefix,
 	}
 
-	guild, err := session.State.Guild(mockconstants.TestGuild)
-	require.NoError(t, err)
+	channel, ok := session.Caches.Channel(mock.TestChannel)
+	require.True(t, ok)
 
-	channel, err := session.State.Channel(mockconstants.TestChannel)
-	require.NoError(t, err)
+	require.True(t, foundRole(session, handler, mock.TestGuild, channel),
+		"Unable to find ephemeral role for channel %s", channel.Name())
 
-	require.True(t, foundRole(handler, guild, channel), "Unable to find ephemeral role for channel %s", channel.Name)
+	handler.ChannelDelete(&events.GuildChannelDelete{
+		GenericGuildChannel: &events.GenericGuildChannel{
+			GenericEvent: events.NewGenericEvent(session, 0, 0),
+			ChannelID:    channel.ID(),
+			Channel:      channel,
+			GuildID:      mock.TestGuild,
+		},
+	})
 
-	handler.ChannelDelete(session, &discordgo.ChannelDelete{Channel: channel})
-
-	require.False(t, foundRole(handler, guild, channel), "Ephemeral role remains for channel %s", channel.Name)
+	require.False(t, foundRole(session, handler, mock.TestGuild, channel),
+		"Ephemeral role remains for channel %s", channel.Name())
 }
 
-func foundRole(handler *callbacks.Handler, guild *discordgo.Guild, channel *discordgo.Channel) bool {
-	ephRoleName := handler.RoleNameFromChannel(channel.Name)
+func foundRole(session *bot.Client, handler *callbacks.Handler, guildID snowflake.ID, channel discord.GuildChannel) bool {
+	ephRoleName := handler.RoleNameFromChannel(channel.Name())
 
-	for _, guildRole := range guild.Roles {
-		if guildRole.Name == ephRoleName {
+	for role := range session.Caches.Roles(guildID) {
+		if role.Name == ephRoleName {
 			return true
 		}
 	}

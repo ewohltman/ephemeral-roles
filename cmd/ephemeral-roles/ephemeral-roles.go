@@ -9,30 +9,37 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/caarlos0/env/v11"
-	"github.com/opentracing/opentracing-go"
+	"github.com/disgoorg/disgo"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
+	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/rest"
+	"github.com/disgoorg/disgo/sharding"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
 const (
-	ephemeralRoles  = "ephemeral-roles"
 	contextTimeout  = 5 * time.Minute
 	monitorInterval = 10 * time.Second
 
-	intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentGuildMembers | discordgo.IntentGuildPresences
+	// intents subscribes to only the gateway events the bot handles: guild,
+	// channel, and role changes (IntentGuilds), the core VoiceStateUpdate
+	// event (IntentGuildVoiceStates), and member changes for the member cache
+	// and counts (IntentGuildMembers).
+	intents = gateway.IntentGuilds |
+		gateway.IntentGuildVoiceStates |
+		gateway.IntentGuildMembers
 )
 
 type environmentVariables struct {
@@ -50,12 +57,12 @@ type environmentVariables struct {
 }
 
 func (envVars *environmentVariables) parseShardID() error {
-	shardIDRegEx := regexp.MustCompile(`-\d.*$`)
+	index := strings.LastIndexByte(envVars.InstanceName, '-')
+	if index < 0 {
+		return fmt.Errorf("error parsing shard ID: no trailing -<N> in instance name %q", envVars.InstanceName)
+	}
 
-	shardIDString := shardIDRegEx.FindString(envVars.InstanceName)
-	shardIDString = strings.TrimPrefix(shardIDString, "-")
-
-	shardID, err := strconv.Atoi(shardIDString)
+	shardID, err := strconv.Atoi(envVars.InstanceName[index+1:])
 	if err != nil {
 		return fmt.Errorf("error parsing shard ID: %w", err)
 	}
@@ -88,91 +95,92 @@ func run() error {
 
 	log.Info("starting up", "bot", ev.BotName)
 
-	discordgo.Logger = log.DiscordGoLogf
+	httpClient := internalHTTP.NewClient(internalHTTP.NewTransport())
 
-	jaegerTracer, jaegerCloser, err := tracer.New(ephemeralRoles)
-	if err != nil {
-		return fmt.Errorf("error creating Jaeger tracer: %w", err)
-	}
-
-	defer func() { _ = jaegerCloser.Close() }()
-
-	client := internalHTTP.NewClient(tracer.RoundTripper(
-		jaegerTracer,
-		ev.InstanceName,
-		internalHTTP.NewTransport(),
-	))
-
-	session, err := startSession(ctx, log.Logger, ev, client, jaegerTracer)
+	client, err := startSession(ctx, log.Logger, ev, httpClient)
 	if err != nil {
 		return fmt.Errorf("error starting Discord session: %w", err)
 	}
 
-	defer func() { _ = session.Close() }()
+	defer client.Close(context.WithoutCancel(ctx))
 
-	return runServer(ctx, log.Logger, session, ev.Port)
+	return runServer(ctx, log.Logger, client, ev.Port)
 }
 
 func startSession(
 	ctx context.Context,
 	log *slog.Logger,
 	envVars *environmentVariables,
-	client *http.Client,
-	jaegerTracer opentracing.Tracer,
-) (*discordgo.Session, error) {
-	session, err := discordgo.New("Bot " + envVars.BotToken)
+	httpClient *http.Client,
+) (*bot.Client, error) {
+	client, err := disgo.New(envVars.BotToken,
+		bot.WithLogger(log),
+		bot.WithShardManagerConfigOpts(
+			sharding.WithShardIDs(envVars.shardID),
+			sharding.WithShardCount(envVars.ShardCount),
+			sharding.WithAutoScaling(false),
+			sharding.WithGatewayConfigOpts(
+				gateway.WithIntents(intents),
+			),
+		),
+		bot.WithCacheConfigOpts(
+			cache.WithCaches(
+				cache.FlagGuilds,
+				cache.FlagChannels,
+				cache.FlagRoles,
+				cache.FlagVoiceStates,
+				cache.FlagMembers,
+			),
+		),
+		bot.WithRestClientConfigOpts(
+			rest.WithHTTPClient(httpClient),
+		),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	session.Client = client
-	session.ShardID = envVars.shardID
-	session.ShardCount = envVars.ShardCount
-	session.LogLevel = discordgo.LogInformational
-	session.State.TrackEmojis = false
-	session.State.TrackPresences = false
-	session.Identify.Intents = discordgo.MakeIntent(intents)
-
 	callbackMetrics := monitor.NewMetrics(&monitor.Config{
 		Log:      log,
-		Session:  session,
+		Client:   client,
 		Interval: monitorInterval,
 	})
 
-	addCallbackHandlers(session,
+	addCallbackHandlers(client,
 		&callbacks.Handler{
 			Log:                     log,
 			RolePrefix:              envVars.RolePrefix,
 			RoleColor:               envVars.RoleColor,
-			JaegerTracer:            jaegerTracer,
 			ReadyCounter:            callbackMetrics.ReadyCounter,
 			VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
-			OperationsGateway:       operations.NewGateway(session),
+			OperationsGateway:       operations.NewGateway(client),
 		},
 	)
 
-	if err := session.Open(); err != nil {
+	if err := client.OpenShardManager(ctx); err != nil {
 		return nil, err
 	}
 
-	callbackMetrics.Monitor(ctx)
+	go callbackMetrics.Monitor(ctx)
 
-	return session, nil
+	return client, nil
 }
 
-func addCallbackHandlers(session *discordgo.Session, callbackConfig *callbacks.Handler) {
-	session.AddHandler(callbackConfig.Ready)
-	session.AddHandler(callbackConfig.VoiceStateUpdate)
-	session.AddHandler(callbackConfig.ChannelDelete)
+func addCallbackHandlers(client *bot.Client, callbackConfig *callbacks.Handler) {
+	client.AddEventListeners(
+		bot.NewListenerFunc(callbackConfig.Ready),
+		bot.NewListenerFunc(callbackConfig.VoiceStateUpdate),
+		bot.NewListenerFunc(callbackConfig.ChannelDelete),
+	)
 }
 
 func runServer(
 	ctx context.Context,
 	log *slog.Logger,
-	session *discordgo.Session,
+	client *bot.Client,
 	port string,
 ) error {
-	httpServer := internalHTTP.NewServer(log, session, port)
+	httpServer := internalHTTP.NewServer(log, client, port)
 
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {
@@ -192,6 +200,8 @@ func runServer(
 
 func main() {
 	if err := run(); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "fatal error: %s", err)
+		_, _ = fmt.Fprintf(os.Stderr, "fatal error: %s\n", err)
+
+		os.Exit(1)
 	}
 }

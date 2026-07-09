@@ -1,12 +1,11 @@
 // Command driver launches ephemeral-roles' real HTTP server and callback
-// handler against an in-memory mock Discord session, so the bot can be driven
+// handler against an in-memory mock Discord client, so the bot can be driven
 // and observed without a live Discord connection or a BOT_TOKEN.
 //
-// The production binary (cmd/ephemeral-roles) cannot run headless: it calls
-// session.Open() at startup and dies with "Authentication failed" against the
-// live Discord gateway. This driver swaps in internal/pkg/mock.NewSession()
-// (backed by github.com/ewohltman/discordgo-mock) which serves Discord REST
-// calls from in-process state, then wires up the SAME production types:
+// The production binary (cmd/ephemeral-roles) cannot run headless: it opens the
+// Discord gateway at startup. This driver swaps in internal/pkg/mock.NewSession()
+// (a *bot.Client with a pre-populated cache and a fake rest.Rest that serves
+// requests from that cache in-process), then wires up the SAME production types:
 //
 //   - internal/pkg/http.NewServer          -> /, /guilds, /metrics, pprof
 //   - internal/pkg/monitor.NewMetrics      -> ephemeral_roles_* gauges/counters
@@ -38,8 +37,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
@@ -47,7 +48,6 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
 const (
@@ -62,17 +62,11 @@ func main() {
 
 	log := logging.New(logging.OptionalLogLevel("info")).Logger
 
-	jaegerTracer, jaegerCloser, err := tracer.New("ephemeral-roles-driver")
-	if err != nil {
-		fatal(log, "Error creating Jaeger tracer", err)
-	}
-	defer func() { _ = jaegerCloser.Close() }()
-
 	session, err := mock.NewSession()
 	if err != nil {
 		fatal(log, "Error creating mock session", err)
 	}
-	defer func() { _ = session.Close() }()
+	defer session.Close(context.Background())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -81,16 +75,15 @@ func main() {
 	// two of startup (they are only Set on each ticker tick, never eagerly).
 	metrics := monitor.NewMetrics(&monitor.Config{
 		Log:      log,
-		Session:  session,
+		Client:   session,
 		Interval: time.Second,
 	})
-	metrics.Monitor(ctx)
+	go metrics.Monitor(ctx)
 
 	handler := &callbacks.Handler{
 		Log:                     log,
 		RolePrefix:              rolePrefix,
 		RoleColor:               roleColor,
-		JaegerTracer:            jaegerTracer,
 		ReadyCounter:            metrics.ReadyCounter,
 		VoiceStateUpdateCounter: metrics.VoiceStateUpdateCounter,
 		OperationsGateway:       operations.NewGateway(session),
@@ -121,21 +114,29 @@ func fatal(log *slog.Logger, msg string, err error) {
 // Joining "testChannel2" should: create a new ephemeral role for that channel,
 // remove the member's stale "{eph} testChannel" role, and assign the new one.
 // So expect the guild role count to grow by one and the member's role set to
-// change. (The new role shows an empty name — see Gotchas in SKILL.md: the mock
-// REST layer ignores the role-create request body.)
-func runCallbackDemo(log *slog.Logger, session *discordgo.Session, handler *callbacks.Handler) {
-	guildID := mockconstants.TestGuild
-	userID := mockconstants.TestUser
-	channelID := mockconstants.TestChannel2
+// change.
+func runCallbackDemo(log *slog.Logger, session *bot.Client, handler *callbacks.Handler) {
+	guildID := mock.TestGuild
+	userID := mock.TestUser
+	channelID := mock.TestChannel2
+
+	member, ok := session.Caches.Member(guildID, userID)
+	if !ok {
+		fatal(log, "Error looking up mock member", fmt.Errorf("member %d not found in guild %d", userID, guildID))
+	}
 
 	log.Info(fmt.Sprintf("=== VoiceStateUpdate demo: user %q joins voice channel %q in guild %q ===", userID, channelID, guildID))
 	log.Info(fmt.Sprintf("BEFORE: guild roles=%d, member roles=%s", guildRoleCount(session, guildID), memberRoles(session, guildID, userID)))
 
-	handler.VoiceStateUpdate(session, &discordgo.VoiceStateUpdate{
-		VoiceState: &discordgo.VoiceState{
-			GuildID:   guildID,
-			UserID:    userID,
-			ChannelID: channelID,
+	handler.VoiceStateUpdate(&events.GuildVoiceStateUpdate{
+		GenericGuildVoiceState: &events.GenericGuildVoiceState{
+			GenericEvent: events.NewGenericEvent(session, 0, 0),
+			VoiceState: discord.VoiceState{
+				GuildID:   guildID,
+				UserID:    userID,
+				ChannelID: &channelID,
+			},
+			Member: member,
 		},
 	})
 
@@ -143,34 +144,35 @@ func runCallbackDemo(log *slog.Logger, session *discordgo.Session, handler *call
 	log.Info("=== VoiceStateUpdate demo complete: guild gained a role and the member was assigned it => create+assign flow ran ===")
 }
 
-// guildRoleCount returns the number of roles currently in the guild's state.
-func guildRoleCount(session *discordgo.Session, guildID string) int {
-	guild, err := session.State.Guild(guildID)
-	if err != nil {
-		return -1
+// guildRoleCount returns the number of roles currently cached for the guild.
+func guildRoleCount(session *bot.Client, guildID snowflake.ID) int {
+	count := 0
+
+	for range session.Caches.Roles(guildID) {
+		count++
 	}
 
-	return len(guild.Roles)
+	return count
 }
 
 // memberRoles returns a member's assigned roles as "name(id-prefix)" pairs so a
 // change in assignment is visible even when a role's name is unset.
-func memberRoles(session *discordgo.Session, guildID, userID string) string {
-	member, err := session.State.Member(guildID, userID)
-	if err != nil {
-		return fmt.Sprintf("<error: %s>", err)
+func memberRoles(session *bot.Client, guildID, userID snowflake.ID) string {
+	member, ok := session.Caches.Member(guildID, userID)
+	if !ok {
+		return "<error: member not found>"
 	}
 
-	parts := make([]string, 0, len(member.Roles))
+	parts := make([]string, 0, len(member.RoleIDs))
 
-	for _, roleID := range member.Roles {
+	for _, roleID := range member.RoleIDs {
 		name := "<unnamed>"
 
-		if role, roleErr := session.State.Role(guildID, roleID); roleErr == nil && role.Name != "" {
+		if role, roleOK := session.Caches.Role(guildID, roleID); roleOK && role.Name != "" {
 			name = role.Name
 		}
 
-		idPrefix := roleID
+		idPrefix := roleID.String()
 		if len(idPrefix) > 6 {
 			idPrefix = idPrefix[:6]
 		}
@@ -183,9 +185,9 @@ func memberRoles(session *discordgo.Session, guildID, userID string) string {
 	return "[" + strings.Join(parts, ", ") + "]"
 }
 
-// serveHTTP starts the production HTTP server against the mock session and
+// serveHTTP starts the production HTTP server against the mock client and
 // blocks until SIGINT/SIGTERM.
-func serveHTTP(log *slog.Logger, session *discordgo.Session, addr string) {
+func serveHTTP(log *slog.Logger, session *bot.Client, addr string) {
 	host, port, ok := strings.Cut(addr, ":")
 	if !ok {
 		host, port = "127.0.0.1", addr

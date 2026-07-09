@@ -149,20 +149,6 @@ func TestLogger_InvalidTimezoneWarns(t *testing.T) {
 	assert.Contains(t, out, "not-a-timezone")
 }
 
-func TestLogger_DiscordGoLogf(t *testing.T) {
-	t.Parallel()
-
-	buf := &bytes.Buffer{}
-	log := logging.New(
-		logging.OptionalOutput(buf),
-		logging.OptionalLogLevel(logging.DebugLevel),
-	)
-
-	log.DiscordGoLogf(0, 0, "Test: %d", 123)
-
-	assert.Contains(t, buf.String(), "Test: 123")
-}
-
 func TestLogger_FanoutToStdoutAndDiscord(t *testing.T) {
 	t.Parallel()
 

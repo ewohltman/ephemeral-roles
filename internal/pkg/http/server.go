@@ -1,15 +1,16 @@
 package http
 
 import (
+	"cmp"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
-	"sort"
+	"slices"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/bot"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -40,29 +41,12 @@ type SortableGuild struct {
 // SortableGuilds is a slice of SortableGuild structs.
 type SortableGuilds []SortableGuild
 
-// Len returns the length of guilds to satisfy the sort.Interface interface.
-func (guilds SortableGuilds) Len() int {
-	return len(guilds)
-}
-
-// Less returns whether the element i is less than element j to satisfy the
-// sort.Interface interface.
-func (guilds SortableGuilds) Less(i, j int) bool {
-	return guilds[i].MemberCount < guilds[j].MemberCount
-}
-
-// Swap swaps the elements i and j in the slice to satisfy the sort.Interface
-// interface.
-func (guilds SortableGuilds) Swap(i, j int) {
-	guilds[i], guilds[j] = guilds[j], guilds[i]
-}
-
 // NewServer returns a new pre-configured *http.Server..
-func NewServer(log *slog.Logger, session *discordgo.Session, port string) *http.Server {
+func NewServer(log *slog.Logger, client *bot.Client, port string) *http.Server {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc(RootEndpoint, rootHandler())
-	mux.HandleFunc(GuildsEndpoint, guildsHandler(log, session))
+	mux.HandleFunc(GuildsEndpoint, guildsHandler(log, client))
 	mux.HandleFunc(pprofIndexEndpoint, pprof.Index)
 	mux.HandleFunc(pprofCmdlineEndpoint, pprof.Cmdline)
 	mux.HandleFunc(pprofProfileEndpoint, pprof.Profile)
@@ -86,23 +70,25 @@ func rootHandler() http.HandlerFunc {
 	}
 }
 
-func guildsHandler(log *slog.Logger, session *discordgo.Session) http.HandlerFunc {
+func guildsHandler(log *slog.Logger, client *bot.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			_, _ = io.Copy(io.Discard, r.Body)
 			_ = r.Body.Close()
 		}()
 
-		sortedGuilds := make(SortableGuilds, len(session.State.Guilds))
+		sortedGuilds := make(SortableGuilds, 0, client.Caches.GuildsLen())
 
-		for i, guild := range session.State.Guilds {
-			sortedGuilds[i] = SortableGuild{
+		for guild := range client.Caches.Guilds() {
+			sortedGuilds = append(sortedGuilds, SortableGuild{
 				Name:        guild.Name,
 				MemberCount: guild.MemberCount,
-			}
+			})
 		}
 
-		sort.Sort(sort.Reverse(sortedGuilds))
+		slices.SortFunc(sortedGuilds, func(a, b SortableGuild) int {
+			return cmp.Compare(b.MemberCount, a.MemberCount)
+		})
 
 		sortedGuildsJSON, err := json.MarshalIndent(sortedGuilds, "", "    ")
 		if err != nil {

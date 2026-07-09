@@ -7,7 +7,6 @@ package logging
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -129,24 +128,16 @@ func (l *Logger) UpdateLevel(level string) {
 	l.level.Set(parseLevel(level))
 }
 
-// DiscordGoLogf is an adapter for plugging into DiscordGo's logging system. All
-// discordgo log levels are emitted at debug so they only surface when debug
-// logging is enabled.
-func (l *Logger) DiscordGoLogf(_, _ int, format string, arguments ...any) {
-	l.Debug(fmt.Sprintf(format, arguments...))
-}
-
-// build (re)constructs the fan-out *slog.Logger from the current configuration.
+// build (re)constructs the *slog.Logger from the current configuration, fanning
+// out to Discord when a webhook is configured.
 func (l *Logger) build() {
-	handlers := []slog.Handler{
-		slog.NewTextHandler(l.output, &slog.HandlerOptions{
-			Level:       l.level,
-			ReplaceAttr: l.replaceAttr,
-		}),
-	}
+	var handler slog.Handler = slog.NewTextHandler(l.output, &slog.HandlerOptions{
+		Level:       l.level,
+		ReplaceAttr: l.replaceAttr,
+	})
 
 	if l.webhookURL != "" {
-		handlers = append(handlers, slogdiscord.NewDiscordHandler(slogdiscord.DiscordWebhookConfig{
+		discordHandler := slogdiscord.NewDiscordHandler(slogdiscord.DiscordWebhookConfig{
 			WebhookURL: l.webhookURL,
 			MinLevel:   l.level.Level(),
 			LevelColors: slogdiscord.LevelColors{
@@ -156,10 +147,12 @@ func (l *Logger) build() {
 				slog.LevelError.String(): ErrorColor,
 			},
 			CustomEmbed: discordEmbed,
-		}))
+		})
+
+		handler = &fanoutHandler{handlers: []slog.Handler{handler, discordHandler}}
 	}
 
-	slogLogger := slog.New(&fanoutHandler{handlers: handlers})
+	slogLogger := slog.New(handler)
 
 	if len(l.baseAttrs) > 0 {
 		slogLogger = slogLogger.With(l.baseAttrs...)
