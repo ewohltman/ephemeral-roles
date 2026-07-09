@@ -3,7 +3,7 @@ package callbacks_test
 import (
 	"testing"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/events"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
@@ -25,7 +25,7 @@ func TestHandler_Ready(t *testing.T) {
 		ReadyCounter: monitor.ReadyCounter(&monitor.Config{Log: log}),
 	}
 
-	handler.Ready(session, &discordgo.Ready{
-		Guilds: make([]*discordgo.Guild, 0),
+	handler.Ready(&events.Ready{
+		GenericEvent: events.NewGenericEvent(session, 0, 0),
 	})
 }

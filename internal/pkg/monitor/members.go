@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/bot"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -14,7 +14,7 @@ import (
 // the bot belongs to.
 type Members struct {
 	Log             *slog.Logger
-	Session         *discordgo.Session
+	Client          *bot.Client
 	Interval        time.Duration
 	PrometheusGauge prometheus.Gauge
 	Cache           *MembersCache
@@ -48,7 +48,7 @@ func (members *Members) update() {
 
 	numMembers := 0
 
-	for _, guild := range members.Session.State.Guilds {
+	for guild := range members.Client.Caches.Guilds() {
 		numMembers += guild.MemberCount
 	}
 

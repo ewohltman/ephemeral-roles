@@ -15,8 +15,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/caarlos0/env/v11"
+	"github.com/disgoorg/disgo"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
+	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/rest"
+	"github.com/disgoorg/disgo/sharding"
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
@@ -32,7 +37,10 @@ const (
 	contextTimeout  = 5 * time.Minute
 	monitorInterval = 10 * time.Second
 
-	intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentGuildMembers | discordgo.IntentGuildPresences
+	intents = gateway.IntentGuilds |
+		gateway.IntentGuildVoiceStates |
+		gateway.IntentGuildMembers |
+		gateway.IntentGuildPresences
 )
 
 type environmentVariables struct {
@@ -88,8 +96,6 @@ func run() error {
 
 	log.Info("starting up", "bot", ev.BotName)
 
-	discordgo.Logger = log.DiscordGoLogf
-
 	jaegerTracer, jaegerCloser, err := tracer.New(ephemeralRoles)
 	if err != nil {
 		return fmt.Errorf("error creating Jaeger tracer: %w", err)
@@ -97,49 +103,63 @@ func run() error {
 
 	defer func() { _ = jaegerCloser.Close() }()
 
-	client := internalHTTP.NewClient(tracer.RoundTripper(
+	httpClient := internalHTTP.NewClient(tracer.RoundTripper(
 		jaegerTracer,
 		ev.InstanceName,
 		internalHTTP.NewTransport(),
 	))
 
-	session, err := startSession(ctx, log.Logger, ev, client, jaegerTracer)
+	client, err := startSession(ctx, log.Logger, ev, httpClient, jaegerTracer)
 	if err != nil {
 		return fmt.Errorf("error starting Discord session: %w", err)
 	}
 
-	defer func() { _ = session.Close() }()
+	defer client.Close(context.WithoutCancel(ctx))
 
-	return runServer(ctx, log.Logger, session, ev.Port)
+	return runServer(ctx, log.Logger, client, ev.Port)
 }
 
 func startSession(
 	ctx context.Context,
 	log *slog.Logger,
 	envVars *environmentVariables,
-	client *http.Client,
+	httpClient *http.Client,
 	jaegerTracer opentracing.Tracer,
-) (*discordgo.Session, error) {
-	session, err := discordgo.New("Bot " + envVars.BotToken)
+) (*bot.Client, error) {
+	client, err := disgo.New(envVars.BotToken,
+		bot.WithLogger(log),
+		bot.WithShardManagerConfigOpts(
+			sharding.WithShardIDs(envVars.shardID),
+			sharding.WithShardCount(envVars.ShardCount),
+			sharding.WithAutoScaling(false),
+			sharding.WithGatewayConfigOpts(
+				gateway.WithIntents(intents),
+			),
+		),
+		bot.WithCacheConfigOpts(
+			cache.WithCaches(
+				cache.FlagGuilds,
+				cache.FlagChannels,
+				cache.FlagRoles,
+				cache.FlagVoiceStates,
+				cache.FlagMembers,
+			),
+		),
+		bot.WithRestClientConfigOpts(
+			rest.WithHTTPClient(httpClient),
+		),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	session.Client = client
-	session.ShardID = envVars.shardID
-	session.ShardCount = envVars.ShardCount
-	session.LogLevel = discordgo.LogInformational
-	session.State.TrackEmojis = false
-	session.State.TrackPresences = false
-	session.Identify.Intents = discordgo.MakeIntent(intents)
-
 	callbackMetrics := monitor.NewMetrics(&monitor.Config{
 		Log:      log,
-		Session:  session,
+		Client:   client,
 		Interval: monitorInterval,
 	})
 
-	addCallbackHandlers(session,
+	addCallbackHandlers(client,
 		&callbacks.Handler{
 			Log:                     log,
 			RolePrefix:              envVars.RolePrefix,
@@ -147,32 +167,34 @@ func startSession(
 			JaegerTracer:            jaegerTracer,
 			ReadyCounter:            callbackMetrics.ReadyCounter,
 			VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
-			OperationsGateway:       operations.NewGateway(session),
+			OperationsGateway:       operations.NewGateway(client),
 		},
 	)
 
-	if err := session.Open(); err != nil {
+	if err := client.OpenShardManager(ctx); err != nil {
 		return nil, err
 	}
 
 	callbackMetrics.Monitor(ctx)
 
-	return session, nil
+	return client, nil
 }
 
-func addCallbackHandlers(session *discordgo.Session, callbackConfig *callbacks.Handler) {
-	session.AddHandler(callbackConfig.Ready)
-	session.AddHandler(callbackConfig.VoiceStateUpdate)
-	session.AddHandler(callbackConfig.ChannelDelete)
+func addCallbackHandlers(client *bot.Client, callbackConfig *callbacks.Handler) {
+	client.AddEventListeners(
+		bot.NewListenerFunc(callbackConfig.Ready),
+		bot.NewListenerFunc(callbackConfig.VoiceStateUpdate),
+		bot.NewListenerFunc(callbackConfig.ChannelDelete),
+	)
 }
 
 func runServer(
 	ctx context.Context,
 	log *slog.Logger,
-	session *discordgo.Session,
+	client *bot.Client,
 	port string,
 ) error {
-	httpServer := internalHTTP.NewServer(log, session, port)
+	httpServer := internalHTTP.NewServer(log, client, port)
 
 	go func() {
 		if err := httpServer.ListenAndServe(); err != nil {

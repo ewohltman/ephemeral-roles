@@ -1,40 +1,47 @@
 package callbacks
 
 import (
-	"errors"
-
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
 )
 
 const channelDeleteEventError = unableToProcessEvent + "ChannelDelete"
 
 // ChannelDelete is the callback function for the ChannelDelete event from Discord.
-func (handler *Handler) ChannelDelete(session *discordgo.Session, channel *discordgo.ChannelDelete) {
-	if channel.Type != discordgo.ChannelTypeGuildVoice {
+func (handler *Handler) ChannelDelete(event *events.GuildChannelDelete) {
+	if event.Channel.Type() != discord.ChannelTypeGuildVoice {
 		return
 	}
 
-	guild, err := session.State.Guild(channel.GuildID)
-	if err != nil {
+	client := event.Client()
+	roleName := handler.RoleNameFromChannel(event.Channel.Name())
+
+	var (
+		roleID snowflake.ID
+		found  bool
+	)
+
+	// Resolve the target role before mutating the cache: the cache's Roles
+	// iterator holds a lock for the duration of the range, so removing a role
+	// inside the loop would deadlock.
+	for role := range client.Caches.Roles(event.GuildID) {
+		if role.Name == roleName {
+			roleID = role.ID
+			found = true
+
+			break
+		}
+	}
+
+	if !found {
+		return
+	}
+
+	if err := client.Rest.DeleteRole(event.GuildID, roleID); err != nil {
 		handler.Log.Error(channelDeleteEventError, "error", err)
 		return
 	}
 
-	for _, role := range guild.Roles {
-		if role.Name != handler.RoleNameFromChannel(channel.Name) {
-			continue
-		}
-
-		if err := session.GuildRoleDelete(channel.GuildID, role.ID); err != nil {
-			handler.Log.Error(channelDeleteEventError, "error", err)
-			return
-		}
-
-		if err := session.State.RoleRemove(channel.GuildID, role.ID); err != nil && !errors.Is(err, discordgo.ErrStateNotFound) {
-			handler.Log.Error(channelDeleteEventError, "error", err)
-			return
-		}
-
-		return
-	}
+	client.Caches.RemoveRole(event.GuildID, roleID)
 }

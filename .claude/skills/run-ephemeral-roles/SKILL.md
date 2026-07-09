@@ -3,15 +3,16 @@ name: run-ephemeral-roles
 description: Build, run, and drive the ephemeral-roles Discord bot. Use when asked to start ephemeral-roles, run it, build it, exercise its VoiceStateUpdate/role flow, hit its HTTP/metrics endpoints, or run its tests.
 ---
 
-`ephemeral-roles` is a Discord bot (Go) that assigns/revokes voice-channel roles.
-The production binary **cannot run headless** — it calls `session.Open()` at
-startup and dies with `websocket: close 4004: Authentication failed.` without a
-real `BOT_TOKEN` + live Discord gateway. So you drive it through
+`ephemeral-roles` is a Discord bot (Go, built on `github.com/disgoorg/disgo`)
+that assigns/revokes voice-channel roles. The production binary **cannot run
+headless** — it opens the disgo Discord gateway at startup and dies without a
+real `BOT_TOKEN` + live Discord connection. So you drive it through
 `.claude/skills/run-ephemeral-roles/driver.go`, which wires the **real**
 `callbacks.Handler`, `monitor.Metrics`, and `http.Server` to the in-repo mock
-Discord session (`internal/pkg/mock`, backed by `discordgo-mock`) — no token, no
-network. It fires one real `VoiceStateUpdate` on startup and then serves the
-bot's HTTP endpoints so you can `curl` them.
+Discord client (`internal/pkg/mock`: a disgo `*bot.Client` with a pre-populated
+cache and a fake `rest.Rest`) — no token, no network. It fires one real
+`VoiceStateUpdate` on startup and then serves the bot's HTTP endpoints so you
+can `curl` them.
 
 All paths below are relative to the repo root.
 
@@ -60,9 +61,13 @@ The startup log (`/tmp/er-driver.log`) shows the core role flow — a member
 joining a voice channel triggers create + assign:
 
 ```
-time=... level=INFO msg="BEFORE: guild roles=2, member roles=[testRole(testRo), {eph} testChannel({eph} )]"
-time=... level=INFO msg="AFTER:  guild roles=3, member roles=[<unnamed>(VlKZOR), testRole(testRo), {eph} testChannel({eph} )]"
+time=... level=INFO msg="BEFORE: guild roles=3, member roles=[testRole(1004), {eph} testChannel(1005)]"
+time=... level=INFO msg="AFTER:  guild roles=4, member roles=[testRole(1004), {eph} testChannel2(1007)]"
 ```
+
+The member starts holding `{eph} testChannel`; joining `testChannel2` creates a
+new `{eph} testChannel2` role (role count 3→4), removes the stale
+`{eph} testChannel`, and assigns the new one.
 
 Verified endpoint output:
 
@@ -94,7 +99,7 @@ out to Discord's gateway — it exits immediately in this container:
 
 ```bash
 BOT_TOKEN=fake ./build/package/ephemeral-roles/ephemeral-roles
-# -> fatal error: error starting Discord session: websocket: close 4004: Authentication failed.
+# -> fatal error: error starting Discord session: ... (disgo rejects the fake token / gateway connect fails)
 ```
 
 Not usable headless; use the driver instead.
@@ -105,7 +110,7 @@ Not usable headless; use the driver instead.
 make test    # gotestsum, -race, coverage; excludes ./cmd/...
 ```
 
-Expected: 7 packages under `internal/pkg/...` pass, ~80.7% total coverage, rc 0.
+Expected: 7 packages under `internal/pkg/...` pass, ~81% total coverage, rc 0.
 Run one package directly, e.g.:
 
 ```bash
@@ -124,14 +129,6 @@ go test ./internal/pkg/callbacks/... -run TestHandler_VoiceStateUpdate -race
   `kill -TERM "$DRIVER_PID"` with `wait "$DRIVER_PID"`.
 - **Don't `pkill -f er-driver`.** The pattern matches the running shell's own
   command line and kills it mid-script. Use the captured `$DRIVER_PID`.
-- **Created ephemeral roles have an empty name in state.** The mock REST layer's
-  role-create (`discordgo-mock` `guildRolesPOST`) ignores the request body, so a
-  freshly created role shows up `<unnamed>` — observe the flow by guild **role
-  count** growing and the member gaining a role ID, not by the new role's name.
-- **Members never lose roles in the mock.** `discordgo-mock`'s member-role
-  DELETE is a no-op (`append(s[:i], s[i:]...)` rebuilds the same slice), so the
-  stale `{eph} testChannel` role stays on the member after the join. That's a
-  mock limitation, not bot behavior.
 - **`guilds`/`members` gauges are 0 for the first second.** `monitor` only
   `Set`s them on each ticker tick, never eagerly. The driver uses a 1s interval;
   the `sleep 1.5` above lets them populate before you scrape `/metrics`.

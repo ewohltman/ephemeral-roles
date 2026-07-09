@@ -26,7 +26,7 @@ func TestMetrics(t *testing.T) {
 
 	metrics := monitor.NewMetrics(&monitor.Config{
 		Log:      mock.NewLogger(),
-		Session:  session,
+		Client:   session,
 		Interval: testMonitorInterval,
 	})
 
@@ -46,7 +46,7 @@ func TestMonitor(t *testing.T) {
 
 	monitor.NewMetrics(&monitor.Config{
 		Log:      mock.NewLogger(),
-		Session:  session,
+		Client:   session,
 		Interval: testMonitorInterval,
 	}).Monitor(ctx)
 }

@@ -8,8 +8,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/rest"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -18,20 +19,20 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
 
-const newRoleID = "newRole"
+const newRoleID = mock.TestRole
 
-type sessionFunc func() *discordgo.Session
+type sessionFunc func() *bot.Client
 
 type roleForMemberTestCase struct {
 	name       string
-	guildID    string
-	userID     string
-	roleID     string
+	guildID    snowflake.ID
+	userID     snowflake.ID
+	roleID     snowflake.ID
 	getSession sessionFunc
 	testFunc   func(
 		t *testing.T,
 		getSession sessionFunc,
-		guildID, userID, roleName string,
+		guildID, userID, roleID snowflake.ID,
 	)
 }
 
@@ -46,7 +47,7 @@ func TestNewGateway(t *testing.T) {
 func TestGateway_Process(t *testing.T) {
 	t.Parallel()
 
-	roleNames := []string{mockconstants.TestRole, mockconstants.TestRole + "2"}
+	roleNames := []string{mock.TestRoleName, mock.TestRoleName + "2"}
 
 	session, err := mock.NewSession()
 	require.NoError(t, err)
@@ -73,10 +74,10 @@ func TestLookupGuild(t *testing.T) {
 	session, err := mock.NewSession()
 	require.NoError(t, err)
 
-	_, err = operations.LookupGuild(session, mockconstants.TestGuild)
+	_, err = operations.LookupGuild(session, mock.TestGuild)
 	require.NoError(t, err)
 
-	_, err = operations.LookupGuild(session, mockconstants.TestGuildLarge)
+	_, err = operations.LookupGuild(session, mock.TestGuildLarge)
 	require.NoError(t, err)
 }
 
@@ -86,7 +87,7 @@ func TestAddRoleToMember(t *testing.T) {
 	session, err := mock.NewSession()
 	require.NoError(t, err)
 
-	getSession := func() *discordgo.Session { return session }
+	getSession := func() *bot.Client { return session }
 
 	runRoleForMemberTestCases(t, addRoleToMemberTestCases(getSession))
 }
@@ -97,7 +98,7 @@ func TestRemoveRoleFromMember(t *testing.T) {
 	session, err := mock.NewSession()
 	require.NoError(t, err)
 
-	getSession := func() *discordgo.Session { return session }
+	getSession := func() *bot.Client { return session }
 
 	runRoleForMemberTestCases(t, removeRoleFromMemberTestCases(getSession))
 }
@@ -130,19 +131,19 @@ func TestIsForbiddenResponse(t *testing.T) {
 			err:      io.EOF,
 		},
 		{
-			name:     "*discordgo.RESTError http.StatusInternalServerError",
+			name:     "*rest.Error http.StatusInternalServerError",
 			expected: false,
-			err:      &discordgo.RESTError{Response: &http.Response{StatusCode: http.StatusInternalServerError}},
+			err:      &rest.Error{Response: &http.Response{StatusCode: http.StatusInternalServerError}},
 		},
 		{
-			name:     "*discordgo.RESTError http.StatusForbidden",
+			name:     "*rest.Error http.StatusForbidden",
 			expected: true,
-			err:      &discordgo.RESTError{Response: &http.Response{StatusCode: http.StatusForbidden}},
+			err:      &rest.Error{Response: &http.Response{StatusCode: http.StatusForbidden}},
 		},
 		{
-			name:     "wrapped *discordgo.RESTError http.StatusForbidden",
+			name:     "wrapped *rest.Error http.StatusForbidden",
 			expected: true,
-			err:      fmt.Errorf("%w", &discordgo.RESTError{Response: &http.Response{StatusCode: http.StatusForbidden}}),
+			err:      fmt.Errorf("%w", &rest.Error{Response: &http.Response{StatusCode: http.StatusForbidden}}),
 		},
 	}
 
@@ -159,10 +160,7 @@ func TestIsMaxGuildsResponse(t *testing.T) {
 
 	assert.False(t, operations.IsMaxGuildsResponse(io.EOF))
 
-	maxGuildsResponse := &discordgo.RESTError{
-		Response: &http.Response{StatusCode: http.StatusBadRequest},
-		Message:  &discordgo.APIErrorMessage{Code: operations.APIErrorCodeMaxRoles},
-	}
+	maxGuildsResponse := &rest.Error{Code: operations.APIErrorCodeMaxRoles}
 
 	assert.True(t, operations.IsMaxGuildsResponse(maxGuildsResponse))
 }
@@ -180,11 +178,11 @@ func TestBotHasChannelPermission(t *testing.T) {
 	session, err := mock.NewSession()
 	require.NoError(t, err)
 
-	testChannelWithPermission, err := session.State.Channel(mockconstants.TestChannel)
-	require.NoError(t, err)
+	testChannelWithPermission, ok := session.Caches.Channel(mock.TestChannel)
+	require.True(t, ok)
 
-	testChannelWithoutPermission, err := session.State.Channel(mockconstants.TestPrivateChannel)
-	require.NoError(t, err)
+	testChannelWithoutPermission, ok := session.Caches.Channel(mock.TestPrivateChannel)
+	require.True(t, ok)
 
 	require.NoError(t, operations.BotHasChannelPermission(session, testChannelWithPermission))
 	require.Error(t, operations.BotHasChannelPermission(session, testChannelWithoutPermission))
@@ -198,7 +196,7 @@ func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
 	err := runTest(gateway, &operations.Request{
 		Type: requestType,
 		CreateRole: &operations.CreateRoleRequest{
-			Guild:    &discordgo.Guild{ID: mockconstants.TestGuild},
+			GuildID:  mock.TestGuild,
 			RoleName: "",
 		},
 	})
@@ -211,7 +209,7 @@ func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway,
 	require.NoError(t, runTest(gateway, &operations.Request{
 		Type: operations.CreateRole,
 		CreateRole: &operations.CreateRoleRequest{
-			Guild:    &discordgo.Guild{ID: mockconstants.TestGuild},
+			GuildID:  mock.TestGuild,
 			RoleName: roleName,
 		},
 	}))
@@ -226,17 +224,17 @@ func addRoleToMemberTestCases(getSession sessionFunc) []*roleForMemberTestCase {
 	return []*roleForMemberTestCase{
 		{
 			name:       "add role user does not have",
-			guildID:    mockconstants.TestGuild,
+			guildID:    mock.TestGuild,
 			roleID:     newRoleID,
-			userID:     mockconstants.TestUser,
+			userID:     mock.TestUser,
 			getSession: getSession,
 			testFunc:   addNewRoleToMember,
 		},
 		{
 			name:       "add role user does have",
-			guildID:    mockconstants.TestGuild,
+			guildID:    mock.TestGuild,
 			roleID:     newRoleID,
-			userID:     mockconstants.TestUser,
+			userID:     mock.TestUser,
 			getSession: getSession,
 			testFunc:   addNewRoleToMember,
 		},
@@ -247,17 +245,17 @@ func removeRoleFromMemberTestCases(getSession sessionFunc) []*roleForMemberTestC
 	return []*roleForMemberTestCase{
 		{
 			name:       "remove role member does have",
-			guildID:    mockconstants.TestGuild,
+			guildID:    mock.TestGuild,
 			roleID:     newRoleID,
-			userID:     mockconstants.TestUser,
+			userID:     mock.TestUser,
 			getSession: getSession,
 			testFunc:   removeRoleFromMember,
 		},
 		{
 			name:       "remove role member does not have",
-			guildID:    mockconstants.TestGuild,
+			guildID:    mock.TestGuild,
 			roleID:     newRoleID,
-			userID:     mockconstants.TestUser,
+			userID:     mock.TestUser,
 			getSession: getSession,
 			testFunc:   removeRoleFromMember,
 		},
@@ -267,7 +265,7 @@ func removeRoleFromMemberTestCases(getSession sessionFunc) []*roleForMemberTestC
 func addNewRoleToMember(
 	t *testing.T,
 	getSession sessionFunc,
-	guildID, userID, roleID string,
+	guildID, userID, roleID snowflake.ID,
 ) {
 	t.Helper()
 	roleForMember(t, getSession, guildID, userID, roleID, true)
@@ -276,7 +274,7 @@ func addNewRoleToMember(
 func removeRoleFromMember(
 	t *testing.T,
 	getSession sessionFunc,
-	guildID, userID, roleID string,
+	guildID, userID, roleID snowflake.ID,
 ) {
 	t.Helper()
 	roleForMember(t, getSession, guildID, userID, roleID, false)
@@ -285,7 +283,7 @@ func removeRoleFromMember(
 func roleForMember(
 	t *testing.T,
 	getSession sessionFunc,
-	guildID, userID, roleID string,
+	guildID, userID, roleID snowflake.ID,
 	add bool,
 ) {
 	t.Helper()
