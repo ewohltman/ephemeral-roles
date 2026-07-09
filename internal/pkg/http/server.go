@@ -1,12 +1,13 @@
 package http
 
 import (
+	"cmp"
 	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/pprof"
-	"sort"
+	"slices"
 	"time"
 
 	"github.com/disgoorg/disgo/bot"
@@ -39,23 +40,6 @@ type SortableGuild struct {
 
 // SortableGuilds is a slice of SortableGuild structs.
 type SortableGuilds []SortableGuild
-
-// Len returns the length of guilds to satisfy the sort.Interface interface.
-func (guilds SortableGuilds) Len() int {
-	return len(guilds)
-}
-
-// Less returns whether the element i is less than element j to satisfy the
-// sort.Interface interface.
-func (guilds SortableGuilds) Less(i, j int) bool {
-	return guilds[i].MemberCount < guilds[j].MemberCount
-}
-
-// Swap swaps the elements i and j in the slice to satisfy the sort.Interface
-// interface.
-func (guilds SortableGuilds) Swap(i, j int) {
-	guilds[i], guilds[j] = guilds[j], guilds[i]
-}
 
 // NewServer returns a new pre-configured *http.Server..
 func NewServer(log *slog.Logger, client *bot.Client, port string) *http.Server {
@@ -102,7 +86,9 @@ func guildsHandler(log *slog.Logger, client *bot.Client) http.HandlerFunc {
 			})
 		}
 
-		sort.Sort(sort.Reverse(sortedGuilds))
+		slices.SortFunc(sortedGuilds, func(a, b SortableGuild) int {
+			return cmp.Compare(b.MemberCount, a.MemberCount)
+		})
 
 		sortedGuildsJSON, err := json.MarshalIndent(sortedGuilds, "", "    ")
 		if err != nil {

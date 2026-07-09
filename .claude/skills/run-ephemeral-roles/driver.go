@@ -48,7 +48,6 @@ import (
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
 const (
@@ -62,12 +61,6 @@ func main() {
 	flag.Parse()
 
 	log := logging.New(logging.OptionalLogLevel("info")).Logger
-
-	jaegerTracer, jaegerCloser, err := tracer.New("ephemeral-roles-driver")
-	if err != nil {
-		fatal(log, "Error creating Jaeger tracer", err)
-	}
-	defer func() { _ = jaegerCloser.Close() }()
 
 	session, err := mock.NewSession()
 	if err != nil {
@@ -85,13 +78,12 @@ func main() {
 		Client:   session,
 		Interval: time.Second,
 	})
-	metrics.Monitor(ctx)
+	go metrics.Monitor(ctx)
 
 	handler := &callbacks.Handler{
 		Log:                     log,
 		RolePrefix:              rolePrefix,
 		RoleColor:               roleColor,
-		JaegerTracer:            jaegerTracer,
 		ReadyCounter:            metrics.ReadyCounter,
 		VoiceStateUpdateCounter: metrics.VoiceStateUpdateCounter,
 		OperationsGateway:       operations.NewGateway(session),

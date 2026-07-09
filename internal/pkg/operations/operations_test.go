@@ -44,7 +44,7 @@ func TestNewGateway(t *testing.T) {
 	assert.NotNil(t, operations.NewGateway(nil))
 }
 
-func TestGateway_Process(t *testing.T) {
+func TestGateway_CreateRole(t *testing.T) {
 	t.Parallel()
 
 	roleNames := []string{mock.TestRoleName, mock.TestRoleName + "2"}
@@ -55,12 +55,10 @@ func TestGateway_Process(t *testing.T) {
 	gateway := operations.NewGateway(session)
 	waitGroup := &sync.WaitGroup{}
 
-	runTestRequestUnknown(t, gateway)
-
 	for _, roleName := range roleNames {
 		for range duplicateRequests {
 			waitGroup.Go(func() {
-				runTestRequestCreateRole(t, gateway, roleName)
+				runTestCreateRole(t, gateway, roleName)
 			})
 		}
 	}
@@ -107,7 +105,10 @@ func TestIsDeadlineExceeded(t *testing.T) {
 	t.Parallel()
 
 	assert.False(t, operations.IsDeadlineExceeded(io.EOF))
-	assert.True(t, operations.IsDeadlineExceeded(&callbacks.DeadlineExceededError{Err: context.DeadlineExceeded}))
+	assert.True(t, operations.IsDeadlineExceeded(&callbacks.EventError{
+		Kind: callbacks.KindDeadlineExceeded,
+		Err:  context.DeadlineExceeded,
+	}))
 }
 
 func TestIsForbiddenResponse(t *testing.T) {
@@ -169,7 +170,10 @@ func TestShouldLogDebug(t *testing.T) {
 	t.Parallel()
 
 	assert.False(t, operations.ShouldLogDebug(io.EOF))
-	assert.True(t, operations.ShouldLogDebug(&callbacks.DeadlineExceededError{Err: context.DeadlineExceeded}))
+	assert.True(t, operations.ShouldLogDebug(&callbacks.EventError{
+		Kind: callbacks.KindDeadlineExceeded,
+		Err:  context.DeadlineExceeded,
+	}))
 }
 
 func TestBotHasChannelPermission(t *testing.T) {
@@ -188,36 +192,11 @@ func TestBotHasChannelPermission(t *testing.T) {
 	require.Error(t, operations.BotHasChannelPermission(session, testChannelWithoutPermission))
 }
 
-func runTestRequestUnknown(t *testing.T, gateway callbacks.OperationsGateway) {
+func runTestCreateRole(t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
 	t.Helper()
 
-	requestType := operations.RequestType(-1)
-
-	err := runTest(gateway, &operations.Request{
-		Type: requestType,
-		CreateRole: &operations.CreateRoleRequest{
-			GuildID:  mock.TestGuild,
-			RoleName: "",
-		},
-	})
-	require.Error(t, err, "unexpected success for request type %q", requestType)
-}
-
-func runTestRequestCreateRole(t *testing.T, gateway callbacks.OperationsGateway, roleName string) {
-	t.Helper()
-
-	require.NoError(t, runTest(gateway, &operations.Request{
-		Type: operations.CreateRole,
-		CreateRole: &operations.CreateRoleRequest{
-			GuildID:  mock.TestGuild,
-			RoleName: roleName,
-		},
-	}))
-}
-
-func runTest(gateway callbacks.OperationsGateway, request *operations.Request) error {
-	result := <-gateway.Process(request)
-	return result.Err
+	_, err := gateway.CreateRole(mock.TestGuild, roleName, 0)
+	require.NoError(t, err)
 }
 
 func addRoleToMemberTestCases(getSession sessionFunc) []*roleForMemberTestCase {

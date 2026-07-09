@@ -6,10 +6,12 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"sync"
+	"slices"
 	"time"
 
 	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -26,131 +28,165 @@ type Config struct {
 type Metrics struct {
 	*Config
 
-	Guilds                  *Guilds
-	Members                 *Members
 	ReadyCounter            prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
 	GuildsGauge             prometheus.Gauge
 	MembersGauge            prometheus.Gauge
+
+	guildList  []discord.Guild
+	numGuilds  int
+	numMembers int
 }
 
 // NewMetrics returns a new *Metrics configured using the provided config.
 func NewMetrics(config *Config) *Metrics {
-	metrics := &Metrics{
+	return &Metrics{
 		Config:                  config,
 		ReadyCounter:            ReadyCounter(config),
 		VoiceStateUpdateCounter: VoiceStateUpdateCounter(config),
 		GuildsGauge:             GuildsGauge(config),
 		MembersGauge:            MembersGauge(config),
 	}
-
-	metrics.newGuilds()
-	metrics.newMembers()
-
-	return metrics
 }
 
-// Monitor begins the goroutines for monitoring callback metrics.
+// Monitor periodically polls the client cache and updates the guild and member
+// gauges until the context is canceled. It blocks, so callers should invoke it
+// in its own goroutine (go metrics.Monitor(ctx)).
 func (metrics *Metrics) Monitor(ctx context.Context) {
-	go metrics.Guilds.Monitor(ctx)
-	go metrics.Members.Monitor(ctx)
-}
+	updateTicker := time.NewTicker(metrics.Interval)
+	defer updateTicker.Stop()
 
-func (metrics *Metrics) newGuilds() {
-	metrics.Guilds = &Guilds{
-		Log:             metrics.Log,
-		Client:          metrics.Client,
-		Interval:        metrics.Interval,
-		PrometheusGauge: metrics.GuildsGauge,
-		Cache:           &GuildsCache{Mutex: &sync.Mutex{}},
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-updateTicker.C:
+			metrics.updateGuilds()
+			metrics.updateMembers()
+		}
 	}
 }
 
-func (metrics *Metrics) newMembers() {
-	metrics.Members = &Members{
-		Log:             metrics.Log,
-		Client:          metrics.Client,
-		Interval:        metrics.Interval,
-		PrometheusGauge: metrics.MembersGauge,
-		Cache:           &MembersCache{Mutex: &sync.Mutex{}},
+func (metrics *Metrics) updateGuilds() {
+	newCount := metrics.Client.Caches.GuildsLen()
+	if newCount == metrics.numGuilds {
+		return
 	}
+
+	currentGuilds := slices.Collect(metrics.Client.Caches.Guilds())
+
+	switch {
+	case newCount > metrics.numGuilds && metrics.numGuilds != 0:
+		if newGuild, ok := metrics.newlyJoinedGuild(currentGuilds); ok {
+			metrics.Log.Info(metrics.botName()+" joined new guild", "guild", newGuild.Name)
+		}
+	case newCount < metrics.numGuilds:
+		metrics.Log.Info(metrics.botName() + " removed from guild")
+	}
+
+	metrics.numGuilds = newCount
+	metrics.guildList = currentGuilds
+	metrics.GuildsGauge.Set(float64(newCount))
+}
+
+func (metrics *Metrics) updateMembers() {
+	numMembers := 0
+
+	for guild := range metrics.Client.Caches.Guilds() {
+		numMembers += guild.MemberCount
+	}
+
+	if numMembers != metrics.numMembers {
+		metrics.numMembers = numMembers
+		metrics.MembersGauge.Set(float64(numMembers))
+	}
+}
+
+func (metrics *Metrics) botName() string {
+	selfUser, ok := metrics.Client.Caches.SelfUser()
+	if !ok {
+		return ""
+	}
+
+	return selfUser.Username
+}
+
+func (metrics *Metrics) newlyJoinedGuild(currentGuilds []discord.Guild) (discord.Guild, bool) {
+	for i := range currentGuilds {
+		if !metrics.isKnownGuild(currentGuilds[i].ID) {
+			return currentGuilds[i], true
+		}
+	}
+
+	return discord.Guild{}, false
+}
+
+func (metrics *Metrics) isKnownGuild(guildID snowflake.ID) bool {
+	for i := range metrics.guildList {
+		if metrics.guildList[i].ID == guildID {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ReadyCounter returns a Prometheus counter for Ready events.
 func ReadyCounter(config *Config) prometheus.Counter {
-	prometheusReadyCounter := prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Namespace: prometheusNamespace,
-			Name:      "ready_events_total",
-			Help:      "Total Ready events",
-		},
-	)
-
-	if err := prometheus.Register(prometheusReadyCounter); err != nil && !alreadyRegisteredError(err) {
-		config.Log.Error("Unable to register Ready events metric with Prometheus", "error", err)
-		return nil
-	}
-
-	return prometheusReadyCounter
+	return newCounter(config.Log, "ready_events_total", "Total Ready events")
 }
 
 // VoiceStateUpdateCounter returns a Prometheus counter for VoiceStateUpdate
 // events.
 func VoiceStateUpdateCounter(config *Config) prometheus.Counter {
-	prometheusVoiceStateUpdateCounter := prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Namespace: prometheusNamespace,
-			Name:      "voice_state_update_events_total",
-			Help:      "Total VoiceStateUpdate events",
-		},
-	)
-
-	if err := prometheus.Register(prometheusVoiceStateUpdateCounter); err != nil && !alreadyRegisteredError(err) {
-		config.Log.Error("Unable to register VoiceStateUpdate events metric with Prometheus", "error", err)
-		return nil
-	}
-
-	return prometheusVoiceStateUpdateCounter
+	return newCounter(config.Log, "voice_state_update_events_total", "Total VoiceStateUpdate events")
 }
 
 // GuildsGauge returns a Prometheus gauge for the number of guilds the bot
 // belongs to.
 func GuildsGauge(config *Config) prometheus.Gauge {
-	prometheusGuildsGauge := prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Namespace: prometheusNamespace,
-			Name:      "guilds",
-			Help:      "Total Guilds count",
-		},
-	)
-
-	if err := prometheus.Register(prometheusGuildsGauge); err != nil && !alreadyRegisteredError(err) {
-		config.Log.Error("Unable to register Guilds gauge with Prometheus", "error", err)
-		return nil
-	}
-
-	return prometheusGuildsGauge
+	return newGauge(config.Log, "guilds", "Total Guilds count")
 }
 
 // MembersGauge returns a Prometheus gauge for the number of members of the
 // guilds the bot belongs to.
 func MembersGauge(config *Config) prometheus.Gauge {
-	prometheusMembersGauge := prometheus.NewGauge(
-		prometheus.GaugeOpts{
-			Namespace: prometheusNamespace,
-			Name:      "members",
-			Help:      "Total Members count",
-		},
-	)
+	return newGauge(config.Log, "members", "Total Members count")
+}
 
-	if err := prometheus.Register(prometheusMembersGauge); err != nil && !alreadyRegisteredError(err) {
-		config.Log.Error("Unable to register Members gauge with Prometheus", "error", err)
+func newCounter(log *slog.Logger, name, help string) prometheus.Counter {
+	counter := prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: prometheusNamespace,
+		Name:      name,
+		Help:      help,
+	})
+
+	if !register(log, counter, name) {
 		return nil
 	}
 
-	return prometheusMembersGauge
+	return counter
 }
 
-func alreadyRegisteredError(err error) bool {
-	return errors.As(err, &prometheus.AlreadyRegisteredError{})
+func newGauge(log *slog.Logger, name, help string) prometheus.Gauge {
+	gauge := prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: prometheusNamespace,
+		Name:      name,
+		Help:      help,
+	})
+
+	if !register(log, gauge, name) {
+		return nil
+	}
+
+	return gauge
+}
+
+func register(log *slog.Logger, collector prometheus.Collector, name string) bool {
+	if err := prometheus.Register(collector); err != nil && !errors.As(err, &prometheus.AlreadyRegisteredError{}) {
+		log.Error("Unable to register metric with Prometheus", "metric", name, "error", err)
+		return false
+	}
+
+	return true
 }

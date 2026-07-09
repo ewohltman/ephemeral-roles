@@ -15,15 +15,6 @@ import (
 	"golang.org/x/sync/singleflight"
 )
 
-// CreateRole is a RequestType enumeration.
-const CreateRole RequestType = iota
-
-// RequestType string representations.
-const (
-	CreateRoleString = "CreateRole"
-	UnknownString    = "unknown"
-)
-
 // APIErrorCodeMaxRoles is the Discord API error code for the maximum number of
 // guild roles being reached.
 const APIErrorCodeMaxRoles = rest.JSONErrorCodeMaximumGuildRolesReached
@@ -33,73 +24,36 @@ const (
 	roleMention = true
 )
 
-// Request is an operations request to be processed.
-type Request struct {
-	Type       RequestType
-	CreateRole *CreateRoleRequest
-}
-
-// RequestType represents a type of operations request.
-type RequestType int
-
-// String returns the string representation for the given RequestType.
-func (rt RequestType) String() string {
-	switch rt {
-	case CreateRole:
-		return CreateRoleString
-	default:
-		return UnknownString
-	}
-}
-
-// CreateRoleRequest is a request to create a new role.
-type CreateRoleRequest struct {
-	GuildID   snowflake.ID
-	RoleName  string
-	RoleColor int
-}
-
-// Gateway is a centralized construct to process operation requests by
-// de-duplicating identical simultaneous requests and providing the result to
-// all the callers.
+// Gateway is a centralized construct to process Discord API-mutating requests
+// by de-duplicating identical simultaneous requests and providing the result
+// to all the callers.
 type Gateway struct {
 	Client *bot.Client
-	group  *singleflight.Group
+	group  singleflight.Group
 }
 
 // NewGateway returns a new *Gateway ready to process requests.
 func NewGateway(client *bot.Client) *Gateway {
-	return &Gateway{
-		Client: client,
-		group:  &singleflight.Group{},
-	}
+	return &Gateway{Client: client}
 }
 
-// Process will process the provided request and send back the result to the
-// provided ResultChannel. The caller should type check the result it receives
-// to determine if an error was sent or the result is of the type it expects.
-func (gateway *Gateway) Process(request *Request) <-chan singleflight.Result {
-	key := fmt.Sprintf("%s/%s/%s",
-		request.Type,
-		request.CreateRole.GuildID,
-		request.CreateRole.RoleName,
-	)
-
-	defer gateway.group.Forget(key)
-
-	return gateway.group.DoChan(key, func() (any, error) {
-		switch request.Type {
-		case CreateRole:
-			return createRole(
-				gateway.Client,
-				request.CreateRole.GuildID,
-				request.CreateRole.RoleName,
-				request.CreateRole.RoleColor,
-			)
-		default:
-			return nil, fmt.Errorf("%s request type not supported", request.Type)
-		}
+// CreateRole creates a new role in the provided guild and adds it to the
+// client cache. Concurrent calls for the same guild and role name are collapsed
+// into a single Discord API request sharing one result.
+func (gateway *Gateway) CreateRole(guildID snowflake.ID, roleName string, roleColor int) (discord.Role, error) {
+	result, err, _ := gateway.group.Do(guildID.String()+"/"+roleName, func() (any, error) {
+		return createRole(gateway.Client, guildID, roleName, roleColor)
 	})
+	if err != nil {
+		return discord.Role{}, err
+	}
+
+	role, ok := result.(discord.Role)
+	if !ok {
+		return discord.Role{}, fmt.Errorf("unrecognized create role result type: %T", result)
+	}
+
+	return role, nil
 }
 
 // LookupGuild returns a discord.Guild from the client's cache. If the guild is

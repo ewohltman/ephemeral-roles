@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -22,25 +21,25 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/disgo/sharding"
-	"github.com/opentracing/opentracing-go"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/callbacks"
 	internalHTTP "github.com/ewohltman/ephemeral-roles/internal/pkg/http"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/logging"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
-	"github.com/ewohltman/ephemeral-roles/internal/pkg/tracer"
 )
 
 const (
-	ephemeralRoles  = "ephemeral-roles"
 	contextTimeout  = 5 * time.Minute
 	monitorInterval = 10 * time.Second
 
+	// intents subscribes to only the gateway events the bot handles: guild,
+	// channel, and role changes (IntentGuilds), the core VoiceStateUpdate
+	// event (IntentGuildVoiceStates), and member changes for the member cache
+	// and counts (IntentGuildMembers).
 	intents = gateway.IntentGuilds |
 		gateway.IntentGuildVoiceStates |
-		gateway.IntentGuildMembers |
-		gateway.IntentGuildPresences
+		gateway.IntentGuildMembers
 )
 
 type environmentVariables struct {
@@ -58,12 +57,12 @@ type environmentVariables struct {
 }
 
 func (envVars *environmentVariables) parseShardID() error {
-	shardIDRegEx := regexp.MustCompile(`-\d.*$`)
+	index := strings.LastIndexByte(envVars.InstanceName, '-')
+	if index < 0 {
+		return fmt.Errorf("error parsing shard ID: no trailing -<N> in instance name %q", envVars.InstanceName)
+	}
 
-	shardIDString := shardIDRegEx.FindString(envVars.InstanceName)
-	shardIDString = strings.TrimPrefix(shardIDString, "-")
-
-	shardID, err := strconv.Atoi(shardIDString)
+	shardID, err := strconv.Atoi(envVars.InstanceName[index+1:])
 	if err != nil {
 		return fmt.Errorf("error parsing shard ID: %w", err)
 	}
@@ -96,20 +95,9 @@ func run() error {
 
 	log.Info("starting up", "bot", ev.BotName)
 
-	jaegerTracer, jaegerCloser, err := tracer.New(ephemeralRoles)
-	if err != nil {
-		return fmt.Errorf("error creating Jaeger tracer: %w", err)
-	}
+	httpClient := internalHTTP.NewClient(internalHTTP.NewTransport())
 
-	defer func() { _ = jaegerCloser.Close() }()
-
-	httpClient := internalHTTP.NewClient(tracer.RoundTripper(
-		jaegerTracer,
-		ev.InstanceName,
-		internalHTTP.NewTransport(),
-	))
-
-	client, err := startSession(ctx, log.Logger, ev, httpClient, jaegerTracer)
+	client, err := startSession(ctx, log.Logger, ev, httpClient)
 	if err != nil {
 		return fmt.Errorf("error starting Discord session: %w", err)
 	}
@@ -124,7 +112,6 @@ func startSession(
 	log *slog.Logger,
 	envVars *environmentVariables,
 	httpClient *http.Client,
-	jaegerTracer opentracing.Tracer,
 ) (*bot.Client, error) {
 	client, err := disgo.New(envVars.BotToken,
 		bot.WithLogger(log),
@@ -164,7 +151,6 @@ func startSession(
 			Log:                     log,
 			RolePrefix:              envVars.RolePrefix,
 			RoleColor:               envVars.RoleColor,
-			JaegerTracer:            jaegerTracer,
 			ReadyCounter:            callbackMetrics.ReadyCounter,
 			VoiceStateUpdateCounter: callbackMetrics.VoiceStateUpdateCounter,
 			OperationsGateway:       operations.NewGateway(client),
@@ -175,7 +161,7 @@ func startSession(
 		return nil, err
 	}
 
-	callbackMetrics.Monitor(ctx)
+	go callbackMetrics.Monitor(ctx)
 
 	return client, nil
 }
@@ -214,6 +200,8 @@ func runServer(
 
 func main() {
 	if err := run(); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "fatal error: %s", err)
+		_, _ = fmt.Fprintf(os.Stderr, "fatal error: %s\n", err)
+
+		os.Exit(1)
 	}
 }

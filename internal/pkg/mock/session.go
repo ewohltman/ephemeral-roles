@@ -1,3 +1,5 @@
+// Package mock provides implementations for mocking objects and endpoints for
+// unit testing.
 package mock
 
 import (

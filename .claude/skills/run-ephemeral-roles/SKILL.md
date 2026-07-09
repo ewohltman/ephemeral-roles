@@ -110,7 +110,7 @@ Not usable headless; use the driver instead.
 make test    # gotestsum, -race, coverage; excludes ./cmd/...
 ```
 
-Expected: 7 packages under `internal/pkg/...` pass, ~81% total coverage, rc 0.
+Expected: 6 packages under `internal/pkg/...` pass, ~80% total coverage, rc 0.
 Run one package directly, e.g.:
 
 ```bash
