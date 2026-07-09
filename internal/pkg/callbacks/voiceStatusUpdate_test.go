@@ -4,8 +4,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/ewohltman/discordgo-mock/mockconstants"
+	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -39,56 +41,30 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 		OperationsGateway:       operations.NewGateway(session),
 	}
 
+	testUserMember, ok := session.Caches.Member(mock.TestGuild, mock.TestUser)
+	require.True(t, ok)
+
+	unknownMember := discord.Member{
+		GuildID: mock.TestGuild,
+		User:    discord.User{ID: snowflake.ID(999999), Username: "unknownUser"},
+	}
+
+	unknownChannel := snowflake.ID(999888)
+
 	type testCase struct {
 		name      string
-		guildID   string
-		userID    string
-		channelID string
+		member    discord.Member
+		channelID *snowflake.ID
 	}
 
 	testCases := []*testCase{
-		{
-			name:      "unknown user",
-			guildID:   mockconstants.TestGuild,
-			userID:    "unknownUser",
-			channelID: mockconstants.TestChannel,
-		},
-		{
-			name:      "private channel",
-			guildID:   mockconstants.TestGuild,
-			userID:    mockconstants.TestUser,
-			channelID: mockconstants.TestPrivateChannel,
-		},
-		{
-			name:      "join test channel",
-			guildID:   mockconstants.TestGuild,
-			userID:    mockconstants.TestUser,
-			channelID: mockconstants.TestChannel,
-		},
-		{
-			name:      "join test channel 2",
-			guildID:   mockconstants.TestGuild,
-			userID:    mockconstants.TestUser,
-			channelID: mockconstants.TestChannel2,
-		},
-		{
-			name:      "join unknown channel",
-			guildID:   mockconstants.TestGuild,
-			userID:    mockconstants.TestUser,
-			channelID: "unknownChannel",
-		},
-		{
-			name:      "rejoin test channel",
-			guildID:   mockconstants.TestGuild,
-			userID:    mockconstants.TestUser,
-			channelID: mockconstants.TestChannel,
-		},
-		{
-			name:      "disconnect test channel",
-			guildID:   mockconstants.TestGuild,
-			userID:    mockconstants.TestUser,
-			channelID: "",
-		},
+		{name: "unknown user", member: unknownMember, channelID: new(mock.TestChannel)},
+		{name: "private channel", member: testUserMember, channelID: new(mock.TestPrivateChannel)},
+		{name: "join test channel", member: testUserMember, channelID: new(mock.TestChannel)},
+		{name: "join test channel 2", member: testUserMember, channelID: new(mock.TestChannel2)},
+		{name: "join unknown channel", member: testUserMember, channelID: new(unknownChannel)},
+		{name: "rejoin test channel", member: testUserMember, channelID: new(mock.TestChannel)},
+		{name: "disconnect test channel", member: testUserMember, channelID: nil},
 	}
 
 	mutex := &sync.Mutex{}
@@ -97,30 +73,30 @@ func TestHandler_VoiceStateUpdate(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			sendUpdate(
-				mutex,
-				session,
-				handler,
-				tc.guildID, tc.userID, tc.channelID,
-			)
+			sendUpdate(mutex, session, handler, &tc.member, tc.channelID)
 		})
 	}
 }
 
 func sendUpdate(
 	mutex *sync.Mutex,
-	session *discordgo.Session,
+	session *bot.Client,
 	handler *callbacks.Handler,
-	guildID, userID, channelID string,
+	member *discord.Member,
+	channelID *snowflake.ID,
 ) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	handler.VoiceStateUpdate(session, &discordgo.VoiceStateUpdate{
-		VoiceState: &discordgo.VoiceState{
-			UserID:    userID,
-			GuildID:   guildID,
-			ChannelID: channelID,
+	handler.VoiceStateUpdate(&events.GuildVoiceStateUpdate{
+		GenericGuildVoiceState: &events.GenericGuildVoiceState{
+			GenericEvent: events.NewGenericEvent(session, 0, 0),
+			VoiceState: discord.VoiceState{
+				GuildID:   member.GuildID,
+				ChannelID: channelID,
+				UserID:    member.User.ID,
+			},
+			Member: *member,
 		},
 	})
 }

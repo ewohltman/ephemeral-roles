@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/bot"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -18,7 +18,7 @@ const prometheusNamespace = "ephemeral_roles"
 // Config contains fields for configuring Metrics.
 type Config struct {
 	Log      *slog.Logger
-	Session  *discordgo.Session
+	Client   *bot.Client
 	Interval time.Duration
 }
 
@@ -59,7 +59,7 @@ func (metrics *Metrics) Monitor(ctx context.Context) {
 func (metrics *Metrics) newGuilds() {
 	metrics.Guilds = &Guilds{
 		Log:             metrics.Log,
-		Session:         metrics.Session,
+		Client:          metrics.Client,
 		Interval:        metrics.Interval,
 		PrometheusGauge: metrics.GuildsGauge,
 		Cache:           &GuildsCache{Mutex: &sync.Mutex{}},
@@ -69,7 +69,7 @@ func (metrics *Metrics) newGuilds() {
 func (metrics *Metrics) newMembers() {
 	metrics.Members = &Members{
 		Log:             metrics.Log,
-		Session:         metrics.Session,
+		Client:          metrics.Client,
 		Interval:        metrics.Interval,
 		PrometheusGauge: metrics.MembersGauge,
 		Cache:           &MembersCache{Mutex: &sync.Mutex{}},

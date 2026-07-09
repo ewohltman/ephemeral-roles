@@ -7,7 +7,6 @@ package logging
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -127,13 +126,6 @@ func OptionalDiscordWebhook(webhookURL string) OptionFunc {
 // stdout handler live; the Discord handler keeps its startup level.
 func (l *Logger) UpdateLevel(level string) {
 	l.level.Set(parseLevel(level))
-}
-
-// DiscordGoLogf is an adapter for plugging into DiscordGo's logging system. All
-// discordgo log levels are emitted at debug so they only surface when debug
-// logging is enabled.
-func (l *Logger) DiscordGoLogf(_, _ int, format string, arguments ...any) {
-	l.Debug(fmt.Sprintf(format, arguments...))
 }
 
 // build (re)constructs the fan-out *slog.Logger from the current configuration.

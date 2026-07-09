@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -33,11 +34,8 @@ func TestNewServer(t *testing.T) {
 	session, err := mock.NewSession()
 	require.NoError(t, err)
 
-	session.State.Guilds = append(
-		session.State.Guilds,
-		&discordgo.Guild{Name: "testGuild2", MemberCount: 3},
-		&discordgo.Guild{Name: "testGuild3", MemberCount: 4},
-	)
+	session.Caches.AddGuild(discord.Guild{ID: snowflake.ID(3002), Name: "testGuild2", MemberCount: 3})
+	session.Caches.AddGuild(discord.Guild{ID: snowflake.ID(3003), Name: "testGuild3", MemberCount: 4})
 
 	testServer := internalHTTP.NewServer(log, session, testPort)
 

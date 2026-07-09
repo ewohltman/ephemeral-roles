@@ -21,7 +21,7 @@ func TestMembers_Monitor(t *testing.T) {
 
 	members := &monitor.Members{
 		Log:             log,
-		Session:         mockSession,
+		Client:          mockSession,
 		Interval:        testMonitorInterval,
 		PrometheusGauge: monitor.MembersGauge(&monitor.Config{Log: log}),
 		Cache:           &monitor.MembersCache{Mutex: &sync.Mutex{}},

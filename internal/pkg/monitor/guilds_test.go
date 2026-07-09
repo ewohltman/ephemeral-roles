@@ -6,12 +6,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/mock"
 	"github.com/ewohltman/ephemeral-roles/internal/pkg/monitor"
 )
+
+const extraGuildID snowflake.ID = 3000
 
 func TestGuilds_Monitor(t *testing.T) {
 	t.Parallel()
@@ -23,7 +26,7 @@ func TestGuilds_Monitor(t *testing.T) {
 
 	guilds := &monitor.Guilds{
 		Log:             log,
-		Session:         mockSession,
+		Client:          mockSession,
 		Interval:        testMonitorInterval,
 		PrometheusGauge: monitor.GuildsGauge(&monitor.Config{Log: log}),
 		Cache:           &monitor.GuildsCache{Mutex: &sync.Mutex{}},
@@ -51,12 +54,12 @@ func addGuild(guilds *monitor.Guilds) {
 	guilds.Cache.Mutex.Lock()
 	defer guilds.Cache.Mutex.Unlock()
 
-	guilds.Session.State.Guilds = append(guilds.Session.State.Guilds, &discordgo.Guild{})
+	guilds.Client.Caches.AddGuild(discord.Guild{ID: extraGuildID, Name: "testGuildExtra"})
 }
 
 func removeGuild(guilds *monitor.Guilds) {
 	guilds.Cache.Mutex.Lock()
 	defer guilds.Cache.Mutex.Unlock()
 
-	guilds.Session.State.Guilds = guilds.Session.State.Guilds[:len(guilds.Session.State.Guilds)-1]
+	guilds.Client.Caches.RemoveGuild(extraGuildID)
 }
