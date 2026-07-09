@@ -48,14 +48,16 @@ func (guilds *Guilds) update() {
 	guilds.Cache.Mutex.Lock()
 	defer guilds.Cache.Mutex.Unlock()
 
+	originalCount := guilds.Cache.numGuilds
+	newCount := guilds.Client.Caches.GuildsLen()
+
+	if newCount == originalCount {
+		return
+	}
+
 	currentGuilds := slices.Collect(guilds.Client.Caches.Guilds())
 
-	originalCount := guilds.Cache.numGuilds
-	newCount := len(currentGuilds)
-
 	switch {
-	case newCount == originalCount:
-		return
 	case newCount > originalCount && originalCount != 0:
 		if newGuild, ok := guilds.newlyJoinedGuild(currentGuilds); ok {
 			guilds.Log.Info(guilds.botName()+" joined new guild", "guild", newGuild.Name)

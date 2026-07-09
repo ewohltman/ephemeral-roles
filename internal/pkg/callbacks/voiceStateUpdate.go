@@ -109,7 +109,7 @@ func (handler *Handler) parseEvent(
 	}
 
 	ephemeralRole, err := handler.lookupGuildRole(client, guild.ID, channel)
-	if errors.Is(err, &RoleNotFoundError{}) {
+	if _, ok := errors.AsType[*RoleNotFoundError](err); ok {
 		ephemeralRole, err = handler.createRole(guild.ID, handler.RoleNameFromChannel(channel.Name()))
 		if err != nil {
 			switch {
@@ -135,23 +135,15 @@ func (handler *Handler) parseEvent(
 }
 
 func (handler *Handler) handleParseEventError(client *bot.Client, err error) {
-	var (
-		channelNotFoundErr         *ChannelNotFoundError
-		insufficientPermissionsErr *InsufficientPermissionsError
-		maxNumberOfRolesErr        *MaxNumberOfRolesError
-		deadlineExceededErr        *DeadlineExceededError
-	)
-
-	switch {
-	case errors.As(err, &channelNotFoundErr):
+	if channelNotFoundErr, ok := errors.AsType[*ChannelNotFoundError](err); ok {
 		handler.logCleanup(client, channelNotFoundErr)
-	case errors.As(err, &insufficientPermissionsErr):
+	} else if insufficientPermissionsErr, ok := errors.AsType[*InsufficientPermissionsError](err); ok {
 		handler.logCleanup(client, insufficientPermissionsErr)
-	case errors.As(err, &maxNumberOfRolesErr):
+	} else if maxNumberOfRolesErr, ok := errors.AsType[*MaxNumberOfRolesError](err); ok {
 		handler.logCleanup(client, maxNumberOfRolesErr)
-	case errors.As(err, &deadlineExceededErr):
+	} else if deadlineExceededErr, ok := errors.AsType[*DeadlineExceededError](err); ok {
 		handler.logParseEventError(deadlineExceededErr)
-	default:
+	} else {
 		handler.Log.Error(voiceStateUpdateEventError, "error", err)
 	}
 }
