@@ -123,6 +123,16 @@ func startSession(
 				gateway.WithIntents(intents),
 			),
 		),
+		// Event listeners (VoiceStateUpdate in particular) make synchronous
+		// Discord REST calls. disgo dispatches events on the same goroutine
+		// that reads the shard's gateway websocket by default, so a slow or
+		// rate-limited REST call can stall that read loop past the heartbeat
+		// interval, making disgo believe the connection went zombie and force
+		// an avoidable reconnect. Running listeners asynchronously decouples
+		// callback latency from heartbeat processing.
+		bot.WithEventManagerConfigOpts(
+			bot.WithAsyncEventsEnabled(),
+		),
 		bot.WithCacheConfigOpts(
 			cache.WithCaches(
 				cache.FlagGuilds,
