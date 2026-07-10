@@ -29,9 +29,21 @@ type voiceStateUpdateMetadata struct {
 }
 
 // VoiceStateUpdate is the callback function for the VoiceStateUpdate event from Discord.
+//
+// The actual processing runs on the guild's dedicated sequencer worker rather
+// than inline: it involves Discord REST calls (role lookup/create/add/remove)
+// that can block on rate limiting, and this callback is invoked synchronously
+// from the shard's gateway read loop, so running that work here would risk
+// stalling heartbeat ACK processing.
 func (handler *Handler) VoiceStateUpdate(event *events.GuildVoiceStateUpdate) {
 	handler.VoiceStateUpdateCounter.Inc()
 
+	handler.sequencer.Submit(event.VoiceState.GuildID, func() {
+		handler.handleVoiceStateUpdate(event)
+	})
+}
+
+func (handler *Handler) handleVoiceStateUpdate(event *events.GuildVoiceStateUpdate) {
 	metadata, err := handler.parseEvent(event.Client(), event.VoiceState, &event.Member)
 	if err != nil {
 		handler.handleParseEventError(event.Client(), err)

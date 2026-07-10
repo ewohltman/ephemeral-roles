@@ -41,6 +41,9 @@ func TestHandler_ChannelDelete(t *testing.T) {
 		},
 	})
 
+	// ChannelDelete queues its actual work on the guild's sequencer worker.
+	handler.Flush(mock.TestGuild)
+
 	require.False(t, foundRole(session, handler, mock.TestGuild, channel),
 		"Ephemeral role remains for channel %s", channel.Name())
 }

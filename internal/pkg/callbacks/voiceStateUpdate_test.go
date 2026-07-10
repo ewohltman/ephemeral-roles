@@ -154,4 +154,9 @@ func sendUpdate(
 			Member: *member,
 		},
 	})
+
+	// VoiceStateUpdate queues its actual work on the guild's sequencer
+	// worker; wait for it so the mutex-serialized test cases above see each
+	// other's completed role mutations.
+	handler.Flush(member.GuildID)
 }

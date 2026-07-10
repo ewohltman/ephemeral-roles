@@ -9,11 +9,21 @@ import (
 const channelDeleteEventError = unableToProcessEvent + "ChannelDelete"
 
 // ChannelDelete is the callback function for the ChannelDelete event from Discord.
+//
+// Processing is queued on the guild's sequencer, the same one VoiceStateUpdate
+// uses, so a channel deletion and a concurrent voice-state update for the same
+// guild never race on that guild's role state.
 func (handler *Handler) ChannelDelete(event *events.GuildChannelDelete) {
 	if event.Channel.Type() != discord.ChannelTypeGuildVoice {
 		return
 	}
 
+	handler.sequencer.Submit(event.GuildID, func() {
+		handler.handleChannelDelete(event)
+	})
+}
+
+func (handler *Handler) handleChannelDelete(event *events.GuildChannelDelete) {
 	client := event.Client()
 	roleName := handler.RoleNameFromChannel(event.Channel.Name())
 

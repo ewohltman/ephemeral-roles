@@ -25,6 +25,14 @@ type Handler struct {
 	ReadyCounter            prometheus.Counter
 	VoiceStateUpdateCounter prometheus.Counter
 	OperationsGateway       OperationsGateway
+
+	sequencer guildSequencer
+}
+
+// Flush blocks until any Discord role work already queued for guildID (from
+// VoiceStateUpdate or ChannelDelete) has completed.
+func (handler *Handler) Flush(guildID snowflake.ID) {
+	handler.sequencer.Flush(guildID)
 }
 
 // RoleNameFromChannel returns the name of a role for a channel, with the bot
