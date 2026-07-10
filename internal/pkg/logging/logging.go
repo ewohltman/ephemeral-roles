@@ -186,10 +186,12 @@ type levelHandler struct {
 	handler slog.Handler
 }
 
-// Enabled reports whether the wrapped handler should receive the level, per the
-// gate's slog.Leveler.
-func (h *levelHandler) Enabled(_ context.Context, level slog.Level) bool {
-	return level >= h.level.Level()
+// Enabled reports whether the wrapped handler should receive the level. It
+// gates on the gate's slog.Leveler and then defers to the wrapped handler, so
+// the wrapped handler's own filtering is honored rather than bypassed by
+// Handle forwarding records directly.
+func (h *levelHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return level >= h.level.Level() && h.handler.Enabled(ctx, level)
 }
 
 // Handle forwards the record to the wrapped handler.

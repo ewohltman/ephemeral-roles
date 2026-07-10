@@ -218,6 +218,6 @@ func TestLogger_DiscordRespectsInfoLevel(t *testing.T) {
 	select {
 	case body := <-received:
 		require.Failf(t, "debug record leaked to Discord at info level", "body: %s", body)
-	case <-time.After(500 * time.Millisecond):
+	default:
 	}
 }
