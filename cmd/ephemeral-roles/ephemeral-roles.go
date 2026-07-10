@@ -33,16 +33,6 @@ const (
 	contextTimeout  = 5 * time.Minute
 	monitorInterval = 10 * time.Second
 
-	// identifyStagger staggers each shard's gateway IDENTIFY by shardID *
-	// identifyStagger. Each shard runs as its own StatefulSet pod/process, so
-	// disgo's in-memory IdentifyRateLimiter (which normally spaces IDENTIFY
-	// calls across shards within a single process) has no cross-process view
-	// of the other shards. Without this delay, pods starting around the same
-	// time IDENTIFY within the same window and Discord invalidates the
-	// colliding sessions. 5s matches Discord's default IDENTIFY rate limit
-	// window (see gateway.NewIdentifyRateLimiter's default Wait).
-	identifyStagger = 5 * time.Second
-
 	// intents subscribes to only the gateway events the bot handles: guild,
 	// channel, and role changes (IntentGuilds), the core VoiceStateUpdate
 	// event (IntentGuildVoiceStates), and member changes for the member cache
@@ -166,19 +156,6 @@ func startSession(
 			OperationsGateway:       operations.NewGateway(client),
 		},
 	)
-
-	if delay := time.Duration(envVars.shardID) * identifyStagger; delay > 0 {
-		log.Info("staggering shard startup for gateway IDENTIFY rate limit", "delay", delay)
-
-		timer := time.NewTimer(delay)
-		defer timer.Stop()
-
-		select {
-		case <-timer.C:
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
 
 	if err := client.OpenShardManager(ctx); err != nil {
 		return nil, err
