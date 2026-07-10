@@ -186,3 +186,38 @@ func TestLogger_FanoutToStdoutAndDiscord(t *testing.T) {
 		require.Fail(t, "discord webhook did not receive the log record")
 	}
 }
+
+func TestLogger_DiscordRespectsInfoLevel(t *testing.T) {
+	t.Parallel()
+
+	received := make(chan string, 1)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+
+		select {
+		case received <- string(body):
+		default:
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	buf := &bytes.Buffer{}
+	log := logging.New(
+		logging.OptionalOutput(buf),
+		logging.OptionalLogLevel(logging.InfoLevel),
+		logging.OptionalDiscordWebhook(server.URL),
+	)
+
+	log.Debug("debug-should-not-ship")
+
+	assert.NotContains(t, buf.String(), "debug-should-not-ship")
+
+	select {
+	case body := <-received:
+		require.Failf(t, "debug record leaked to Discord at info level", "body: %s", body)
+	default:
+	}
+}
