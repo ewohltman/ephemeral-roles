@@ -132,7 +132,7 @@ func (l *Logger) UpdateLevel(level string) {
 // build (re)constructs the *slog.Logger from the current configuration, fanning
 // out to Discord when a webhook is configured.
 func (l *Logger) build() {
-	var handler slog.Handler = slog.NewTextHandler(l.output, &slog.HandlerOptions{
+	var handler slog.Handler = slog.NewJSONHandler(l.output, &slog.HandlerOptions{
 		Level:       l.level,
 		ReplaceAttr: l.replaceAttr,
 	})

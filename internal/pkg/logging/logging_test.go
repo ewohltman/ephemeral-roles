@@ -130,7 +130,7 @@ func TestLogger_ShardIDAndTimezone(t *testing.T) {
 	log.Info("hello")
 
 	out := buf.String()
-	assert.Contains(t, out, "shardID=7")
+	assert.Contains(t, out, `"shardID":7`)
 	assert.NotContains(t, out, "error parsing timezone location")
 }
 
