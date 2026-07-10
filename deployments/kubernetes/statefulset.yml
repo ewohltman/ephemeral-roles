@@ -46,3 +46,11 @@ spec:
           ports:
             - name: http
               containerPort: 8081
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 1
+            periodSeconds: 2
+            timeoutSeconds: 2
+            failureThreshold: 3

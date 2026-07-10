@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/gateway"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -18,6 +19,7 @@ import (
 const (
 	RootEndpoint   = "/"
 	GuildsEndpoint = "/guilds"
+	ReadyzEndpoint = "/readyz"
 )
 
 const (
@@ -47,6 +49,7 @@ func NewServer(log *slog.Logger, client *bot.Client, port string) *http.Server {
 
 	mux.HandleFunc(RootEndpoint, rootHandler())
 	mux.HandleFunc(GuildsEndpoint, guildsHandler(log, client))
+	mux.HandleFunc(ReadyzEndpoint, readyzHandler(client))
 	mux.HandleFunc(pprofIndexEndpoint, pprof.Index)
 	mux.HandleFunc(pprofCmdlineEndpoint, pprof.Cmdline)
 	mux.HandleFunc(pprofProfileEndpoint, pprof.Profile)
@@ -66,6 +69,34 @@ func rootHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.Copy(io.Discard, r.Body)
 		_ = r.Body.Close()
+		_, _ = w.Write(nil)
+	}
+}
+
+// readyzHandler reports 200 once every shard this process manages has
+// completed its gateway handshake and reached gateway.StatusReady, and 503
+// otherwise. Kubernetes uses this to gate the StatefulSet's OrderedReady
+// rollout: each pod is one shard, and disgo's IdentifyRateLimiter only spaces
+// IDENTIFY calls out within a single process, so without this gate multiple
+// pods starting up in quick succession can IDENTIFY within the same window
+// and have Discord invalidate the colliding sessions.
+func readyzHandler(client *bot.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.Copy(io.Discard, r.Body)
+		_ = r.Body.Close()
+
+		if !client.HasShardManager() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+
+		for shard := range client.ShardManager.Shards() {
+			if shard.Status() != gateway.StatusReady {
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+		}
+
 		_, _ = w.Write(nil)
 	}
 }

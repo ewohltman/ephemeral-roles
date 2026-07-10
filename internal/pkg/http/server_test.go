@@ -49,6 +49,7 @@ func TestNewServer(t *testing.T) {
 
 	testRootEndpoint(t, client)
 	testGuildsEndpoint(t, client)
+	testReadyzEndpoint(t, client)
 
 	ctx, cancelContext := context.WithTimeout(t.Context(), time.Second)
 	defer cancelContext()
@@ -63,6 +64,20 @@ func testRootEndpoint(t *testing.T, client *http.Client) {
 	require.NoError(t, err)
 
 	drainCloseResponse(resp)
+}
+
+func testReadyzEndpoint(t *testing.T, client *http.Client) {
+	t.Helper()
+
+	// mock.NewSession does not configure a shard manager, so readyz reports
+	// not ready, matching a real process before its gateway connection
+	// reaches gateway.StatusReady.
+	resp, err := doRequest(t.Context(), client, testURL+internalHTTP.ReadyzEndpoint)
+	require.NoError(t, err)
+
+	drainCloseResponse(resp)
+
+	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }
 
 func testGuildsEndpoint(t *testing.T, client *http.Client) {
