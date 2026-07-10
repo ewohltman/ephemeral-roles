@@ -170,8 +170,11 @@ func startSession(
 	if delay := time.Duration(envVars.shardID) * identifyStagger; delay > 0 {
 		log.Info("staggering shard startup for gateway IDENTIFY rate limit", "delay", delay)
 
+		timer := time.NewTimer(delay)
+		defer timer.Stop()
+
 		select {
-		case <-time.After(delay):
+		case <-timer.C:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		}
