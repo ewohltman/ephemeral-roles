@@ -122,8 +122,9 @@ func OptionalDiscordWebhook(webhookURL string) OptionFunc {
 	}
 }
 
-// UpdateLevel allows for runtime updates of the logging level. It adjusts the
-// stdout handler live; the Discord handler keeps its startup level.
+// UpdateLevel allows for runtime updates of the logging level. Both the stdout
+// and Discord handlers share the same LevelVar, so the change takes effect on
+// each of them live.
 func (l *Logger) UpdateLevel(level string) {
 	l.level.Set(parseLevel(level))
 }
@@ -139,7 +140,6 @@ func (l *Logger) build() {
 	if l.webhookURL != "" {
 		discordHandler := slogdiscord.NewDiscordHandler(slogdiscord.DiscordWebhookConfig{
 			WebhookURL: l.webhookURL,
-			MinLevel:   l.level.Level(),
 			LevelColors: slogdiscord.LevelColors{
 				slog.LevelDebug.String(): DebugColor,
 				slog.LevelInfo.String():  InfoColor,
@@ -149,7 +149,14 @@ func (l *Logger) build() {
 			CustomEmbed: discordEmbed,
 		})
 
-		handler = &fanoutHandler{handlers: []slog.Handler{handler, discordHandler}}
+		// The slog-discord handler cannot filter by level reliably: it treats a
+		// MinLevel of 0 (which is slog.LevelInfo) as "unset" and falls back to
+		// Debug, so an "info" configuration would leak debug records to Discord.
+		// Gate it with the shared LevelVar instead, which also lets runtime
+		// UpdateLevel calls take effect on the Discord output.
+		gatedDiscord := &levelHandler{level: l.level, handler: discordHandler}
+
+		handler = &fanoutHandler{handlers: []slog.Handler{handler, gatedDiscord}}
 	}
 
 	slogLogger := slog.New(handler)
@@ -168,6 +175,40 @@ func (l *Logger) replaceAttr(_ []string, attr slog.Attr) slog.Attr {
 	}
 
 	return attr
+}
+
+// levelHandler wraps a slog.Handler and gates records by a slog.Leveler. It
+// lets a wrapped handler that does not honor a dynamic level (or, like
+// slog-discord, misinterprets slog.LevelInfo's zero value as "unset") be
+// filtered correctly against the shared LevelVar.
+type levelHandler struct {
+	level   slog.Leveler
+	handler slog.Handler
+}
+
+// Enabled reports whether the wrapped handler should receive the level, per the
+// gate's slog.Leveler.
+func (h *levelHandler) Enabled(_ context.Context, level slog.Level) bool {
+	return level >= h.level.Level()
+}
+
+// Handle forwards the record to the wrapped handler.
+//
+//nolint:gocritic // slog.Handler requires slog.Record to be passed by value.
+func (h *levelHandler) Handle(ctx context.Context, record slog.Record) error {
+	return h.handler.Handle(ctx, record)
+}
+
+// WithAttrs returns a new levelHandler wrapping the underlying handler with the
+// attributes applied.
+func (h *levelHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &levelHandler{level: h.level, handler: h.handler.WithAttrs(attrs)}
+}
+
+// WithGroup returns a new levelHandler wrapping the underlying handler with the
+// group applied.
+func (h *levelHandler) WithGroup(name string) slog.Handler {
+	return &levelHandler{level: h.level, handler: h.handler.WithGroup(name)}
 }
 
 // fanoutHandler is a slog.Handler that dispatches each record to every wrapped
