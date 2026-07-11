@@ -38,9 +38,14 @@ type voiceStateUpdateMetadata struct {
 func (handler *Handler) VoiceStateUpdate(event *events.GuildVoiceStateUpdate) {
 	handler.VoiceStateUpdateCounter.Inc()
 
-	handler.sequencer.Submit(event.VoiceState.GuildID, func() {
+	accepted := handler.sequencer.Submit(event.VoiceState.GuildID, func() {
 		handler.handleVoiceStateUpdate(event)
 	})
+	if !accepted {
+		handler.Log.Warn("dropping VoiceStateUpdate event: guild queue full",
+			"guildID", event.VoiceState.GuildID,
+		)
+	}
 }
 
 func (handler *Handler) handleVoiceStateUpdate(event *events.GuildVoiceStateUpdate) {

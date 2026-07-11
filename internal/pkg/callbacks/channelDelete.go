@@ -3,7 +3,10 @@ package callbacks
 import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
 
 const channelDeleteEventError = unableToProcessEvent + "ChannelDelete"
@@ -18,9 +21,23 @@ func (handler *Handler) ChannelDelete(event *events.GuildChannelDelete) {
 		return
 	}
 
-	handler.sequencer.Submit(event.GuildID, func() {
+	accepted := handler.sequencer.Submit(event.GuildID, func() {
 		handler.handleChannelDelete(event)
 	})
+	if !accepted {
+		// Unlike a dropped VoiceStateUpdate, a dropped ChannelDelete is never
+		// retried by a later event, permanently leaking a role toward the
+		// guild's 250-role cap. ChannelDelete is rare, so fall back to a
+		// goroutine that waits for queue capacity: the read loop stays
+		// unblocked and the work still runs serialized on the guild worker.
+		handler.Log.Warn("guild queue full: queueing ChannelDelete asynchronously",
+			"guildID", event.GuildID,
+		)
+
+		go handler.sequencer.SubmitWait(event.GuildID, func() {
+			handler.handleChannelDelete(event)
+		})
+	}
 }
 
 func (handler *Handler) handleChannelDelete(event *events.GuildChannelDelete) {
@@ -48,7 +65,10 @@ func (handler *Handler) handleChannelDelete(event *events.GuildChannelDelete) {
 		return
 	}
 
-	if err := client.Rest.DeleteRole(event.GuildID, roleID); err != nil {
+	ctx, cancel := operations.RequestContext()
+	defer cancel()
+
+	if err := client.Rest.DeleteRole(event.GuildID, roleID, rest.WithCtx(ctx)); err != nil {
 		handler.Log.Error(channelDeleteEventError, "error", err)
 		return
 	}

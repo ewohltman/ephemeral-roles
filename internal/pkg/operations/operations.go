@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
@@ -22,7 +23,23 @@ const APIErrorCodeMaxRoles = rest.JSONErrorCodeMaximumGuildRolesReached
 const (
 	roleHoist   = true
 	roleMention = true
+
+	// requestTimeout bounds each Discord REST request, including the time
+	// spent queued in disgo's REST rate limiter. Discord can respond to role
+	// mutations with retry_after values of an hour or more; without a
+	// deadline the rate limiter blocks the calling goroutine for that entire
+	// window (observed wedging a shard's guild worker for 96+ minutes in
+	// production). Failing fast with context.DeadlineExceeded instead lets
+	// callers classify the error (KindDeadlineExceeded) and drop the
+	// operation.
+	requestTimeout = 1 * time.Minute
 )
+
+// RequestContext returns a context bounding a single Discord REST request,
+// and its cancel function.
+func RequestContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), requestTimeout)
+}
 
 // Gateway is a centralized construct to process Discord API-mutating requests
 // by de-duplicating identical simultaneous requests and providing the result
@@ -65,7 +82,10 @@ func LookupGuild(client *bot.Client, guildID snowflake.ID) (discord.Guild, error
 		return guild, nil
 	}
 
-	restGuild, err := client.Rest.GetGuild(guildID, false)
+	ctx, cancel := RequestContext()
+	defer cancel()
+
+	restGuild, err := client.Rest.GetGuild(guildID, false, rest.WithCtx(ctx))
 	if err != nil {
 		return discord.Guild{}, fmt.Errorf("unable to query guild: %w", err)
 	}
@@ -79,7 +99,10 @@ func LookupGuild(client *bot.Client, guildID snowflake.ID) (discord.Guild, error
 // user associated with the provided userID, in the guild associated with the
 // provided guildID.
 func AddRoleToMember(client *bot.Client, guildID, userID, roleID snowflake.ID) error {
-	if err := client.Rest.AddMemberRole(guildID, userID, roleID); err != nil {
+	ctx, cancel := RequestContext()
+	defer cancel()
+
+	if err := client.Rest.AddMemberRole(guildID, userID, roleID, rest.WithCtx(ctx)); err != nil {
 		return fmt.Errorf("unable to add ephemeral role: %w", err)
 	}
 
@@ -90,7 +113,10 @@ func AddRoleToMember(client *bot.Client, guildID, userID, roleID snowflake.ID) e
 // from the user associated with the provided userID, in the guild associated
 // with the provided guildID.
 func RemoveRoleFromMember(client *bot.Client, guildID, userID, roleID snowflake.ID) error {
-	if err := client.Rest.RemoveMemberRole(guildID, userID, roleID); err != nil {
+	ctx, cancel := RequestContext()
+	defer cancel()
+
+	if err := client.Rest.RemoveMemberRole(guildID, userID, roleID, rest.WithCtx(ctx)); err != nil {
 		return fmt.Errorf("unable to remove ephemeral role: %w", err)
 	}
 
@@ -161,12 +187,15 @@ func createRole(
 	roleName string,
 	roleColor int,
 ) (discord.Role, error) {
+	ctx, cancel := RequestContext()
+	defer cancel()
+
 	role, err := client.Rest.CreateRole(guildID, discord.RoleCreate{
 		Name:        roleName,
 		Color:       roleColor,
 		Hoist:       roleHoist,
 		Mentionable: roleMention,
-	})
+	}, rest.WithCtx(ctx))
 	if err != nil {
 		return discord.Role{}, fmt.Errorf("unable to create ephemeral role: %w", err)
 	}
