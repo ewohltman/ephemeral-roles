@@ -17,7 +17,7 @@ spec:
       labels:
         app: ephemeral-roles
     spec:
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 90
       containers:
         - name: ephemeral-roles
           image: ewohltman/ephemeral-roles:v1.16.5

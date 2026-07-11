@@ -47,14 +47,21 @@ func (s *guildSequencer) Submit(guildID snowflake.ID, fn func()) bool {
 	}
 }
 
+// SubmitWait queues fn like Submit but blocks until the guild's queue has
+// capacity instead of dropping. It must not be called from the gateway read
+// loop; it is for callers that can afford to wait (a goroutine falling back
+// after a Submit drop, tests) while still needing fn to run serialized on
+// the guild's worker.
+func (s *guildSequencer) SubmitWait(guildID snowflake.ID, fn func()) {
+	s.queue(guildID) <- fn
+}
+
 // Flush blocks until every job submitted for guildID before this call has
-// completed. Unlike Submit, Flush waits for queue capacity rather than
-// dropping; it is intended for tests and shutdown paths, not the gateway
-// read loop.
+// completed.
 func (s *guildSequencer) Flush(guildID snowflake.ID) {
 	done := make(chan struct{})
 
-	s.queue(guildID) <- func() { close(done) }
+	s.SubmitWait(guildID, func() { close(done) })
 
 	<-done
 }

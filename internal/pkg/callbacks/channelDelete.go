@@ -25,9 +25,18 @@ func (handler *Handler) ChannelDelete(event *events.GuildChannelDelete) {
 		handler.handleChannelDelete(event)
 	})
 	if !accepted {
-		handler.Log.Warn("dropping ChannelDelete event: guild queue full",
+		// Unlike a dropped VoiceStateUpdate, a dropped ChannelDelete is never
+		// retried by a later event, permanently leaking a role toward the
+		// guild's 250-role cap. ChannelDelete is rare, so fall back to a
+		// goroutine that waits for queue capacity: the read loop stays
+		// unblocked and the work still runs serialized on the guild worker.
+		handler.Log.Warn("guild queue full: queueing ChannelDelete asynchronously",
 			"guildID", event.GuildID,
 		)
+
+		go handler.sequencer.SubmitWait(event.GuildID, func() {
+			handler.handleChannelDelete(event)
+		})
 	}
 }
 
