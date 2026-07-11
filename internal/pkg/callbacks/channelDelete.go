@@ -3,7 +3,10 @@ package callbacks
 import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
+
+	"github.com/ewohltman/ephemeral-roles/internal/pkg/operations"
 )
 
 const channelDeleteEventError = unableToProcessEvent + "ChannelDelete"
@@ -18,9 +21,14 @@ func (handler *Handler) ChannelDelete(event *events.GuildChannelDelete) {
 		return
 	}
 
-	handler.sequencer.Submit(event.GuildID, func() {
+	accepted := handler.sequencer.Submit(event.GuildID, func() {
 		handler.handleChannelDelete(event)
 	})
+	if !accepted {
+		handler.Log.Warn("dropping ChannelDelete event: guild queue full",
+			"guildID", event.GuildID,
+		)
+	}
 }
 
 func (handler *Handler) handleChannelDelete(event *events.GuildChannelDelete) {
@@ -48,7 +56,10 @@ func (handler *Handler) handleChannelDelete(event *events.GuildChannelDelete) {
 		return
 	}
 
-	if err := client.Rest.DeleteRole(event.GuildID, roleID); err != nil {
+	ctx, cancel := operations.RequestContext()
+	defer cancel()
+
+	if err := client.Rest.DeleteRole(event.GuildID, roleID, rest.WithCtx(ctx)); err != nil {
 		handler.Log.Error(channelDeleteEventError, "error", err)
 		return
 	}

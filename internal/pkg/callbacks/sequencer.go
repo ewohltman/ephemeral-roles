@@ -7,8 +7,8 @@ import (
 )
 
 // guildQueueBuffer bounds how many pending guild-scoped jobs may queue up
-// behind a slow one before Submit blocks. Sized well above realistic
-// per-guild event bursts (channel switches are human-paced).
+// behind a slow one. Sized well above realistic per-guild event bursts
+// (channel switches are human-paced).
 const guildQueueBuffer = 64
 
 // guildSequencer serializes Discord role-mutating work per guild, so that
@@ -29,8 +29,42 @@ type guildSequencer struct {
 // Submit queues fn to run on guildID's dedicated worker, creating the worker
 // on first use. fn runs after any previously submitted work for the same
 // guild has completed.
-func (s *guildSequencer) Submit(guildID snowflake.ID, fn func()) {
+//
+// Submit never blocks: if the guild's queue is full, fn is dropped and Submit
+// reports false. The caller holds disgo's event-manager mutex, so blocking
+// here would wedge all event dispatch for the shard — including heartbeat
+// ACK processing — until the queue drains (a production incident: a Discord
+// role-create rate limit with a multi-hour retry_after backed up a guild
+// queue and put the shard into a permanent zombie-reconnect loop). Dropping
+// risks at most a stale ephemeral role, which the member's next voice event
+// corrects.
+func (s *guildSequencer) Submit(guildID snowflake.ID, fn func()) bool {
+	select {
+	case s.queue(guildID) <- fn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Flush blocks until every job submitted for guildID before this call has
+// completed. Unlike Submit, Flush waits for queue capacity rather than
+// dropping; it is intended for tests and shutdown paths, not the gateway
+// read loop.
+func (s *guildSequencer) Flush(guildID snowflake.ID) {
+	done := make(chan struct{})
+
+	s.queue(guildID) <- func() { close(done) }
+
+	<-done
+}
+
+// queue returns guildID's job channel, creating it and starting its drain
+// worker on first use.
+func (s *guildSequencer) queue(guildID snowflake.ID) chan func() {
 	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.queues == nil {
 		s.queues = make(map[snowflake.ID]chan func())
 	}
@@ -42,19 +76,8 @@ func (s *guildSequencer) Submit(guildID snowflake.ID, fn func()) {
 
 		go drainGuildQueue(queue)
 	}
-	s.mu.Unlock()
 
-	queue <- fn
-}
-
-// Flush blocks until every job submitted for guildID before this call has
-// completed.
-func (s *guildSequencer) Flush(guildID snowflake.ID) {
-	done := make(chan struct{})
-
-	s.Submit(guildID, func() { close(done) })
-
-	<-done
+	return queue
 }
 
 func drainGuildQueue(queue chan func()) {
