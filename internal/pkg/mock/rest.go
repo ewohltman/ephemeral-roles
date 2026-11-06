@@ -114,5 +114,5 @@ func (m *mockRest) GetGuild(
 		return nil, errGuildNotFound
 	}
 
-	return &discord.RestGuild{Guild: guild}, nil
+	return &discord.RestGuild{Guild: guild.Guild}, nil
 }

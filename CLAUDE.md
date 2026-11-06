@@ -28,7 +28,7 @@ Run a single test package/test the normal Go way, e.g.:
 go test ./internal/pkg/callbacks/... -run TestHandler_VoiceStateUpdate -race
 ```
 
-CI (`.github/workflows/pullRequest.yml`) runs `make tidy`, `make vet`, `golangci-lint` (golangci-lint-action v9, golangci-lint v2.12.2), `make test`,
+CI (`.github/workflows/pullRequest.yml`) runs `make tidy`, `make vet`, `golangci-lint` (golangci-lint-action v9, golangci-lint v2.15.0), `make test`,
 `make build`, `make image` on every PR targeting non-master branches. `pullRequestMaster.yml` covers PRs into
 master. Development happens on `develop` (the repo's default branch); contributions target `develop` per
 CONTRIBUTING.md, and merges to `master` auto-deploy.
