@@ -87,36 +87,38 @@ func (handler *Handler) parseEvent(
 	voiceState discord.VoiceState,
 	member *discord.Member,
 ) (*voiceStateUpdateMetadata, error) {
-	guild, err := operations.LookupGuild(client, voiceState.GuildID)
+	cacheGuild, err := operations.LookupGuild(client, voiceState.GuildID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to lookup Guild: %w", err)
 	}
 
+	guild := &cacheGuild.Guild
+
 	if voiceState.ChannelID == nil {
 		return &voiceStateUpdateMetadata{
 			Client: client,
-			Guild:  &guild,
+			Guild:  guild,
 			Member: member,
 		}, nil
 	}
 
 	channel, ok := client.Caches.Channel(*voiceState.ChannelID)
 	if !ok {
-		return nil, &EventError{Kind: KindChannelNotFound, Guild: &guild, Member: member}
+		return nil, &EventError{Kind: KindChannelNotFound, Guild: guild, Member: member}
 	}
 
 	if err := operations.BotHasChannelPermission(client, channel); err != nil {
-		return nil, &EventError{Kind: KindInsufficientPermissions, Guild: &guild, Member: member, Channel: channel, Err: err}
+		return nil, &EventError{Kind: KindInsufficientPermissions, Guild: guild, Member: member, Channel: channel, Err: err}
 	}
 
-	ephemeralRole, err := handler.ephemeralRoleForChannel(client, &guild, member, channel)
+	ephemeralRole, err := handler.ephemeralRoleForChannel(client, guild, member, channel)
 	if err != nil {
 		return nil, err
 	}
 
 	return &voiceStateUpdateMetadata{
 		Client:        client,
-		Guild:         &guild,
+		Guild:         guild,
 		Member:        member,
 		Channel:       channel,
 		EphemeralRole: ephemeralRole,

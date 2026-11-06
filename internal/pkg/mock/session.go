@@ -60,11 +60,9 @@ func NewSession() (*bot.Client, error) {
 	))
 
 	caches.SetSelfUser(discord.OAuth2User{
-		User: discord.User{
-			ID:       TestUserBot,
-			Username: TestUserBotName,
-			Bot:      true,
-		},
+		ID:       TestUserBot,
+		Username: TestUserBotName,
+		Bot:      true,
 	})
 
 	if err := addGuild(caches, TestGuild, TestGuildName, false); err != nil {
@@ -108,7 +106,7 @@ func addGuild(caches cache.Caches, guildID snowflake.ID, guildName string, large
 		memberCount += largeGuildSize
 	}
 
-	caches.AddGuild(discord.Guild{
+	caches.AddGuild(discord.CacheGuild{
 		ID:          guildID,
 		Name:        guildName,
 		MemberCount: memberCount,

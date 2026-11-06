@@ -60,7 +60,7 @@ func TestMonitor(t *testing.T) {
 	// goroutine observes the cache growing and shrinking between ticks.
 	time.Sleep(sleepInterval)
 
-	session.Caches.AddGuild(discord.Guild{ID: newGuildID, Name: "newGuild", MemberCount: 5})
+	session.Caches.AddGuild(discord.CacheGuild{ID: newGuildID, Name: "newGuild", MemberCount: 5})
 
 	time.Sleep(sleepInterval)
 
