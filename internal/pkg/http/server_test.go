@@ -34,8 +34,8 @@ func TestNewServer(t *testing.T) {
 	session, err := mock.NewSession()
 	require.NoError(t, err)
 
-	session.Caches.AddGuild(discord.Guild{ID: snowflake.ID(3002), Name: "testGuild2", MemberCount: 3})
-	session.Caches.AddGuild(discord.Guild{ID: snowflake.ID(3003), Name: "testGuild3", MemberCount: 4})
+	session.Caches.AddGuild(discord.CacheGuild{ID: snowflake.ID(3002), Name: "testGuild2", MemberCount: 3})
+	session.Caches.AddGuild(discord.CacheGuild{ID: snowflake.ID(3003), Name: "testGuild3", MemberCount: 4})
 
 	testServer := internalHTTP.NewServer(log, session, testPort)
 

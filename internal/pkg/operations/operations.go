@@ -73,10 +73,10 @@ func (gateway *Gateway) CreateRole(guildID snowflake.ID, roleName string, roleCo
 	return role, nil
 }
 
-// LookupGuild returns a discord.Guild from the client's cache. If the guild is
+// LookupGuild returns a discord.CacheGuild from the client's cache. If the guild is
 // not found in the cache, LookupGuild will query the Discord API for the guild
 // and add it to the cache before returning it.
-func LookupGuild(client *bot.Client, guildID snowflake.ID) (discord.Guild, error) {
+func LookupGuild(client *bot.Client, guildID snowflake.ID) (discord.CacheGuild, error) {
 	guild, ok := client.Caches.Guild(guildID)
 	if ok {
 		return guild, nil
@@ -87,12 +87,14 @@ func LookupGuild(client *bot.Client, guildID snowflake.ID) (discord.Guild, error
 
 	restGuild, err := client.Rest.GetGuild(guildID, false, rest.WithCtx(ctx))
 	if err != nil {
-		return discord.Guild{}, fmt.Errorf("unable to query guild: %w", err)
+		return discord.CacheGuild{}, fmt.Errorf("unable to query guild: %w", err)
 	}
 
-	client.Caches.AddGuild(restGuild.Guild)
+	guild = discord.CacheGuild{Guild: restGuild.Guild}
 
-	return restGuild.Guild, nil
+	client.Caches.AddGuild(guild)
+
+	return guild, nil
 }
 
 // AddRoleToMember adds the role associated with the provided roleID to the

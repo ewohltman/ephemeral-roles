@@ -33,7 +33,7 @@ type Metrics struct {
 	GuildsGauge             prometheus.Gauge
 	MembersGauge            prometheus.Gauge
 
-	guildList  []discord.Guild
+	guildList  []discord.CacheGuild
 	numGuilds  int
 	numMembers int
 }
@@ -111,14 +111,14 @@ func (metrics *Metrics) botName() string {
 	return selfUser.Username
 }
 
-func (metrics *Metrics) newlyJoinedGuild(currentGuilds []discord.Guild) (discord.Guild, bool) {
+func (metrics *Metrics) newlyJoinedGuild(currentGuilds []discord.CacheGuild) (discord.CacheGuild, bool) {
 	for i := range currentGuilds {
 		if !metrics.isKnownGuild(currentGuilds[i].ID) {
 			return currentGuilds[i], true
 		}
 	}
 
-	return discord.Guild{}, false
+	return discord.CacheGuild{}, false
 }
 
 func (metrics *Metrics) isKnownGuild(guildID snowflake.ID) bool {

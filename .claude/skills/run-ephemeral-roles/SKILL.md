@@ -19,8 +19,8 @@ All paths below are relative to the repo root.
 ## Prerequisites
 
 No `apt-get` packages needed beyond the Go toolchain and `curl` (both already
-present in this container). The module requires **Go 1.26+** (`go version` →
-`go1.26.4` here). `make build`/`make image` also reference `podman`, but the
+present in this container). The module requires **Go 1.27.3+** (`go version` →
+`go1.27.3` here). `make build`/`make image` also reference `podman`, but the
 driver does not need it.
 
 ## Build
