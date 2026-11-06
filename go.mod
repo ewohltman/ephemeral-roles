@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/Bufferoverflovv/slog-discord v1.0.0
-	github.com/caarlos0/env/v11 v11.4.1
+	github.com/caarlos0/env/v11 v11.4.2
 	github.com/disgoorg/disgo v0.19.6
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/prometheus/client_golang v1.24.1
