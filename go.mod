@@ -9,7 +9,7 @@ require (
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/prometheus/client_golang v1.25.0
 	github.com/stretchr/testify v1.12.1
-	golang.org/x/sync v0.24.0
+	golang.org/x/sync v0.25.0
 )
 
 require (
